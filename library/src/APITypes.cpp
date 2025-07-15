@@ -60,12 +60,14 @@ void IScriptManager::load_userdata_types()
 
     // TODO
     //  this seems like some very unsafe / sketchy usage (wrapping vector...)
-    this->new_usertype<Bytes>("Bytes", 
-        sol::constructors<Bytes(), Bytes(Bytes const &)>(), 
-        "assign", [](Bytes &self, Bytes const &other) { self = other; }, 
-        "move", [](Bytes &self, Bytes &other) { self = std::move(other); }, 
-        "swap", [](Bytes &self, Bytes &other) { self.swap(other); }
-    );
+    // TODO
+    //  looks like msvc compiler is failing to find a (or some) >>ost operators, because dum... even though op>> is optional
+    //this->new_usertype<Bytes>("Bytes", 
+    //    sol::constructors<Bytes(), Bytes(Bytes const &)>(), 
+    //    "assign", [](Bytes &self, Bytes const &other) { self = other; }, 
+    //    "move", [](Bytes &self, Bytes &other) { self = std::move(other); }, 
+    //    "swap", [](Bytes &self, Bytes &other) { self.swap(other); }
+    //);
 
     // TODO impl
     //state.new_usertype<UserProfile>("UserProfile",

@@ -1,6 +1,5 @@
 #include "ModManager.h"
 #include "VUtils.h"
-#include <chrono>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
@@ -13,6 +12,7 @@
     #include <stdexcept>
     #include <string_view>
     #include <vector>
+    #include <chrono>
 
     #include <lua.h>
     #include <quill/Backend.h>
@@ -37,7 +37,7 @@
     #include "Types.h"
     #include "VUtilsResource.h"
 
-auto SCRIPT_MANAGER(std::make_unique<IScriptManager>());
+auto SCRIPT_MANAGER = std::make_unique<IScriptManager>();
 
 IScriptManager *ScriptManager()
 {
@@ -82,7 +82,8 @@ IScriptManager::load_file_script(std::filesystem::path script_root)
 
     auto last_write_time = std::filesystem::last_write_time(script_info_path);
 
-    ScriptInfo script_info(std::move(name), std::move(entry_path), std::move(script_root), last_write_time);
+    ScriptInfo script_info(std::move(name), std::move(entry_path).string(), std::move(script_root),
+                           last_write_time);
 
     script_info.m_version     = loadNode["version"].as<std::string>("");
     script_info.m_apiVersion  = loadNode["api-version"].as<std::string>("");
@@ -225,7 +226,7 @@ void IScriptManager::Init()
     auto sorted = std::filesystem::directory_iterator(AVLEDET_SCRIPTS_PATH, ec)
                   | std::views::filter([](std::filesystem::directory_entry e) -> bool {
                         return e.is_directory()
-                               && !std::string_view(e.path().filename().c_str()).starts_with("--");
+                               && !e.path().filename().string().starts_with("--");
                     })
                   | std::ranges::to<std::vector>();
     std::ranges::sort(sorted);

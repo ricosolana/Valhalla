@@ -25,7 +25,8 @@
 
     #include <intrusive_shared_ptr/intrusive_shared_ptr.h>
     #include <lua.h>
-    #include <magic_enum.hpp>
+    //#include <magic_enum.hpp> // TODO magic
+    #include <magic_enum/magic_enum.hpp>
     #include <sol/forward.hpp>
     #include <sol/protected_function_result.hpp>
     #include <sol/sol.hpp>

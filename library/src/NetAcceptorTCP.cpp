@@ -158,8 +158,7 @@ namespace avledet::network {
             throw std::runtime_error("invalid port");
 
         auto ep = asio::ip::tcp::endpoint(addr, static_cast<asio::ip::port_type>(port_num));
-
-        auto socket = std::make_shared<TcpSocket>(asio::ip::tcp::socket(m_ctx), true);
+        auto socket = std::make_shared<TcpSocket>(asio::ip::tcp::socket(m_ctx), ep, true);
 
         socket->m_socket.async_connect(ep, [this, socket](asio::error_code const &ec) {
             if (!ec) {
@@ -199,11 +198,13 @@ namespace avledet::network {
         m_acceptor.async_accept([this](asio::error_code const &ec, asio::ip::tcp::socket socket) {
             if (!ec) {
                 // Construct first to avoid mutex blocking too long
-                LOG_INFO(AVL_LOGGER, "Accepted socket {}", socket.remote_endpoint().address().to_string());
-                auto ptr = std::make_shared<TcpSocket>(std::move(socket), false);
+                auto endpoint = socket.remote_endpoint();
+                auto addr_str = endpoint.address().to_string();
+                LOG_INFO(AVL_LOGGER, "Accepted socket {}", addr_str);
+                auto ptr = std::make_shared<TcpSocket>(std::move(socket), endpoint, false);
                 ptr->do_read();
                 std::scoped_lock scoped(m_mux);// unique = write-only lock
-                m_queued.emplace_back(std::move(ptr));
+                m_queued.push_back(std::move(ptr));
             } else {
                 if (ec.value() == asio::error::operation_aborted) {
                     //LOG_INFO(LOGGER, "NetAccepter aborted");

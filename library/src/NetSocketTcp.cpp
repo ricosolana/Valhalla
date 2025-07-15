@@ -24,8 +24,9 @@ namespace avledet::network {
         * any (hopeuflly main thread) accesses sockets
     */
 
-    TcpSocket::TcpSocket(asio::ip::tcp::socket socket, bool is_outbound) :
+    TcpSocket::TcpSocket(asio::ip::tcp::socket socket, asio::ip::tcp::endpoint endpoint, bool is_outbound) :
         m_socket(std::move(socket)),
+        m_endpoint(endpoint),
         m_status(Status::Connecting),
         m_is_outbound(is_outbound)
     {
@@ -36,10 +37,10 @@ namespace avledet::network {
         this->close(true);
     }
 
-    void TcpSocket::close(bool linger)
+    void TcpSocket::close(bool linger) noexcept
     {
         if (m_status == Status::Connected && linger) {
-            std::shared_lock shared(m_mux);// shared = read-only lock
+            std::scoped_lock shared(m_mux);// unique = "one man shall pass"
             if (!m_send.empty()) {
                 m_status = Status::Lingering;
 
@@ -52,11 +53,12 @@ namespace avledet::network {
 
         if (m_status != Status::Closed) {
             m_status = Status::Closed;
+            std::scoped_lock shared(m_mux);// unique = "one man shall pass"
             m_socket.close();
         }
     }
 
-    void TcpSocket::send(std::vector<char> packet)
+    void TcpSocket::send(std::vector<char> packet) noexcept
     {
         if (m_status != Status::Connected)
             return;
@@ -72,7 +74,8 @@ namespace avledet::network {
         {
             std::scoped_lock scoped(m_mux);// unique = write-only lock
             was_empty  = m_send.empty();
-            ptr_packet = &m_send.emplace_back(std::move(packet));
+            m_send.push_back(std::move(packet));
+            ptr_packet = &m_send.back();
         }
 
         // reengage writers
@@ -82,7 +85,7 @@ namespace avledet::network {
         }
     }
 
-    std::vector<char> TcpSocket::Recv()
+    std::vector<char> TcpSocket::Recv() noexcept
     {
         std::vector<char> result;
 
@@ -96,44 +99,28 @@ namespace avledet::network {
         return result;
     }
 
-    std::string TcpSocket::get_host_name()
+    std::string TcpSocket::get_host_name() noexcept
     {
         return this->get_address();
     }
 
-    std::string TcpSocket::get_address()
+    std::string TcpSocket::get_address() noexcept
     {
-        asio::error_code ec;
-
-        auto local  = m_socket.local_endpoint(ec);
-        if (ec) {
-            // error
-            std::cout << "error1: " << ec.message();
-            //LOG_ERROR(AVL_LOGGER, "error1: {}", ec.message());
-        }
-
-        auto remote = m_socket.remote_endpoint(ec);
-        if (ec) {
-            // error
-            std::cout << "error2: " << ec.message();
-        }
-
-        
-
-        return remote.address().to_string();
+        //return this->m_address;
+        return this->m_endpoint.address().to_string();
     }
 
-    bool TcpSocket::is_outbound()
+    bool TcpSocket::is_outbound() noexcept
     {
         return m_is_outbound;
     }
 
-    Status TcpSocket::get_status()
+    Status TcpSocket::get_status() noexcept
     {
         return m_status;
     }
 
-    std::tuple<float, float> TcpSocket::get_connection_quality()
+    std::tuple<float, float> TcpSocket::get_connection_quality() noexcept
     {
 #ifdef _WIN32
         // TODO
@@ -159,7 +146,7 @@ namespace avledet::network {
         return {};
     }
 
-    int TcpSocket::get_send_queue_size()
+    int TcpSocket::get_send_queue_size() noexcept
     {
         // TODO use the atomic counting int instead
         //std::shared_lock scoped(m_mux); // shared = read-only lock
@@ -184,7 +171,7 @@ namespace avledet::network {
         return (int) m_send_queue_size;
     }
 
-    int TcpSocket::get_ping()
+    int TcpSocket::get_ping() noexcept
     {
 #ifdef _WIN32
         // https://github.com/notr1ch/TwitchTest/blob/c34fe317f2b7968ab45e585051d1e66273e26049/main.cpp#L709C13-L709C13
@@ -205,9 +192,17 @@ namespace avledet::network {
 
         PMIB_TCPTABLE tcpTable = (PMIB_TCPTABLE) buf.data();
 
+        asio::error_code ec;
         // https://stackoverflow.com/questions/6716347/not-getting-correct-port-number-by-getextendedtcptable-in-delphi-7
-        auto localPort  = asio::detail::socket_ops::host_to_network_short(m_socket.local_endpoint().port());
-        auto remotePort = asio::detail::socket_ops::host_to_network_short(m_socket.remote_endpoint().port());
+        auto localPort  = asio::detail::socket_ops::host_to_network_short(m_socket.local_endpoint(ec).port());
+        if (ec) {
+            return 0;
+        }
+
+        auto remotePort = asio::detail::socket_ops::host_to_network_short(m_socket.remote_endpoint(ec).port());
+        if (ec) {
+            return 0;
+        }
 
         PMIB_TCPROW row = nullptr;
         for (unsigned i = 0; i < tcpTable->dwNumEntries; i++) {
@@ -331,7 +326,9 @@ namespace avledet::network {
                           [this, self, packet](std::error_code const &ec, size_t) {
                               if (!ec) {
                                   m_send_queue_size -= (std::uint32_t) packet.get().size();
-                                  assert(m_send_queue_size);
+                                  
+                                  //assert(m_send_queue_size >= 0);
+                                  
 
                                   std::vector<char> const *next_packet {};
                                   {

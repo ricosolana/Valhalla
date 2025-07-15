@@ -65,6 +65,7 @@ if(WIN32)
     add_definitions("/wd4267") # int loss
     add_definitions("/wd4996") # unsafe cstd functions
     add_definitions("/wd4702") # unreachable code
+    add_definitions("/Zc:preprocessor")
 
     #if(CMAKE_BUILD_TYPE MATCHES Release)
     #    set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE ON)

@@ -355,9 +355,13 @@ void INetManager::PostInit()
 
     m_acceptor->start();
     m_acceptor->on_connect([this](ISocket::Ptr socket) {
-        auto &&ptr = std::make_unique<Peer>(std::move(socket));
-        if (AVL_SCRIPT_EVENT(IScriptManager::Events::Connect, ptr.get())) {
-            m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr));
+        try {
+            auto &&ptr = std::make_unique<Peer>(std::move(socket));
+            if (AVL_SCRIPT_EVENT(IScriptManager::Events::Connect, ptr.get())) {
+                m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr));
+            }
+        } catch (std::exception const &e) {
+            // (un)expected (more like unlikely), but, ... ERRORS ARE POSSIBLE! just look at literally any asio method...
         }
     });
 }

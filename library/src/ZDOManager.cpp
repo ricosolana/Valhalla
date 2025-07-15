@@ -991,6 +991,8 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
                 //}
             }
 
+            // TODO still getting unexpected ZDO missing from zone when new, ...
+            //  obvious fix would be to not check, or... denote that the ZDO is new to avoid this easily traceable issue...
             zdo->set_position(pos);
 
             assert(_FindZDOContainer(zdo->get_zone()));

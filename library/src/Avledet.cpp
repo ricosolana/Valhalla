@@ -374,6 +374,7 @@ void IAvledet::LoadFiles(bool reloading)
             a(m_settings.playerWhitelist, players, "whitelist", true, nullptr);
             a(m_settings.playerMax, players, "max-online", 10, [](int val) { return val < 1; });
             a(m_settings.playerOnline, players, "authenticate", true, nullptr);
+            // If timeout is 0, will never timeout
             a(m_settings.playerTimeout, players, "timeout", 30s,
               [](std::chrono::seconds val) { return val < 0s; });
 #if AVL_IS_ON(AVL_PLAYER_SLEEP)

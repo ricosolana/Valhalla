@@ -41,7 +41,7 @@ namespace avledet::network {
         LOG_TRACE_L1(AVL_LOGGER, "init_identifiers for {}, address {}", get_host_name(), m_address);
     }
 
-    void SteamSocket::close(bool linger)
+    void SteamSocket::close(bool linger) noexcept
     {
         // logic:
         //  if we are already lingering, and we are close-now (do not linger), then override and close
@@ -105,7 +105,7 @@ namespace avledet::network {
         return result == k_EBeginAuthSessionResultOK;
     }
 
-    void SteamSocket::send(std::vector<char> bytes)
+    void SteamSocket::send(std::vector<char> bytes) noexcept
     {
         assert(!bytes.empty());
 
@@ -117,7 +117,7 @@ namespace avledet::network {
         this->send_queued();
     }
 
-    std::vector<char> SteamSocket::Recv()
+    std::vector<char> SteamSocket::Recv() noexcept
     {
         std::vector<char> bytes;
 
@@ -147,22 +147,22 @@ namespace avledet::network {
         return bytes;
     }
 
-    std::string SteamSocket::get_host_name()
+    std::string SteamSocket::get_host_name() noexcept
     {
         return std::to_string(m_steam_id.GetSteamID64());
     }
 
-    std::string SteamSocket::get_address()
+    std::string SteamSocket::get_address() noexcept
     {
         return m_address;
     }
 
-    bool SteamSocket::is_outbound()
+    bool SteamSocket::is_outbound() noexcept
     {
         return m_is_outbound;
     }
 
-    int SteamSocket::get_send_queue_size()
+    int SteamSocket::get_send_queue_size() noexcept
     {
         int num = 0;
         for (auto &&bytes : m_send_queue) {// this is inefficient
@@ -183,7 +183,7 @@ namespace avledet::network {
         return num;
     }
 
-    std::tuple<float, float> SteamSocket::get_connection_quality()
+    std::tuple<float, float> SteamSocket::get_connection_quality() noexcept
     {
         SteamNetConnectionRealTimeStatus_t rt {};
         if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {
@@ -198,12 +198,12 @@ namespace avledet::network {
         return {};
     }
 
-    Status SteamSocket::get_status()
+    Status SteamSocket::get_status() noexcept
     {
         return m_status;
     }
 
-    int SteamSocket::get_ping()
+    int SteamSocket::get_ping() noexcept
     {
         SteamNetConnectionRealTimeStatus_t rt {};
         if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {

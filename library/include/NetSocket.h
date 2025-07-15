@@ -35,22 +35,22 @@ namespace avledet::network {
 
         virtual ~ISocket() = default;
 
-        virtual void close(bool linger) = 0;
+        virtual void close(bool linger) noexcept = 0;
 
-        virtual std::vector<char> Recv()         = 0;
-        virtual void send(std::vector<char> buf) = 0;
+        virtual std::vector<char> Recv() noexcept = 0;
+        virtual void send(std::vector<char> buf) noexcept = 0;
 
-        virtual std::string get_host_name() = 0;
-        virtual std::string get_address()   = 0;
-        virtual bool is_outbound()          = 0;// TODO impl
+        virtual std::string get_host_name() noexcept = 0;
+        virtual std::string get_address() noexcept   = 0;
+        virtual bool is_outbound() noexcept          = 0;// TODO impl
 
-        virtual Status get_status()       = 0;
-        virtual int get_ping()            = 0;
-        virtual int get_send_queue_size() = 0;
+        virtual Status get_status() noexcept = 0;
+        virtual int get_ping() noexcept      = 0;
+        virtual int get_send_queue_size() noexcept = 0;
         //virtual std::tuple<float, float, int, float, float> get_connection_stats() = 0;
 
         // auto [local, remote] = get_connection_quality()
-        virtual std::tuple<float, float> get_connection_quality() = 0;
+        virtual std::tuple<float, float> get_connection_quality() noexcept = 0;
     };
 
     class SteamSocket : public ISocket
@@ -63,13 +63,13 @@ namespace avledet::network {
         void init_identifiers();
 
       protected:
-        static bool is_game_server()
+        static bool is_game_server() noexcept 
         {
             auto game_server = SteamGameServerNetworkingSockets();
             return game_server != nullptr;
         }
 
-        static ISteamNetworkingSockets *get_steam_sockets()
+        static ISteamNetworkingSockets *get_steam_sockets() noexcept 
         {
             auto game_server = SteamGameServerNetworkingSockets();
             return game_server ? game_server : SteamNetworkingSockets();
@@ -84,19 +84,19 @@ namespace avledet::network {
         void flush();
         bool authenticate(avledet::util::ByteView ticket);
 
-        void close(bool linger) override;
+        void close(bool linger) noexcept override;
 
-        void send(std::vector<char> bytes) override;
-        std::vector<char> Recv() override;
+        void send(std::vector<char> bytes) noexcept override;
+        std::vector<char> Recv() noexcept override;
 
-        std::string get_host_name() override;
-        std::string get_address() override;
-        bool is_outbound() override;
+        std::string get_host_name() noexcept override;
+        std::string get_address() noexcept override;
+        bool is_outbound() noexcept override;
 
-        Status get_status() override;
-        int get_ping() override;
-        int get_send_queue_size() override;
-        std::tuple<float, float> get_connection_quality() override;
+        Status get_status() noexcept override;
+        int get_ping() noexcept override;
+        int get_send_queue_size() noexcept override;
+        std::tuple<float, float> get_connection_quality() noexcept override;
 
       private:
         SteamNetworkingIdentity m_steam_id {};
@@ -120,35 +120,37 @@ namespace avledet::network {
       public:
         using Ptr = std::shared_ptr<TcpSocket>;
 
-        explicit TcpSocket(asio::ip::tcp::socket socket, bool is_outbound);
+        explicit TcpSocket(asio::ip::tcp::socket socket, asio::ip::tcp::endpoint endpoint, bool is_outbound);
         ~TcpSocket();
 
-        void close(bool linger) override;
+        void close(bool linger) noexcept override;
 
-        std::vector<char> Recv() override;
-        void send(std::vector<char> buf) override;
+        std::vector<char> Recv() noexcept override;
+        void send(std::vector<char> buf) noexcept override;
 
-        std::string get_host_name() override;
-        std::string get_address() override;
-        bool is_outbound() override;
+        std::string get_host_name() noexcept override;
+        std::string get_address() noexcept override;
+        bool is_outbound() noexcept override;
 
-        Status get_status() override;
-        int get_ping() override;
-        int get_send_queue_size() override;
+        Status get_status() noexcept override;
+        int get_ping() noexcept override;
+        int get_send_queue_size() noexcept override;
 
         //std::tuple<float, float, int, float, float> get_connection_stats() override {
         //	return {};
         //};
 
-        std::tuple<float, float> get_connection_quality() override;
+        std::tuple<float, float> get_connection_quality() noexcept override;
 
         void do_read();
 
       private:
         asio::ip::tcp::socket m_socket;           // 160 bytes
+        std::vector<char> m_temp_read_bytes;      // 32 bytes
         std::list<std::vector<char>> m_recv;      // 24 bytes
         std::list<std::vector<char>> m_send;      // 24 bytes
-        std::vector<char> m_temp_read_bytes;      // 32 bytes
+        //std::string m_address;                    // 24? bytes; cached because asio doesnt cache the address
+        asio::ip::tcp::endpoint m_endpoint;         // 16 bytes; cached
         std::shared_mutex m_mux;                  // 8 bytes
         std::uint32_t m_temp_read_size {};        // 4 bytes
         std::uint32_t m_temp_write_size {};       // 4 bytes
