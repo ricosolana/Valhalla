@@ -365,7 +365,7 @@ void IAvledet::LoadFiles(bool reloading)
             a(m_settings.serverPort, server, "port", 2456, nullptr, reloading);
             a(m_settings.serverPublic, server, "public", false, nullptr);
             a(m_settings.serverDedicated, server, "dedicated", true, nullptr, reloading);
-            a(m_settings.TEST_serverTcp, server, "tcp", false, nullptr, reloading);
+            a(m_settings.TEST_serverTcp, server, "experimental-tcp", false, nullptr, reloading);
 
             /*
                 Player settings

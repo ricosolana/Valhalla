@@ -980,8 +980,9 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
                 //	continue;
                 //}
 
-                //zdo->_set_position(pos);//unrevised because is fresh zdo
-                //_AddZDOToZone(zdo);
+                // do NOT comment this out and do NOT 'zdo->set_position()'
+                zdo->_set_position(pos);//unrevised because is fresh zdo
+                _AddZDOToZone(zdo);
 
                 m_objectsByPrefab[zdo->get_prefab_hash()].insert(zdo);
             } else {
@@ -989,11 +990,11 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
                 //	zdo = std::move(copy);
                 //	continue;
                 //}
-            }
 
-            // TODO still getting unexpected ZDO missing from zone when new, ...
-            //  obvious fix would be to not check, or... denote that the ZDO is new to avoid this easily traceable issue...
-            zdo->set_position(pos);
+                // do NOT move this after
+                //  see https://github.com/ricosolana/Valhalla/blob/e9520909bb61d559f3815d1454ca8327760f6586/library/src/ZDOManager.cpp#L994
+                zdo->set_position(pos);
+            }
 
             assert(_FindZDOContainer(zdo->get_zone()));
 

@@ -1,4 +1,11 @@
 TODO
+    add c++23 install link
+        https://dev.to/marcosplusplus/how-to-install-gcc-14-and-use-c23-41od
+
+    fist issue magically fixed
+
+    issue with znetview / calls? rolling not appearing
+
     Linux:
         I just installed magic-enum via vcpkg, and is working fine...
 
