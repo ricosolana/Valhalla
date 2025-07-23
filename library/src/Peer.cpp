@@ -172,10 +172,16 @@ void Peer::Teleport(Vector3f pos, Quaternion rot, bool animation)
     this->Route(avledet::util::hashes::Routed::S2C_RequestTeleport, pos, rot, animation);
 }
 
-void Peer::RouteParams(ZDOID targetZDO, avledet::util::Hash hash, avledet::util::Bytes params)
+void Peer::RouteParams(avledet::util::UserID const &sender, ZDOID targetZDO, avledet::util::Hash hash,
+                       avledet::util::Bytes params)
 {
     Invoke(avledet::util::hashes::Rpc::RoutedRPC,
-           RouteManager()->Serialize(AVL_ID, this->GetUserID(), targetZDO, hash, std::move(params)));
+           RouteManager()->Serialize(sender, this->GetUserID(), targetZDO, hash, std::move(params)));
+}
+
+void Peer::RouteParams(ZDOID targetZDO, avledet::util::Hash hash, avledet::util::Bytes params)
+{
+    this->RouteParams(AVL_ID, targetZDO, hash, std::move(params));
 }
 
 void Peer::ZDOSectorInvalidated(ZDO::reference zdo)

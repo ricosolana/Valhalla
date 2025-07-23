@@ -11,6 +11,7 @@
 #include "Hashes.h"
 #include "NetSocket.h"
 #include "Rpc.h"
+#include "Types.h"
 #include "UserData.h"
 #include "Vector.h"
 #include "VUtils.h"
@@ -206,7 +207,8 @@ class Peer : public std::enable_shared_from_this<Peer>,
     }
 
     template<typename Func>
-    void SubRoute(avledet::util::Hash hash, ZDOID const &targetZDO, Func func)
+    void SubRoute(avledet::util::Hash hash, avledet::util::UserID const &sender, ZDOID const &targetZDO,
+                  Func func)
     {
         if (m_socket->get_status() == Status::Closed)
             return;
@@ -215,10 +217,11 @@ class Peer : public std::enable_shared_from_this<Peer>,
         writer.write(avledet::util::hashes::Rpc::RoutedRPC);
 
         //assert(false); //ADDRESS THE BELOW
-        writer.write([this, targetZDO, hash, func](DataWriter &writer) {
+        writer.write([this, hash, sender, targetZDO, func](DataWriter &writer) {
             // routed rpc spec
-            writer.write<std::int64_t>(0);            // msg id
-            writer.write(AVL_ID);                     // sender
+            writer.write<std::int64_t>(0);// msg id
+            //writer.write(AVL_ID);                     // sender
+            writer.write(sender);
             writer.write(m_characterID.get_user_id());// target
             writer.write(targetZDO);                  // target ZDO
             writer.write(hash);                       // routed method hash
@@ -237,6 +240,12 @@ class Peer : public std::enable_shared_from_this<Peer>,
 
         // Postfix
         //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this->shared_from_this(), writer);
+    }
+
+    template<typename Func>
+    void SubRoute(avledet::util::Hash hash, avledet::util::UserID const &sender, Func func)
+    {
+        SubRoute(hash, sender, ZDOID::NONE, func);
     }
 
     template<typename Func>
@@ -412,6 +421,9 @@ class Peer : public std::enable_shared_from_this<Peer>,
     {
         return UIMessage(msg, UIMsgType::Center);
     }
+
+    void RouteParams(avledet::util::UserID const &sender, ZDOID targetZDO, avledet::util::Hash hash,
+                     avledet::util::Bytes params);
 
     void RouteParams(ZDOID targetZDO, avledet::util::Hash hash, avledet::util::Bytes params);
 

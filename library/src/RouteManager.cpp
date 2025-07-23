@@ -87,8 +87,8 @@ void IRouteManager::OnNewPeer(Peer::Ptr peer)
             for (auto &&other : peers) {
                 // Ignore the src peer
                 if (peer->GetUserID() != other->GetUserID()) {
-                    other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, (std::int64_t) 0, peer->GetUserID(),
-                                  target, targetZDO, hash, params);// params (everything really...) is copied
+                    other->RouteParams(peer->GetUserID(), targetZDO, hash,
+                                       params.get_buf());// params (buf) copied
                 }
             }
         } else {
@@ -99,8 +99,7 @@ void IRouteManager::OnNewPeer(Peer::Ptr peer)
                     //    return;
 
                     //other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, reader);
-                    other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, (std::int64_t) 0, peer->GetUserID(),
-                                  target, targetZDO, hash, params);
+                    other->RouteParams(peer->GetUserID(), targetZDO, hash, params.get_buf());
                 }
             } else {
                 if (!targetZDO) {
