@@ -23,6 +23,9 @@ template<class T>
 class IMethod
 {
   public:
+    using Ptr = std::unique_ptr<IMethod>;
+
+  public:
     avledet::util::Hash const m_hash;
 
   public:
@@ -49,6 +52,56 @@ class IMethod
     //{
     //    return lhs->m_hash <=> rhs;
     //}
+
+    /*
+        OPERATOR <=>
+    */
+    friend auto operator<=>(Ptr const &lhs, Ptr const &rhs) noexcept
+    {
+        // This operation will succeed 1/n of the time (usually), so skip it
+        //lhs.get() == rhs.get()
+        return lhs->m_hash <=> rhs->m_hash;
+    }
+
+    friend auto operator<=>(Ptr const &lhs, avledet::util::Hash const &rhs) noexcept
+    {
+        return lhs->m_hash <=> rhs;
+    }
+
+    friend auto operator<=>(IMethod<T> const &lhs, IMethod<T> const &rhs) noexcept
+    {
+        return lhs.m_hash <=> rhs.m_hash;
+    }
+
+    /*
+        OPERATOR ==
+    */
+
+    friend bool operator==(Ptr const &lhs, Ptr const &rhs) noexcept
+    {
+        return lhs->m_hash <=> rhs->m_hash;
+    }
+
+    friend bool operator==(Ptr const &lhs, avledet::util::Hash const &rhs) noexcept
+    {
+        return lhs->m_hash <=> rhs;
+    }
+
+    friend bool operator==(IMethod<T> const &lhs, IMethod<T> const &rhs) noexcept
+    {
+        return lhs.m_hash == rhs.m_hash;
+    }
+
+    struct equal_to
+    {
+        using is_transparent = void;
+
+        template<typename _T, typename _U>
+        bool operator()(_T const &lhs, _U const &rhs) const
+        {
+            return lhs == rhs;
+        }
+    };
 };
 
 // Package lambda invoker

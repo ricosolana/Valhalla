@@ -26,7 +26,8 @@ namespace avledet::rpc {
             auto &&find = m_methods.find(hash);
             if (find != m_methods.end()) {
                 //bool keep_mapped = find->get()->Invoke(std::move(handle), reader);//(1)
-                bool keep_mapped = find->second->Invoke(std::move(handle), reader);//(1)
+                //bool keep_mapped = find->second->Invoke(std::move(handle), reader);//(1) // map
+                bool keep_mapped = find->get()->Invoke(std::move(handle), reader);//(1)
                 if (!keep_mapped) {
                     LOG_TRACE_L1(AVL_LOGGER, "method {} unsubscribed", hash);
                     m_methods.erase(
@@ -39,8 +40,9 @@ namespace avledet::rpc {
         // TODO later, for custom LUA
         void register_method(std::unique_ptr<Method> method)
         {
-            auto hash       = method->m_hash;
-            m_methods[hash] = std::move(method);
+            auto hash = method->m_hash;
+            //m_methods[hash] = std::move(method);
+            m_methods.insert(std::move(method));
         }
 
         // *note: registering a rpc by assign ([]) *might* break things if called from within a invoked function
@@ -57,8 +59,8 @@ namespace avledet::rpc {
         }
 
       public:
-        //gtl::btree_set<MethodPtr, std::less<>> m_methods;
-        avledet::util::Map<avledet::util::Hash, std::unique_ptr<Method>> m_methods;
+        gtl::btree_set<typename Method::Ptr, std::less<>> m_methods;
+        //avledet::util::Map<avledet::util::Hash, std::unique_ptr<Method>> m_methods;
     };
 
 }// namespace avledet::rpc

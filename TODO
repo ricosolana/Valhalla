@@ -1,49 +1,19 @@
 TODO
-    suspect the <serverside> RPC sender to be broken
-        sending malformed packets, hence the complaining peer console
-
-        also wireshark is complaining, oddly from ONLY server-> client RPC packets, and not the other direction...
-
     add c++23 install link
         https://dev.to/marcosplusplus/how-to-install-gcc-14-and-use-c23-41od
-
-    fist issue magically fixed
-
-    (1) issue with znetview / calls? rolling not appearing
-        Player.cs:UpdateDodge
-            dodge animation is sent as ZNetView Rpc "SetTrigger"
-
-            check if this packet is being sent correctly
-
-            use this WS filter:
-                zs2 and not zs2.keepalive.server and not zs2.nettime and not zs2.routedrpc.setevent.time and not zs2.zdodata.id.userid and not zs2.msg_type==-265949079 and not zs2.rpcsynced.public and not zs2.routedrpc.method==199378019 and not zs2.routedrpc.method==-461013576
-
-            ::: filter for why is the stream screwed up...
-                ((zs2 and not zs2.keepalive.server and not zs2.nettime and not zs2.routedrpc.setevent.time and not zs2.zdodata.id.userid and not zs2.msg_type==-265949079 and not zs2.rpcsynced.public and not zs2.routedrpc.method==199378019 and not zs2.routedrpc.method==-461013576) && !(zs2.routedrpc.method == -1550530018)) && !(ip.dst == 192.168.1.11)
 
     Linux:
         I just installed magic-enum via vcpkg, and is working fine...
 
-    Unexpected behaviour when player is blocking with fists
-        starts blocking, but never resets animation / whatever
-
-        likely issue with route manager or netview routing / ...
-        just depends on how the packet is sent
-
-        - Mumanoid blocking is networked as:
-            nview ZDO bool (int), "IsBlocking"
-            zanim ZDO bool (int), "blocking" >>> via Unity Internal Hash
-
-            so, possibly something wrong with animation hash / revising
-
-
-    Appears that RouteManager
-    
     windows fixes
 
     dump new game data packages
         the current ones are VERY outdated
 
+
+
+    rework the Rpc derived class
+        or migrate from avl...
 
 
     start entering other classes

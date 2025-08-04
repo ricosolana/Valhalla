@@ -4,6 +4,7 @@
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
     #include <algorithm>
+    #include <chrono>
     #include <cmath>
     #include <filesystem>
     #include <functional>
@@ -12,7 +13,6 @@
     #include <stdexcept>
     #include <string_view>
     #include <vector>
-    #include <chrono>
 
     #include <lua.h>
     #include <quill/Backend.h>
@@ -225,8 +225,7 @@ void IScriptManager::Init()
 
     auto sorted = std::filesystem::directory_iterator(AVLEDET_SCRIPTS_PATH, ec)
                   | std::views::filter([](std::filesystem::directory_entry e) -> bool {
-                        return e.is_directory()
-                               && !e.path().filename().string().starts_with("--");
+                        return e.is_directory() && !e.path().filename().string().starts_with("--");
                     })
                   | std::ranges::to<std::vector>();
     std::ranges::sort(sorted);
@@ -357,7 +356,10 @@ void IScriptManager::unload_script(decltype(m_scripts)::iterator &script_itr, bo
 
     for (auto &&peer_pair : NetManager()->m_connectedPeers) {
         for (auto &&method_itr = peer_pair->m_methods.begin(); method_itr != peer_pair->m_methods.end();) {
-            auto &&method = dynamic_cast<MethodImplLua<Peer *> *>(method_itr->second.get());
+            //map
+            //auto &&method = dynamic_cast<MethodImplLua<Peer *> *>(method_itr->second.get());
+
+            auto &&method = dynamic_cast<MethodImplLua<Peer *> *>(method_itr->get());
 
             if (!method) {
                 ++method_itr;
