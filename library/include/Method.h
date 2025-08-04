@@ -110,6 +110,9 @@ class MethodImpl : public IMethod<T>
 {
     using args_type = typename VUtils::Traits::func_traits<F>::args_type;
 
+    static_assert(std::tuple_size_v<args_type> > 0, "First RPC arg must be <T>");
+    static_assert(std::is_same_v<std::tuple_element_t<0, args_type>, T>, "First RPC arg must be <T>");
+
     template<class Tuple, std::size_t... Is>
     auto impl_tail(DataReader &reader, std::index_sequence<Is...>)
     {
