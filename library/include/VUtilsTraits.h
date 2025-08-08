@@ -157,6 +157,20 @@ namespace avledet::util::traits {
     template<class... Ts>
     overload(Ts...) -> overload<Ts...>;// line not needed in C++20...
 
+    // If my type is some kind of vector, tuple, other template type...
+    //  is_specialization_of<T, std::complex>;
+    // https://open-std.org/JTC1/SC22/WG21/docs/papers/2020/p2098r1.pdf
+    template<class T, template<class...> class Primary>
+    struct is_specialization_of : std::false_type
+    {};
+
+    template<template<class...> class Primary, class... Args>
+    struct is_specialization_of<Primary<Args...>, Primary> : std::true_type
+    {};
+
+    template<class T, template<class...> class Primary>
+    inline constexpr bool is_specialization_of_v = is_specialization_of<T, Primary>::value;
+
 
     // disabled (and unused, how lucky) due to .clangd being dumb
     // Get the index of a type in a tuple

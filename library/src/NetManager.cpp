@@ -9,6 +9,7 @@
 
 #include "Avledet.h"
 #include "Crypto.h"
+#include "DataStream.h"
 #include "DiscordManager.h"
 #include "Hashes.h"
 #include "ModManager.h"
@@ -16,6 +17,7 @@
 #include "NetManager.h"
 #include "NetSocket.h"
 #include "RouteManager.h"
+#include "Types.h"
 #include "VUtils.h"
 #include "VUtilsRandom.h"
 #include "VUtilsResource.h"
@@ -79,8 +81,8 @@ void INetManager::SendPlayerList()
 
         writer.write(avledet::util::hashes::Rpc::S2C_UpdatePlayerList);// rpc hash
 
-        //assert(false); //TODO
-        writer.write([this](DataWriter &writer) {
+        {
+            avledet::util::WriterScopedEncap scoped(writer);
             writer.write((std::uint32_t) m_onlinePeers.size());
 
             for (auto &&peer : m_onlinePeers) {
@@ -105,7 +107,7 @@ void INetManager::SendPlayerList()
                     }
                 }
             }
-        });
+        }
 
         for (auto &&peer : m_onlinePeers) {
             peer->Send(writer.get_buf());
@@ -122,7 +124,10 @@ void INetManager::SendNetTime()
 
 void INetManager::SendPeerInfo(Peer::Ptr peer)
 {
-    peer->SubInvoke(avledet::util::hashes::Rpc::PeerInfo, [](DataWriter &writer) {
+    avledet::util::Writer writer;
+    {
+        //avledet::util::WriterScopedEncap scoped(writer);
+
         writer.write(Avledet()->ID());
         writer.write(std::string_view(VConstants::GAME));
         writer.write(VConstants::NETWORK);
@@ -137,7 +142,9 @@ void INetManager::SendPeerInfo(Peer::Ptr peer)
         writer.write(world->m_uid);
         writer.write(world->m_worldGenVersion);
         writer.write(Avledet()->GetWorldTime());
-    });
+    }
+
+    peer->Invoke(avledet::util::hashes::Rpc::PeerInfo, writer.release());
 }
 
 //void INetManager::OnNewClient(ISocket::Ptr socket, avledet::util::UserID uuid, const std::string &name, const Vector3f &pos) {
@@ -152,23 +159,27 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
     AVL_DISPATCH_WEBHOOK(peer->m_name + " has joined");
 
     // Important
-    peer->Register(avledet::util::hashes::Rpc::C2S_PlayerData,
-                   [](Peer::Ptr peer, avledet::util::ByteView pkg) {
-                       //DataReader reader(pkg);
-                       auto reader = DataReader(std::vector<char>(pkg.begin(), pkg.end()));
+    peer->Register(avledet::util::hashes::Rpc::C2S_PlayerData, [](Peer::Ptr peer, avledet::util::Bytes pkg) {
+        //DataReader reader(pkg);
+        //auto reader = DataReader(std::vector<char>(pkg.begin(), pkg.end()));
+        // TODO cannabilize package?
+        DataReader reader(pkg);
 
-                       peer->m_pos = reader.read<Vector3f>();
-                       peer->SetMapVisible(reader.read<bool>());
+        peer->m_pos = reader.read<Vector3f>();
+        peer->SetMapVisible(reader.read<bool>());
 
-                       auto count = reader.read<std::int32_t>();
-                       for (int i = 0; i < count; i++) {
-                           // Read player event data (only 2):
-                           //  'possibleEvents'
-                           //  'baseValue' // used to be a zdo member
-                           auto key              = reader.read<std::string_view>();// key
-                           peer->m_syncData[key] = reader.read<std::string>();     // value
-                       }
-                   });
+        // TODO create template guide
+        //reader.read<avledet::util::Map<std::string_view, std::string_view>>();
+
+        auto count = reader.read<std::int32_t>();
+        for (int i = 0; i < count; i++) {
+            // Read player event data (only 2):
+            //  'possibleEvents'
+            //  'baseValue' // used to be a zdo member
+            auto key              = reader.read<std::string_view>();// key
+            peer->m_syncData[key] = reader.read<std::string>();     // value
+        }
+    });
 
     // isnt 'ban' a command?
     //  it should be part of RemoteCommand

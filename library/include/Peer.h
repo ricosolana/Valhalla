@@ -184,6 +184,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
 
     // TODO disable this method if full mod capture is enabled
     //  allowing this method is better for performance but limits mod catcheability
+    /*
     template<typename Func>
     void SubInvoke(avledet::util::Hash hash, Func func)
     {
@@ -200,59 +201,82 @@ class Peer : public std::enable_shared_from_this<Peer>,
         //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash, this->shared_from_this(), bytes))
         //return;
 
-        this->Send(std::move(writer.get_buf()));
+        this->Send(writer.release());
 
         // TODO Postfix
         //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this->shared_from_this(), writer);
-    }
+    }*/
 
-    template<typename Func>
-    void SubRoute(avledet::util::Hash hash, avledet::util::UserID const &sender, ZDOID const &targetZDO,
-                  Func func)
-    {
-        if (m_socket->get_status() == Status::Closed)
-            return;
+    // TODO
+    //  make a call to routed rpc direct- instead
+    //  or visa-versa funnel
+    ////template<typename Func>
+    ////void SubRoute(avledet::util::Hash hash, avledet::util::UserID const &sender, ZDOID const &targetZDO,
+    ////              Func func)
+    ////{
+    ////    if (m_socket->get_status() == Status::Closed)
+    ////        return;
 
-        DataWriter writer;
-        writer.write(avledet::util::hashes::Rpc::RoutedRPC);
+    ////    DataWriter writer;
+    ////    writer.write(avledet::util::hashes::Rpc::RoutedRPC);
 
-        //assert(false); //ADDRESS THE BELOW
-        writer.write([this, hash, sender, targetZDO, func](DataWriter &writer) {
-            // routed rpc spec
-            writer.write<std::int64_t>(0);// msg id
-            //writer.write(AVL_ID);                     // sender
-            writer.write(sender);
-            writer.write(m_characterID.get_user_id());// target
-            writer.write(targetZDO);                  // target ZDO
-            writer.write(hash);                       // routed method hash
-            // FIrst subwrite the routedrpc parameter package then nest the params within it
-            //assert(false); //ADDRESS THE BELOW
-            writer.write([func](DataWriter &writer) {
-                writer.write(func);// explicit parameter as a package (length + array)
-            });
-        });
+    ////    {
+    ////        avledet::util::WriterScopedEncap scoped(writer);
 
-        // Prefix
-        //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ hash, this->shared_from_this(), targetZDO, bytes))
-        //return;
+    ////        // routed rpc spec
+    ////        writer.write<std::int64_t>(0);// msg id
+    ////        //writer.write(AVL_ID);                     // sender
+    ////        writer.write(sender);
+    ////        writer.write(m_characterID.get_user_id());// target
+    ////        writer.write(targetZDO);                  // target ZDO
+    ////        writer.write(hash);                       // routed method hash
+    ////        // First subwrite the routedrpc parameter package then nest the params within it
+    ////        //assert(false); //ADDRESS THE BELOW
+    ////        {
+    ////            avledet::util::WriterScopedEncap scoped1(writer);
 
-        this->Send(std::move(writer.get_buf()));
 
-        // Postfix
-        //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this->shared_from_this(), writer);
-    }
+    ////        }
+    ////        writer.write([func](DataWriter &writer) {
+    ////            writer.write(func);// explicit parameter as a package (length + array)
+    ////        });
+    ////    }
+    ////    writer.write([this, hash, sender, targetZDO, func](DataWriter &writer) {
+    ////        // routed rpc spec
+    ////        writer.write<std::int64_t>(0);// msg id
+    ////        //writer.write(AVL_ID);                     // sender
+    ////        writer.write(sender);
+    ////        writer.write(m_characterID.get_user_id());// target
+    ////        writer.write(targetZDO);                  // target ZDO
+    ////        writer.write(hash);                       // routed method hash
+    ////        // FIrst subwrite the routedrpc parameter package then nest the params within it
+    ////        //assert(false); //ADDRESS THE BELOW
+    ////        writer.write([func](DataWriter &writer) {
+    ////            writer.write(func);// explicit parameter as a package (length + array)
+    ////        });
+    ////    });
 
-    template<typename Func>
-    void SubRoute(avledet::util::Hash hash, avledet::util::UserID const &sender, Func func)
-    {
-        SubRoute(hash, sender, ZDOID::NONE, func);
-    }
+    ////    // Prefix
+    ////    //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ hash, this->shared_from_this(), targetZDO, bytes))
+    ////    //return;
 
-    template<typename Func>
-    void SubRoute(avledet::util::Hash hash, Func func)
-    {
-        SubRoute(hash, ZDOID::NONE, func);
-    }
+    ////    this->Send(writer.release());
+
+    ////    // Postfix
+    ////    //AVL_SCRIPT_EVENT(IScriptManager::Events::RpcOut ^ hash ^ IScriptManager::Events::POSTFIX, this->shared_from_this(), writer);
+    ////}
+
+    //template<typename Func>
+    //void SubRoute(avledet::util::Hash hash, avledet::util::UserID const &sender, Func func)
+    //{
+    //    SubRoute(hash, sender, ZDOID::NONE, func);
+    //}
+
+    //template<typename Func>
+    //void SubRoute(avledet::util::Hash hash, Func func)
+    //{
+    //    SubRoute(hash, ZDOID::NONE, func);
+    //}
 
     template<typename... Types>
     void Invoke(avledet::util::Hash hash, Types const &...params)
@@ -288,19 +312,10 @@ class Peer : public std::enable_shared_from_this<Peer>,
         if (args.size() != repr.m_types.size())
             throw std::runtime_error("mismatched number of args");
 
-        // Prefix
-        //if (!AVL_SCRIPT_EVENT(IScriptManager::EVENT_RpcOut ^ repr.m_hash, this->shared_from_this(), sol::as_args(args)))
-        //    return;
-
-        //VLOG(2) << "InvokeLua, hash: " << repr.m_hash << ", #params : " << args.size();
-
         DataWriter params;
         params.write(repr.m_hash);
         params.write(repr.m_types, args);
-        this->Send(std::move(params.get_buf()));
-
-        // Postfix
-        //AVL_SCRIPT_EVENT(IScriptManager::EVENT_RpcOut ^ repr.m_hash ^ IScriptManager::EVENT_POST, this->shared_from_this(), sol::as_args(args));
+        this->Send(params.release());
     }
 #endif
 
@@ -329,7 +344,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
     {
         assert(!bytes.empty());
 
-        if (AVL_SCRIPT_EVENT(IScriptManager::Events::Send, this->shared_from_this(), std::ref(bytes)))
+        if (AVL_SCRIPT_EVENT(IScriptManager::Events::Send, this->shared_from_this(), bytes))
             this->m_socket->send(std::move(bytes));
     }
 
@@ -337,7 +352,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
     {
         auto bytes = m_socket->Recv();
         if (!bytes.empty()) {
-            if (AVL_SCRIPT_EVENT(IScriptManager::Events::Recv, this->shared_from_this(), std::ref(bytes))) {
+            if (AVL_SCRIPT_EVENT(IScriptManager::Events::Recv, this->shared_from_this(), bytes)) {
                 return bytes;
             }
         }
@@ -428,7 +443,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
     void RouteParams(ZDOID targetZDO, avledet::util::Hash hash, avledet::util::Bytes params);
 
     template<typename... Types>
-    void RouteView(ZDOID targetZDO, avledet::util::Hash hash, Types &&...params)
+    void RouteView(ZDOID targetZDO, avledet::util::Hash hash, Types const &...params)
     {
         if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ hash, this->shared_from_this(), targetZDO,
                               params...))
@@ -438,21 +453,21 @@ class Peer : public std::enable_shared_from_this<Peer>,
     }
 
     template<typename... Types>
-    void RouteView(ZDOID targetZDO, std::string_view name, Types &&...params)
+    void RouteView(ZDOID targetZDO, std::string_view name, Types const &...params)
     {
-        RouteView(targetZDO, avledet::util::get_stable_hash(name), std::forward<Types>(params)...);
+        RouteView(targetZDO, avledet::util::get_stable_hash(name), params...);
     }
 
     template<typename... Types>
-    void Route(avledet::util::Hash hash, Types &&...params)
+    void Route(avledet::util::Hash hash, Types const &...params)
     {
-        RouteView(ZDOID::NONE, hash, std::forward<Types>(params)...);
+        RouteView(ZDOID::NONE, hash, params...);
     }
 
     template<typename... Types>
-    void Route(std::string_view name, Types &&...params)
+    void Route(std::string_view name, Types const &...params)
     {
-        RouteView(ZDOID::NONE, avledet::util::get_stable_hash(name), std::forward<Types>(params)...);
+        RouteView(ZDOID::NONE, avledet::util::get_stable_hash(name), params...);
     }
 
 
@@ -462,18 +477,9 @@ class Peer : public std::enable_shared_from_this<Peer>,
         if (args.size() != repr.m_types.size())
             throw std::runtime_error("mismatched number of args");
 
-            //auto results = sol::variadic_results(args.begin(), args.end());
-
-    // TODO wtf even is this? the 'old' reflection?
-    #ifdef MOD_EVENT_RESPONSE
-        if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOut ^ repr.m_hash, this->shared_from_this(),
-                              targetZDO, sol::as_args(args)))
-            return;
-    #endif
-
         DataWriter writer;
         writer.write(repr.m_types, args);
-        RouteParams(targetZDO, repr.m_hash, std::move(writer.get_buf()));
+        RouteParams(targetZDO, repr.m_hash, writer.release());
     }
 
     decltype(auto) RouteLua(IScriptManager::MethodSig const &repr, sol::variadic_args const &args)

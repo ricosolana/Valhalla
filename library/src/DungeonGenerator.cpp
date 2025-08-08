@@ -229,7 +229,7 @@ void DungeonGenerator::Save()
         writer.write(rot);
     }
 
-    m_zdo->set(avledet::util::hashes::ZDO::DungeonGenerator::ROOM_DATA, std::move(writer.get_buf()));
+    m_zdo->set(avledet::util::hashes::ZDO::DungeonGenerator::ROOM_DATA, writer.release());
 }
 
 Dungeon::DoorDef const *DungeonGenerator::FindDoorType(VUtils::Random::State &state, std::string_view type)

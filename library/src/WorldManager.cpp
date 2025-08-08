@@ -4,6 +4,7 @@
 
 #include "Avledet.h"
 #include "CompileSettings.h"
+#include "DataStream.h"
 #include "NetManager.h"
 #include "RandomEventManager.h"
 #include "VUtils.h"
@@ -55,8 +56,9 @@ World::World(DataReader reader)
 avledet::util::Bytes World::SaveMeta()
 {
     DataWriter writer;
-    //assert(false); //TODO
-    writer.write([this](DataWriter &writer) {
+    {
+        avledet::util::WriterScopedEncap scoped(writer);
+
         writer.write(VConstants::WORLD);
         writer.write(m_name);
         writer.write(m_seedName);
@@ -64,12 +66,10 @@ avledet::util::Bytes World::SaveMeta()
         writer.write(m_uid);
         writer.write(m_worldGenVersion);
         writer.write(true);
-
-        // TODO write starting keys
         writer.write(m_startingGlobalKeys);
-    });
+    }
 
-    return writer.get_buf();
+    return writer.release();
 }
 
 /*

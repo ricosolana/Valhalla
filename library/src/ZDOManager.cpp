@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "Avledet.h"
+#include "DataStream.h"
 #include "Hashes.h"
 #include "NetManager.h"
 #include "RouteManager.h"
@@ -141,7 +142,7 @@ void IZDOManager::Update()
 
         m_destroySendList.clear();
 
-        RouteManager()->InvokeAll(avledet::util::hashes::Routed::DestroyZDO, std::move(writer.get_buf()));
+        RouteManager()->InvokeAll(avledet::util::hashes::Routed::DestroyZDO, writer.release());
     }
 }
 
@@ -841,52 +842,55 @@ bool IZDOManager::SendZDOs(Peer::Ptr peer, bool flush)
     if (syncList.empty() && peer->m_invalidSector.empty())
         return false;
 
-    // TODO a better optimization would be to use write a special
-    //	preserializer that prepends packet data to the peer-buffer
-    //	to avoid a few buffer allocs
-    //	this only matters if performance is upmost concern, which it is because c :>
+    avledet::util::Writer writer;
+    {
+        //avledet::util::WriterScopedEncap scoped(writer);
 
-    peer->SubInvoke(
-            avledet::util::hashes::Rpc::ZDOData, [&peer, &syncList, availableSpace](DataWriter &writer) {
-                writer.write(peer->m_invalidSector);
+        writer.write(peer->m_invalidSector);
 
-                auto const time = Avledet()->Time();
+        auto const time = Avledet()->Time();
 
-                for (auto &&itr = syncList.begin();
-                     itr != syncList.end() && writer.size() <= availableSpace /* (1) */; itr++) {
+        for (auto &&itr = syncList.begin();
+             itr != syncList.end() && writer.size() <= availableSpace /* (1) */; itr++) {
 
-                    // if size exceeded, break now
-                    //  HEY DUMMY! look above (1), I already did this
-                    //if (writer.size() > availableSpace) {
-                    //    break;
-                    //}
+            // if size exceeded, break now
+            //  HEY DUMMY! look above (1), I already did this
+            //if (writer.size() > availableSpace) {
+            //    break;
+            //}
 
-                    // copy is intentional
-                    //  TODO copy is solely for LUA
-                    //      - I've already decided that copies are tacky as fuck
-                    //          the better alternative would be to use shared ptr zdos
-                    //          the problem is shared_ptr has a lot of overhead
-                    //          so use boost intrusive ptr, where bits will have to be used for refcount
-                    auto zdo = itr->first;
+            // copy is intentional
+            //  TODO copy is solely for LUA
+            //      - I've already decided that copies are tacky as fuck
+            //          the better alternative would be to use shared ptr zdos
+            //          the problem is shared_ptr has a lot of overhead
+            //          so use boost intrusive ptr, where bits will have to be used for refcount
+            auto zdo = itr->first;
 
-                    peer->m_forceSend.erase(zdo->get_id());
+            peer->m_forceSend.erase(zdo->get_id());
 
-                    if (!AVL_SCRIPT_EVENT(IScriptManager::Events::SendingZDO, peer, zdo)) {
-                        continue;
-                    }
+            if (!AVL_SCRIPT_EVENT(IScriptManager::Events::SendingZDO, peer, zdo)) {
+                continue;
+            }
 
-                    writer.write(zdo->get_id());
-                    writer.write(zdo->get_owner_rev());
-                    writer.write(zdo->get_data_rev());
-                    writer.write(zdo->get_owner());
-                    writer.write(zdo->get_position());
+            writer.write(zdo->get_id());
+            writer.write(zdo->get_owner_rev());
+            writer.write(zdo->get_data_rev());
+            writer.write(zdo->get_owner());
+            writer.write(zdo->get_position());
 
-                    writer.write([zdo](DataWriter &writer) { zdo->pack(writer, true); });
+            {
+                avledet::util::WriterScopedEncap scoped1(writer);
 
-                    peer->m_zdos[zdo->get_id()] = {zdo->_get_revision(), time};
-                }
-                writer.write(ZDOID::NONE);// null terminator
-            });
+                zdo->pack(writer, true);
+            }
+
+            peer->m_zdos[zdo->get_id()] = {zdo->_get_revision(), time};
+        }
+        writer.write(ZDOID::NONE);// null terminator
+    }
+
+    peer->Invoke(avledet::util::hashes::Rpc::ZDOData, writer.release());
 
     if (!peer->m_invalidSector.empty() || !syncList.empty()) {
         peer->m_invalidSector.clear();

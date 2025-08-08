@@ -7,6 +7,7 @@
 #include "ModManager.h"
 #include "NetManager.h"
 #include "Peer.h"
+#include <tuple>
 
 class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
 {
@@ -64,22 +65,35 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
     // Invoke a routed function bound to a peer with sub zdo
     template<typename... Args>
     void InvokeView(avledet::util::UserID target, ZDOID const &targetZDO, avledet::util::Hash hash,
-                    Args &&...params)
+                    Args const &...params)
     {
         // Prefix
-        if ((std::int64_t) target == EVERYBODY) {
-            // targetZDO can have a value apparently
+        if (target == EVERYBODY) {
+            // If the script wants to modify the arguments, it will be allowed, ...
+            //  BUT, it will have to subsequently make a new call to Invoke(Lua)
+            //  Its just safer this way..
             if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOutAll ^ hash, targetZDO, params...))
                 return;
 
-            auto bytes = Serialize(AVL_ID, target, targetZDO, hash, DataWriter::serialize(params...));
+            avledet::util::Writer writer;
+            writer.write(avledet::util::hashes::Rpc::RoutedRPC);
+            {
+                avledet::util::WriterScopedEncap scoped(writer);
+
+                /*writer =*/prepare_packet(writer, AVL_ID, (std::int64_t) target, targetZDO, hash);
+                {
+                    avledet::util::WriterScopedEncap scoped2(writer);
+
+                    writer.write_all(params...);
+                }
+            }
 
             for (auto &&peer : NetManager()->GetPeers()) {
-                peer->Invoke(avledet::util::hashes::Rpc::RoutedRPC, bytes);
+                peer->Send(writer.get_buf());
             }
         } else {
             if (auto peer = NetManager()->FindPeerByUserID(target)) {
-                peer->RouteView(targetZDO, hash, std::forward<Args>(params)...);
+                peer->RouteView(targetZDO, hash, params...);
             }
         }
     }
@@ -87,9 +101,9 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
     // Invoke a routed function bound to a peer with sub zdo
     template<typename... Args>
     void InvokeView(avledet::util::UserID target, ZDOID const &targetZDO, std::string_view name,
-                    Args &&...params)
+                    Args const &...params)
     {
-        InvokeView(target, targetZDO, avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
+        InvokeView(target, targetZDO, avledet::util::get_stable_hash(name), params...);
     }
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -100,24 +114,41 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
             if (args.size() != repr.m_types.size())
                 throw std::runtime_error("mismatched number of args");
 
-            auto results = sol::variadic_results(args.begin(), args.end());
-
-    #if AVL_IS_ON(AVL_REFLECTIVE_MOD_EVENTS)
-            if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOutAll ^ repr.m_hash, sol::as_args(results)))
-                return;
-    #endif
+            // RoutedRPC packet Shape
+            //  Valheim:
+            //      int32: <hash>
+            //  Rpc (args)
+            //  RoutedRpc (package)
+            //      uint32: length
+            //          int64: msg_id
+            //          int64: sender
+            //          int64: target
+            //          int64+int32: zdo
+            //          int32: hash
+            //              uint32: length
+            //              <args>
 
             avledet::util::Writer writer;
-            writer.write(repr.m_types, results);
-            auto bytes = Serialize(AVL_ID, (std::int64_t) target, targetZDO, repr.m_hash,
-                                   std::move(writer.get_buf()));
+            writer.write(avledet::util::hashes::Rpc::RoutedRPC);
+            {
+                avledet::util::WriterScopedEncap scoped(writer);
+
+                /*writer =*/prepare_packet(writer, AVL_ID, (std::int64_t) target, targetZDO, repr.m_hash);
+                {
+                    avledet::util::WriterScopedEncap scoped2(writer);
+
+                    auto results = sol::variadic_results(args.begin(), args.end());
+                    writer.write(repr.m_types, results);
+                }
+            }
 
             for (auto &&peer : NetManager()->GetPeers()) {
-                peer->Invoke(avledet::util::hashes::Rpc::RoutedRPC, bytes);
+                peer->Send(writer.get_buf());
             }
         } else {
-            if (auto peer = NetManager()->FindPeerByUserID((std::int64_t) target))
+            if (auto peer = NetManager()->FindPeerByUserID((std::int64_t) target)) {
                 peer->RouteViewLua(targetZDO, repr, args);
+            }
         }
 
         //Serialize(AVL_ID, target, targetZDO, repr.m_hash,
@@ -130,16 +161,16 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
 
     // Invoke a routed function bound to a peer
     template<typename... Args>
-    void Invoke(avledet::util::UserID target, avledet::util::Hash hash, Args &&...params)
+    void Invoke(avledet::util::UserID target, avledet::util::Hash hash, Args const &...params)
     {
-        InvokeView(target, ZDOID::NONE, hash, std::forward<Args>(params)...);
+        InvokeView(target, ZDOID::NONE, hash, params...);
     }
 
     // Invoke a routed function bound to a peer
     template<typename... Args>
-    void Invoke(avledet::util::UserID target, std::string_view name, Args &&...params)
+    void Invoke(avledet::util::UserID target, std::string_view name, Args const &...params)
     {
-        InvokeView(target, ZDOID::NONE, avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
+        InvokeView(target, ZDOID::NONE, avledet::util::get_stable_hash(name), params...);
     }
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -152,16 +183,16 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
 
     // Invoke a routed function targeted to all peers
     template<typename... Args>
-    void InvokeAll(avledet::util::Hash hash, Args &&...params)
+    void InvokeAll(avledet::util::Hash hash, Args const &...params)
     {
-        Invoke(EVERYBODY, hash, std::forward<Args>(params)...);
+        Invoke(EVERYBODY, hash, params...);
     }
 
     // Invoke a routed function targeted to all peers
     template<typename... Args>
-    void InvokeAll(std::string_view name, Args &&...params)
+    void InvokeAll(std::string_view name, Args const &...params)
     {
-        Invoke(EVERYBODY, avledet::util::get_stable_hash(name), std::forward<Args>(params)...);
+        Invoke(EVERYBODY, avledet::util::get_stable_hash(name), params...);
     }
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -171,20 +202,45 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
     }
 #endif
 
-    avledet::util::Bytes Serialize(avledet::util::UserID sender, avledet::util::UserID target,
-                                   ZDOID const &targetZDO, avledet::util::Hash hash,
-                                   avledet::util::Bytes const &params)
+    // TODO [deprecated]
+    //  Instead, create a preparer(), and write to that directly (faster)
+    ////[[deprecated("use prepare_params instead")]]
+    ////avledet::util::Bytes Serialize(avledet::util::UserID sender, avledet::util::UserID target,
+    ////                               ZDOID const &targetZDO, avledet::util::Hash hash,
+    ////                               avledet::util::Bytes const &params)
+    ////{
+    ////    DataWriter writer;
+
+    ////    writer.write((std::int64_t) 0);// msg id
+    ////    writer.write(sender);
+    ////    writer.write(target);
+    ////    writer.write(targetZDO);
+    ////    writer.write(hash);
+    ////    writer.write(params);
+
+    ////    return writer.release();
+    ////}
+
+    void /*avledet::util::Writer*/ prepare_packet(avledet::util::Writer &writer, avledet::util::UserID sender,
+                                                  avledet::util::UserID target, ZDOID const &targetZDO,
+                                                  avledet::util::Hash hash)
     {
-        DataWriter writer;
+        //avledet::util::Writer writer;
+        //writer.write(avledet::util::hashes::Rpc::RoutedRPC);
 
-        writer.write((std::int64_t) 0);// msg id
-        writer.write(sender);
-        writer.write(target);
-        writer.write(targetZDO);
-        writer.write(hash);
-        writer.write(params);
+        {
+            // Wrong. Must encap entire packet, not just RoutedRpc header
+            //avledet::util::WriterScopedEncap scoped(writer);
 
-        return writer.get_buf();
+            writer.write((std::int64_t) 0);// msg id (dummy)
+            writer.write(sender);
+            writer.write(target);
+            writer.write(targetZDO);
+            writer.write(hash);
+        }
+
+        // value *should* be returned without copy
+        //return writer;
     }
 };
 

@@ -6,6 +6,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <span>
+#include <stdexcept>
 #include <string_view>
 #include <tuple>
 #include <type_traits>
@@ -48,7 +50,12 @@ namespace avledet::util {
         char *data();
         char const *data() const;
 
-        std::vector<char> &get_buf();
+        // Returns a copy of internal buffer
+        std::vector<char> get_buf();
+
+        // Returns a moved copy of buffer
+        //  Will invalidate internal buffer
+        std::vector<char> release();
 
       protected:
         std::vector<char> m_buf;
@@ -158,6 +165,8 @@ namespace avledet::util {
         // auto a = write(a, b, c);
         template<class... T>
             requires(sizeof...(T) >= 1)
+        //&& std::negation_v<std::disjunction<
+        //VUtils::Traits::is_specialization_of<std::remove_cvref_t<T>, std::tuple>...>>)
         decltype(auto) write(T const &...args)
         {
             return Streamer<std::remove_cvref_t<T>...> {}.operator()(*this, args...);
@@ -165,22 +174,32 @@ namespace avledet::util {
 
         // variadic "serialize"
         //  write(std::tuple<> {});
-        template<class V = void, class T, class... Args>
-            requires(std::is_void_v<T>, sizeof...(Args) >= 1)
-        void write(std::tuple<T, Args...> const &args)
+        //template<class V = void, class... Args>
+        //    requires(std::is_void_v<V>, sizeof...(Args) >= 1)
+        //void write(std::tuple<Args...> const &args)
+        //{
+        //    return [&]<std::size_t... I>(std::index_sequence<I...>) {
+        //        ((write(std::get<I>(args))), ...);
+        //    }(std::make_index_sequence<sizeof...(Args)> {});
+        //}
+
+        //template<class V = void, class... Args>
+        //requires(std::is_void_v<V>, sizeof...(Args) >= 1)
+        template<class... Args>
+        void write_all(Args const &...args)
         {
-            return [&]<std::size_t... I>(std::index_sequence<I...>) {
-                ((write(std::get<I>(args))), ...);
-            }(std::make_index_sequence<sizeof...(Args)> {});
+            ((write(args)), ...);
         }
 
         // Empty template
-        //[[deprecated("Use write(T...) instead")]]
-        static void serialize_impl(Writer &) {}
+        [[deprecated("Use serialize(T...) instead")]]
+        static void serialize_impl(Writer &)
+        {
+        }
 
         // Writes variadic parameters into a package
         template<typename T, typename... Types>
-        //[[deprecated("Use write(T...) instead")]]
+        [[deprecated("Use serialize(T...) instead")]]
         static decltype(auto) serialize_impl(Writer &pkg, T const &var1, Types const &...var2)
         {
             pkg.write(var1);
@@ -190,20 +209,39 @@ namespace avledet::util {
 
         // Serialize variadic types to an array
         template<typename T, typename... Types>
-        //[[deprecated("Use write(T...) instead")]]
-        static decltype(auto) serialize(T const &var1, Types const &...var2)
+        [[deprecated("Use serialize(T...) instead")]]
+        static decltype(auto) serialize0(T const &var1, Types const &...var2)
         {
             Writer writer;
             serialize_impl(writer, var1, var2...);
-            return std::vector<char>(writer.get_buf());
+            return writer.release();
         }
 
         // empty full template
-        //[[deprecated("Use write(T...) instead")]]
-        static decltype(auto) serialize()
+        [[deprecated("Use serialize(T...) instead")]]
+        static decltype(auto) serialize0()
         {
             return std::vector<char>();
         }
+
+        template<typename... Types>
+        static std::vector<char> serialize(Types const &...var2)
+        {
+            Writer writer;
+            writer.write_all(var2...);
+            return writer.release();
+        }
+    };
+
+    class WriterScopedEncap
+    {
+      public:
+        WriterScopedEncap(Writer &writer);
+        ~WriterScopedEncap();
+
+      private:
+        std::reference_wrapper<Writer> m_writer;
+        std::size_t const m_start_pos;
     };
 
     //Primitive Streamer
@@ -362,22 +400,22 @@ namespace avledet::util {
     template<invokable_read1 T>
     struct Streamer<T>
     {
-        void operator()(Writer &writer, T const &value) const
-        {
-            auto const start    = writer.get_pos();
-            std::uint32_t count = 0;
-            writer.write(count);//dummy
-
-            // call func...
-            value(std::ref(writer));
-
-            auto const end = writer.get_pos();
-            writer.set_pos(start);
-            count = end - start - sizeof(count);
-            //assert(count >= 0);
-            writer.write(count);
-            writer.set_pos(end);
-        }
+        // Using an anonymous lambda to write a sub package is odd... especially when able to accept an rvalue
+        //  Replaced by WriterScopedEncap
+        //void operator()(Writer &writer, T const &value) const
+        //{
+        //    auto const start    = writer.get_pos();
+        //    std::uint32_t count = 0;
+        //    writer.write(count);//dummy
+        //    // call func...
+        //    value(std::ref(writer));
+        //    auto const end = writer.get_pos();
+        //    writer.set_pos(start);
+        //    count = end - start - sizeof(count);
+        //    //assert(count >= 0);
+        //    writer.write(count);
+        //    writer.set_pos(end);
+        //}
 
         // usage: (as for_each)
         //  reader.read([](Object next) {

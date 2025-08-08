@@ -1,5 +1,7 @@
 #include "DataStream.h"
 #include <cstddef>
+#include <cstdint>
+#include <limits>
 #include <stdexcept>
 
 namespace avledet::util {
@@ -93,9 +95,39 @@ namespace avledet::util {
         return m_buf.data();
     }
 
-    std::vector<char> &Stream::get_buf()
+    std::vector<char> Stream::get_buf()
     {
         return m_buf;
+    }
+
+    std::vector<char> Stream::release()
+    {
+        return std::move(m_buf);
+    }
+
+    WriterScopedEncap::WriterScopedEncap(Writer &writer) :
+        m_writer(std::ref(writer)),
+        m_start_pos(writer.get_pos())
+    {
+        m_writer.get().write((std::uint32_t) 0);//dummy
+    }
+
+    // write the length
+    WriterScopedEncap::~WriterScopedEncap()
+    {
+        auto const end_pos = m_writer.get().get_pos();
+        m_writer.get().set_pos(m_start_pos);
+        auto count = end_pos - m_start_pos - sizeof(std::uint32_t);
+
+        // TODO; when would this ever be encountered?
+        // we cant throw; destructor exceptions are dangerous
+        assert(m_start_pos + sizeof(std::uint32_t) <= end_pos);
+
+        assert(count <= std::numeric_limits<std::uint32_t>::max());
+
+        //assert(count >= 0);
+        m_writer.get().write((std::uint32_t) count);
+        m_writer.get().set_pos(end_pos);
     }
 
 }// namespace avledet::util

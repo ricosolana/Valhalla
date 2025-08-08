@@ -126,7 +126,7 @@ void Peer::update()
                 DataWriter writer;
                 writer.write((avledet::util::Hash) 0);
                 writer.write(false);
-                this->Send(std::move(writer.get_buf()));
+                this->Send(writer.release());
             } else {
                 m_lastPing = now;
             }
@@ -175,8 +175,21 @@ void Peer::Teleport(Vector3f pos, Quaternion rot, bool animation)
 void Peer::RouteParams(avledet::util::UserID const &sender, ZDOID targetZDO, avledet::util::Hash hash,
                        avledet::util::Bytes params)
 {
-    Invoke(avledet::util::hashes::Rpc::RoutedRPC,
-           RouteManager()->Serialize(sender, this->GetUserID(), targetZDO, hash, std::move(params)));
+    DataWriter writer;
+
+    writer.write(avledet::util::hashes::Rpc::RoutedRPC);
+    {
+        avledet::util::WriterScopedEncap scoped(writer);
+
+        RouteManager()->prepare_packet(writer, sender, this->GetUserID(), targetZDO, hash);
+
+        writer.write(params);
+    }
+
+    this->Send(writer.release());
+
+    //this->Invoke(avledet::util::hashes::Rpc::RoutedRPC,
+    //RouteManager()->Serialize(sender, this->GetUserID(), targetZDO, hash, std::move(params)));
 }
 
 void Peer::RouteParams(ZDOID targetZDO, avledet::util::Hash hash, avledet::util::Bytes params)

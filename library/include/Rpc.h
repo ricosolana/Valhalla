@@ -20,7 +20,7 @@ namespace avledet::rpc {
       public:
         using Method = IMethod<T>;// keep consistent for now...
 
-      protected:
+      public:
         void internal_invoke(T handle, avledet::util::Hash hash, avledet::util::Reader &reader)
         {
             auto &&find = m_methods.find(hash);
@@ -36,7 +36,6 @@ namespace avledet::rpc {
             }
         }
 
-      public:
         // TODO later, for custom LUA
         void register_method(std::unique_ptr<Method> method)
         {

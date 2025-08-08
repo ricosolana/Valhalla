@@ -291,7 +291,7 @@ void IZoneManager::SendLocationIcons()
         writer.write(std::string_view(instance.get().m_feature.get().m_name));
     }
 
-    RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_UpdateIcons, writer.get_buf());
+    RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_UpdateIcons, writer.release());
 }
 #endif
 
@@ -308,10 +308,10 @@ void IZoneManager::SendLocationIcons(Peer::Ptr peer)
     writer.write((std::int32_t) icons.size());
     for (auto &&instance : icons) {
         writer.write(instance.get().m_pos);
-        writer.write(std::string_view(instance.get().m_feature.get().m_name));
+        writer.write(instance.get().m_feature.get().m_name);
     }
 
-    peer->Route(avledet::util::hashes::Routed::S2C_UpdateIcons, writer.get_buf());
+    peer->Route(avledet::util::hashes::Routed::S2C_UpdateIcons, writer.release());
 #else
     peer->SubRoute(avledet::util::hashes::Routed::S2C_UpdateIcons, [this](DataWriter &writer) {
         writer.write<std::int32_t>(1);// dummy count

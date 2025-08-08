@@ -50,10 +50,11 @@ void IRouteManager::OnNewPeer(Peer::Ptr peer)
         reader.read<std::int64_t>();// skip msgid
         /*DataWriter(avledet::util::ByteView(reader.data(), reader.size()), reader.get_pos()).Write(peer->m_uuid);*/
         reader.read<avledet::util::UserID>();// skip sender
+        auto sender    = peer->GetUserID();
         auto target    = reader.read<avledet::util::UserID>();
         auto targetZDO = reader.read<ZDOID>();
         auto hash      = reader.read<avledet::util::Hash>();
-        auto params    = DataReader(reader.read<std::vector<char>>());
+        auto params    = reader.read<std::vector<char>>();
 
         /*
 		* Rpc and multi-execution dilemna
@@ -66,8 +67,9 @@ void IRouteManager::OnNewPeer(Peer::Ptr peer)
         if (target == EVERYBODY) {
             // Confirmed: targetZDO CAN have a value when globally routed
             //  TODO make params a COPY here for lua, or define copy-like behaviour / modifs...
-            //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteInAll ^ hash, peer, targetZDO, params))
-            //    return;
+            if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteInAll ^ hash, peer, targetZDO, params)) {
+                return;
+            }
 
             //dpp death trigger webhook
             //TODO
@@ -79,33 +81,59 @@ void IRouteManager::OnNewPeer(Peer::Ptr peer)
 
             // 'EVERYBODY' also targets the server
             if (!targetZDO) {
-                auto params_copy = params;
-                this->internal_invoke(peer, hash, params_copy);
+                auto reader0 = avledet::util::Reader(params);
+                this->internal_invoke(peer, hash, reader0);
             }//else ... // netview currently not supported
 
             auto &&peers = NetManager()->GetPeers();
-            for (auto &&other : peers) {
-                // Ignore the src peer
-                if (peer->GetUserID() != other->GetUserID()) {
-                    other->RouteParams(peer->GetUserID(), targetZDO, hash,
-                                       params.get_buf());// params (buf) copied
+            if (!peers.empty()) {
+                DataWriter writer;
+
+                writer.write(avledet::util::hashes::Rpc::RoutedRPC);
+                {
+                    avledet::util::WriterScopedEncap scoped(writer);
+
+                    RouteManager()->prepare_packet(writer, sender, target, targetZDO, hash);
+
+                    writer.write(params);
+                }
+
+                for (auto &&other : peers) {
+                    // Ignore the src peer
+                    if (peer->GetUserID() != other->GetUserID()) {
+                        // we do the lowest level send to avoid rpc lua
+                        other->Send(writer.get_buf());
+                    }
                 }
             }
         } else {
             if (target != AVL_ID) {
                 if (auto other = NetManager()->FindPeerByUserID(target)) {
                     // TODO test if working correctly
-                    //if (!AVL_SCRIPT_EVENT(IScriptManager::Events::Routed ^ hash, peer, reader))
-                    //    return;
+                    if (!AVL_SCRIPT_EVENT(IScriptManager::Events::Routed ^ hash, peer, other, targetZDO,
+                                          params)) {
+                        return;
+                    }
 
-                    //other->Invoke(avledet::util::hashes::Rpc::RoutedRPC, reader);
-                    other->RouteParams(peer->GetUserID(), targetZDO, hash, params.get_buf());
+                    DataWriter writer;
+
+                    writer.write(avledet::util::hashes::Rpc::RoutedRPC);
+                    {
+                        avledet::util::WriterScopedEncap scoped(writer);
+
+                        RouteManager()->prepare_packet(writer, sender, target, targetZDO, hash);
+
+                        writer.write(params);
+                    }
+
+                    // we do the lowest level send to avoid rpc lua
+                    other->Send(writer.get_buf());
                 }
             } else {
                 if (!targetZDO) {
                     //TODO we dont need to copy params here, but portability is better...
-                    auto params_copy = params;
-                    this->internal_invoke(peer, hash, params_copy);
+                    auto reader0 = avledet::util::Reader(params);
+                    this->internal_invoke(peer, hash, reader0);
                 }//else ... // netview is not currently supported
             }
         }

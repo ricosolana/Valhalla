@@ -1,4 +1,5 @@
 #add_subdirectory("crypto")
-add_subdirectory("rpc")
+#add_subdirectory("rpc")
 #add_subdirectory("scripting")
 #add_subdirectory("sol")
+add_subdirectory("stream")

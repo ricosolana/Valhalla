@@ -233,6 +233,7 @@ namespace avledet::network {
                     LOG_TRACE_L1(AVL_LOGGER, "send_queued() failed: {}", magic_enum::enum_name(res));
                     break;
                 }
+                // TODO should I recycle these vecs by hash type?
                 itr = m_send_queue.erase(itr);
             }
         }

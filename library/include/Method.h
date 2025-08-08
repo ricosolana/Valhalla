@@ -164,7 +164,9 @@ class MethodImpl : public IMethod<T>
 
         bool keep_me_mapped = true;
 
-        LOG_TRACE_L1(AVL_LOGGER, "calling internal method, hash {}", this->m_hash);
+        //TODO
+        //  do not use outside of avl (ie TESTS), will segfault because null
+        //LOG_TRACE_L1(AVL_LOGGER, "calling internal method, hash {}", this->m_hash);
 
         if constexpr (std::is_same_v<bool, typename VUtils::Traits::func_traits<F>::result_type>) {
             keep_me_mapped = std::apply(m_func, tuple);
