@@ -261,10 +261,10 @@ Vector3f ZDO::get_position() const
     return this->m_pos;
 }
 
-ZDO::Rev &ZDO::_get_revision()
-{
-    return this->m_rev;
-}
+//ZDO::Rev &ZDO::_get_revision()
+//{
+//    return this->m_rev;
+//}
 
 Quaternion ZDO::get_rotation() const
 {

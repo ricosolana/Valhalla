@@ -923,7 +923,7 @@ class ZDO
     }
 
     // Internal use; (mutable revision for use by RPC_ZDOData lambda)
-    Rev &_get_revision();
+    //Rev &_get_revision();
 
     /*
         Member accessors

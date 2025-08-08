@@ -885,7 +885,7 @@ bool IZDOManager::SendZDOs(Peer::Ptr peer, bool flush)
                 zdo->pack(writer, true);
             }
 
-            peer->m_zdos[zdo->get_id()] = {zdo->_get_revision(), time};
+            peer->m_zdos[zdo->get_id()] = {zdo->m_rev, time};
         }
         writer.write(ZDOID::NONE);// null terminator
     }
@@ -912,8 +912,9 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
 
         //assert(false); //TODO
         reader.read([this](ZDOID zdoid) {
-            if (auto zdo = find_zdo(zdoid))
+            if (auto zdo = find_zdo(zdoid)) {
                 _InvalidateZDOZone(zdo);
+            }
         });
 
         auto time = Avledet()->Time();
@@ -946,7 +947,7 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
                     // If the owner has changed, keep a copy
                     if (owner_rev > zdo->get_owner_rev()) {
                         zdo->_set_owner(owner);
-                        zdo->_get_revision().set_owner_rev(owner_rev);
+                        zdo->m_rev.set_owner_rev(owner_rev);
                         peer->m_zdos[zdoid] = {ZDO::Rev(data_rev, owner_rev), time};
                     }
                     continue;
@@ -969,8 +970,8 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
 
             //try {
             zdo->_set_owner(owner);
-            zdo->_get_revision().set_data_rev(data_rev);
-            zdo->_get_revision().set_owner_rev(owner_rev);
+            zdo->m_rev.set_data_rev(data_rev);
+            zdo->m_rev.set_owner_rev(owner_rev);
 
             // Unpack the ZDOs primary data
             zdo->unpack(des, 0);
@@ -1004,7 +1005,7 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
 
             assert(_FindZDOContainer(zdo->get_zone())->contains(zdo));
 
-            peer->m_zdos[zdoid] = {zdo->_get_revision(), time};
+            peer->m_zdos[zdoid] = {zdo->m_rev, time};
             /*
 			}
 			catch (const std::runtime_error& e) {
