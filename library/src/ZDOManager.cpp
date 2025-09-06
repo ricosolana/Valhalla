@@ -1,4 +1,5 @@
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <quill/LogMacros.h>
@@ -11,7 +12,9 @@
 #include "DataStream.h"
 #include "Hashes.h"
 #include "NetManager.h"
+#include "Peer.h"
 #include "RouteManager.h"
+#include "ServerSettings.h"
 #include "VUtils.h"
 #include "ZDO.h"
 #include "ZDOManager.h"
@@ -487,13 +490,45 @@ void IZDOManager::AssignOrReleaseZDOs(Peer::Ptr peer)
         }
     }
 
-    if (AVL_SETTINGS.TEST_zdoAssignAlgorithm == AssignAlgorithm::DYNAMIC_RADIUS) {
+    /*
+        Better algorithm:
+            Would account for the peer with the lowest latency / network issues
+            
+            So in cases of choosing the best peer for co-op operations,
+                the least laggy player becomes the primary ZDO controller
+
+            - When 2 or more players are within same zone, apply algo:
+                - The farther the players from each other, the more assignment freedom we have,
+                    and not having to worry about Sync issues regarding owner tranfer
+                - The closer the players are to each other, the more likely we have to rely on lowest latency player
+                    for overlapping/nearby ZDOs
+
+    */
+
+    if (AVL_SETTINGS.TEST_zdoAssignAlgorithm == AssignAlgorithm::RADIUS_LATENCY) {
+        // If many players around, use fastest player
+        constexpr auto traffic_metric = [](Peer::Ptr peer) {
+            auto [local, remote] = peer->m_socket->get_connection_quality();
+            auto ratio           = (local + remote) * 0.5f;
+
+            return ratio + (33.0f / (float) peer->m_socket->get_ping());
+        };
+        auto peers = NetManager()->GetPeers();
+        std::sort(peers.begin(), peers.end());
+        //auto peers_sorted = peers;
+        for (auto &&otherPeer : peers) {
+            //otherPeer->m_socket->Q
+        }
+    } else if (AVL_SETTINGS.TEST_zdoAssignAlgorithm == AssignAlgorithm::DYNAMIC_RADIUS) {
+
+        static constexpr auto DIST_SMART = 12.0f;
 
         float minSqDist = std::numeric_limits<float>::max();
         Vector3f closestPos;
 
         // get the distance to the closest peer
         for (auto &&otherPeer : NetManager()->GetPeers()) {
+            // skip self
             if (otherPeer == peer)
                 continue;
 
@@ -506,21 +541,25 @@ void IZDOManager::AssignOrReleaseZDOs(Peer::Ptr peer)
                 minSqDist  = sqDist;
                 closestPos = otherPeer->m_pos;
 
-                if (minSqDist <= 12 * 12) {
+                if (minSqDist <= DIST_SMART * DIST_SMART) {
                     break;
                 }
             }
         }
 
-        if (minSqDist != std::numeric_limits<float>::max() && minSqDist > 12 * 12) {
+        // If other "possible owner" peer is FAR
+        if (minSqDist < std::numeric_limits<float>::max() && minSqDist > DIST_SMART * DIST_SMART) {
             // Get zdos immediate to this peer
-            auto zdos = GetZDOs(peer->m_pos, std::sqrt(minSqDist) * 0.5f - 2.f);
+            float const dist = std::sqrt(minSqDist);
+            // weird algo, basically
+            float const cutoff_dist = dist * 0.5f - 2.0f;
+            auto zdos               = GetZDOs(peer->m_pos, cutoff_dist);
 
             // Basically reassign zdos from another owner to me instead
             for (auto &&zdo : zdos) {
                 if (zdo->is_persistent()
                     && zdo->get_position().sq_distance_to(closestPos)
-                               > 12 * 12// Ensure the ZDO is far from the other player
+                               > DIST_SMART * DIST_SMART// Ensure the ZDO is far from the other player
                 ) {
                     zdo->set_owner(peer->GetUserID());
                 }

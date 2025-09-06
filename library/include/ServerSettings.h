@@ -15,7 +15,8 @@
 enum class AssignAlgorithm
 {
     NONE,
-    DYNAMIC_RADIUS
+    DYNAMIC_RADIUS,
+    RADIUS_LATENCY
 };
 
 /*
