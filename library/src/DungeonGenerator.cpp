@@ -567,6 +567,12 @@ void DungeonGenerator::PlaceRoom(Room const &room, Vector3f pos, Quaternion rot,
     // TODO seed is only useful for RandomSpawn
     int seed = (int) pos.x * 4271 + (int) pos.y * 9187 + (int) pos.z * 2134;
 
+    // Per Unity docs
+    //  https://docs.unity3d.com/ScriptReference/MonoBehaviour.Awake.html
+    //"Example2. This causes Example1.Awake() to be called. The Space key is used to perform this"
+    // Calling SetActive() on a scene disabled object will call Awake()
+
+    // TODO init RandomSpawns
     //VUtils::Random::State state(seed);
     //for (auto&& randomSpawn : room.m_randomSpawns)
     //	randomSpawn.Randomize();
@@ -577,10 +583,10 @@ void DungeonGenerator::PlaceRoom(Room const &room, Vector3f pos, Quaternion rot,
             Quaternion rot1 = rot * view.m_rot;
 
             // Prefabs can be instantiated exactly in world space (not local room space)
-            auto global = VUtils::Physics::LocalToGlobal(pos1, rot1, this->m_pos, this->m_rot);
+            auto [gPos, gRot] = VUtils::Physics::LocalToGlobal(pos1, rot1, this->m_pos, this->m_rot);
 
-            auto &&zdo = ZDOManager()->Instantiate(view.m_prefabHash, global.first);
-            zdo->set_rotation(global.second);
+            auto &&zdo = ZDOManager()->Instantiate(view.m_prefabHash, gPos);
+            zdo->set_rotation(gRot);
         }
     }
 

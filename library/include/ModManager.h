@@ -321,6 +321,8 @@ class IScriptManager
     }
 
   public:
+    ~IScriptManager();
+
     void Init();
     void Uninit();
     void update();

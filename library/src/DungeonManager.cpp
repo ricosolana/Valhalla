@@ -1,4 +1,6 @@
 #include "DungeonManager.h"
+#include "Quaternion.h"
+#include "Vector.h"
 
 #if AVL_IS_ON(AVL_DUNGEON_GENERATION)
     #include "DataStream.h"
@@ -46,8 +48,17 @@ void IDungeonManager::post_prefab_init()
 
         //VLOG(2) << "Loading dungeon " << name;
 
-        dungeon->m_interior_position = pkg.read<Vector3f>();
-        dungeon->m_original_position = pkg.read<Vector3f>();
+        // TODO
+        //  read new format
+        assert(false);
+        {
+            bool useTransform            = pkg.read<bool>();
+            dungeon->m_interior_position = pkg.read<Vector3f>();
+            pkg.read<Quaternion>();// TODO
+            dungeon->m_original_position = pkg.read<Vector3f>();
+        }
+        //dungeon->m_interior_position = pkg.read<Vector3f>();
+        //dungeon->m_original_position = pkg.read<Vector3f>();
 
         dungeon->m_algorithm                 = (Dungeon::Algorithm) pkg.read<std::int32_t>();
         dungeon->m_alternative_functionality = pkg.read<bool>();

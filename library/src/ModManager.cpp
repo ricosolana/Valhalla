@@ -179,6 +179,8 @@ void my_sethook_cb(lua_State *L, lua_Debug *ar)
     LOG_INFO(AVL_LOGGER, "HOOKAH!!!");
 };
 
+IScriptManager::~IScriptManager() {}
+
 void IScriptManager::Init()
 {
     LOG_NOTICE(AVL_LOGGER, "Initializing ModManager");

@@ -507,18 +507,20 @@ void IZDOManager::AssignOrReleaseZDOs(Peer::Ptr peer)
 
     if (AVL_SETTINGS.TEST_zdoAssignAlgorithm == AssignAlgorithm::RADIUS_LATENCY) {
         // If many players around, use fastest player
-        constexpr auto traffic_metric = [](Peer::Ptr peer) {
-            auto [local, remote] = peer->m_socket->get_connection_quality();
-            auto ratio           = (local + remote) * 0.5f;
+        assert(false);
+        (void) nullptr;
+        //constexpr auto traffic_metric = [](Peer::Ptr peer) {
+        //    auto [local, remote] = peer->m_socket->get_connection_quality();
+        //    auto ratio           = (local + remote) * 0.5f;
 
-            return ratio + (33.0f / (float) peer->m_socket->get_ping());
-        };
-        auto peers = NetManager()->GetPeers();
-        std::sort(peers.begin(), peers.end());
-        //auto peers_sorted = peers;
-        for (auto &&otherPeer : peers) {
-            //otherPeer->m_socket->Q
-        }
+        //    return ratio + (33.0f / (float) peer->m_socket->get_ping());
+        //};
+        //auto peers = NetManager()->GetPeers();
+        //std::sort(peers.begin(), peers.end());
+        ////auto peers_sorted = peers;
+        //for (auto &&otherPeer : peers) {
+        //    //otherPeer->m_socket->Q
+        //}
     } else if (AVL_SETTINGS.TEST_zdoAssignAlgorithm == AssignAlgorithm::DYNAMIC_RADIUS) {
 
         static constexpr auto DIST_SMART = 12.0f;

@@ -1,3 +1,4 @@
+#include "Types.h"
 #include "Vector.h"
 #include "VUtils.h"
 
@@ -80,7 +81,17 @@ void IZoneManager::PostPrefabInit()
             // randomspawns
             auto spawns = pkg.read<std::int32_t>();
             for (int s = 0; s < spawns; s++) {
-                pkg.read<float>();// chance
+                auto chance = pkg.read<float>();// chance
+
+                auto theme = pkg.read<int>();   //Room::Theme>(); // require theme
+
+                auto biome = pkg.read<int>();   //<avledet::util::Biome>() // require biome
+
+                pkg.read<bool>();               //not in lava
+
+                auto minev = pkg.read<int>();   //min elevation
+
+                auto maxev = pkg.read<int>();   //max elevation
 
                 auto views = pkg.read<std::int32_t>();
                 for (int v = 0; v < views; v++) {

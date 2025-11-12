@@ -68,8 +68,12 @@ int main(int argc, char **argv)
         Avledet()->Start();
 #ifndef _DEBUG
     } catch (std::exception const &e) {
+        // technically, we handle the error here, but this is the outer-error catcher
+        //  with no further recourse; we simply exit the program for issues beyond
+        LOG_ERROR(AVL_LOGGER, "Unhandled server crash");
         LOG_ERROR(AVL_LOGGER, "{}", e.what());
-        return 1;
+        //return 1;
+        exit(1);
     }
 #endif
 
