@@ -5,7 +5,9 @@
 #include <utility>
 
 #include "Avledet.h"
+#include "Hashes.h"
 #include "PrefabManager.h"
+#include "Types.h"
 #include "VUtilsResource.h"
 #include "ZDO.h"
 
@@ -115,7 +117,11 @@ void IPrefabManager::Register(std::string name, Vector3f scale, Prefab::Flag fla
     assert(!prefab.m_name.empty());
 
     if (!emp.second) {
-        LOG_WARNING(AVL_LOGGER, "Duplicate prefab tried to register: {}", prefab.m_name);
+        if (emp.first->m_name != name) {
+            LOG_WARNING(AVL_LOGGER, "Possible hash collision between prefabs {}, {}", name, prefab.m_name);
+        } else {
+            LOG_WARNING(AVL_LOGGER, "Duplicate prefab tried to register: {}", prefab.m_name);
+        }
     }
 
     if (prefab.m_name == "_TerrainCompiler") {
@@ -126,7 +132,11 @@ void IPrefabManager::Register(std::string name, Vector3f scale, Prefab::Flag fla
 
 void IPrefabManager::Register(DataReader &reader)
 {
-    auto name       = reader.read<std::string>();
+    auto name = reader.read<std::string>();
+    auto hash = reader.read<avledet::util::Hash>();
+    assert(avledet::util::get_stable_hash(name)
+           == hash);// err detect, TODO should be a throw not debug assert
+
     auto localScale = reader.read<Vector3f>();
     auto flags      = reader.read<Prefab::Flag>();
 

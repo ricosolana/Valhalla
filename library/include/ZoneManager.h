@@ -4,11 +4,13 @@
 #include <cstdint>
 #include <list>
 #include <string>
+#include <vector>
 
 #include "DataStream.h"
 #include "Peer.h"
 #include "Prefab.h"
 #include "Quaternion.h"
+#include "RandomSpawn.h"
 #include "Types.h"
 #include "Vector.h"
 #include "VUtils.h"
@@ -22,11 +24,13 @@ enum class GlobalKey
     EventRate,
     ResourceRate,
     StaminaRate,
+    AdrenalineRate,
     MoveStaminaRate,
     StaminaRegenRate,
     SkillGainRate,
     SkillReductionRate,
     EnemySpeedSize,
+    EnemyLevelUpRate,
     PlayerEvents,
     Fire,
     DeathKeepEquip,
@@ -56,6 +60,7 @@ enum class GlobalKey
     KilledTroll,
     killed_surtling,
     KilledBat,
+    AshlandsOcean,
     MAX
 };
 
@@ -102,11 +107,11 @@ class IZoneManager
         std::int32_t m_spawnAttempts;// 200000 or 100000 depending on priority
         std::int32_t m_quantity;
         bool m_randomRotation = true;
-        //std::vector<RandomSpawn> m_randomSpawns;
         bool m_slopeRotation;
         bool m_snapToWater;
         bool m_unique;
-        std::vector<Prefab::Instance> m_pieces;
+        std::vector<Prefab::Instance> m_pieces;//TODO rename to views/prefab templates...?
+        std::vector<avledet::gen::RandomSpawn> m_random_spawns;
 
         bool operator==(Feature const &other) const
         {

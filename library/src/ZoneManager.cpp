@@ -1,3 +1,4 @@
+#include "RandomSpawn.h"
 #include "Types.h"
 #include "Vector.h"
 #include "VUtils.h"
@@ -34,7 +35,7 @@ void IZoneManager::PostPrefabInit()
         if (!opt)
             throw std::runtime_error("features.pkg missing");
 
-        DataReader pkg(*opt);
+        DataReader pkg(std::move(*opt));
 
         auto comment = pkg.read<std::string_view>();// comment
         LOG_DEBUG(AVL_LOGGER, "pkg comment: {}", comment);
@@ -47,10 +48,10 @@ void IZoneManager::PostPrefabInit()
         auto count = pkg.read<std::int32_t>();
         for (int i = 0; i < count; i++) {
             // TODO read zoneLocations from file
-            auto loc    = std::make_unique<Feature>();
-            loc->m_name = pkg.read<std::string>();
-            loc->m_hash = avledet::util::get_stable_hash(loc->m_name);
+            auto loc = std::make_unique<Feature>();
 
+            loc->m_name              = pkg.read<std::string>();
+            loc->m_hash              = avledet::util::get_stable_hash(loc->m_name);
             loc->m_biome             = (avledet::util::Biome) pkg.read<std::int32_t>();
             loc->m_biomeArea         = (avledet::util::BiomeArea) pkg.read<std::int32_t>();
             loc->m_applyRandomDamage = pkg.read<bool>();
@@ -77,46 +78,31 @@ void IZoneManager::PostPrefabInit()
             loc->m_spawnAttempts          = pkg.read<std::int32_t>();
             loc->m_quantity               = pkg.read<std::int32_t>();
             loc->m_randomRotation         = pkg.read<bool>();
+            loc->m_slopeRotation          = pkg.read<bool>();
+            loc->m_snapToWater            = pkg.read<bool>();
+            loc->m_unique                 = pkg.read<bool>();
 
-            // randomspawns
-            auto spawns = pkg.read<std::int32_t>();
-            for (int s = 0; s < spawns; s++) {
-                auto chance = pkg.read<float>();// chance
-
-                auto theme = pkg.read<int>();   //Room::Theme>(); // require theme
-
-                auto biome = pkg.read<int>();   //<avledet::util::Biome>() // require biome
-
-                pkg.read<bool>();               //not in lava
-
-                auto minev = pkg.read<int>();   //min elevation
-
-                auto maxev = pkg.read<int>();   //max elevation
-
-                auto views = pkg.read<std::int32_t>();
-                for (int v = 0; v < views; v++) {
-                    pkg.read<avledet::util::Hash>();// prefab hash
-                    pkg.read<Vector3f>();           // position
-                    pkg.read<Quaternion>();         // rotation
-                }
-            }
-
-            loc->m_slopeRotation = pkg.read<bool>();
-            loc->m_snapToWater   = pkg.read<bool>();
-            loc->m_unique        = pkg.read<bool>();
-
+            // Netview game objects
             auto views = pkg.read<std::int32_t>();
             for (int j = 0; j < views; j++) {
                 Prefab::Instance piece;
 
+                auto dbgName = pkg.read<std::string_view>();//For debugging
+                (void) dbgName;
+
                 piece.m_prefabHash = pkg.read<avledet::util::Hash>();
-                piece.m_pos        = pkg.read<Vector3f>();
-                piece.m_rot        = pkg.read<Quaternion>();
+                assert(avledet::util::get_stable_hash(dbgName)
+                       == piece.m_prefabHash);//TODO dont use debug assert
+                piece.m_pos = pkg.read<Vector3f>();
+                piece.m_rot = pkg.read<Quaternion>();
 
                 piece.get_prefab();
 
                 loc->m_pieces.push_back(piece);
             }
+
+            // RandomSpawn defs/refs
+            loc->m_random_spawns = avledet::gen::RandomSpawn::parse_list(pkg);
 
             //m_featuresByHash.insert({ loc->m_hash, *loc.get() });
             m_features.push_back(std::move(loc));
@@ -133,9 +119,11 @@ void IZoneManager::PostPrefabInit()
         if (!opt)
             throw std::runtime_error("vegetation.pkg missing");
 
-        DataReader pkg(*opt);
+        DataReader pkg(std::move(*opt));
 
-        pkg.read<std::string_view>();// comment
+        auto comment = pkg.read<std::string_view>();// comment
+        LOG_DEBUG(AVL_LOGGER, "pkg comment: {}", comment);
+
         auto ver = pkg.read<std::string_view>();
         if (ver != VConstants::GAME) {
             LOG_WARNING(AVL_LOGGER, "vegetation.pkg uses different game version than server ({})", ver);

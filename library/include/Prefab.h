@@ -12,6 +12,7 @@ class Prefab
     using IndexType            = std::uint16_t;
     static constexpr auto NONE = std::numeric_limits<IndexType>::max();
 
+    // TODO rename Template / Placeholder / Def
     struct Instance
     {
         avledet::util::CSU::Quaternion m_rot;// 16 bytes

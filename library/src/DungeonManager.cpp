@@ -1,6 +1,10 @@
 #include "DungeonManager.h"
 #include "Quaternion.h"
+#include "RandomSpawn.h"
+#include "Types.h"
 #include "Vector.h"
+#include <stdexcept>
+#include <type_traits>
 
 #if AVL_IS_ON(AVL_DUNGEON_GENERATION)
     #include "DataStream.h"
@@ -42,24 +46,29 @@ void IDungeonManager::post_prefab_init()
 
         //avledet::util::Hash hash = pkg.read<avledet::util::Hash>();
 
+        // Debug anchor
+        if (pkg.read<avledet::util::Hash>() != VUtils::get_stable_hash("dungeon")) {
+            throw std::runtime_error("bad read anchor");
+        }
+
         auto name = pkg.read<std::string_view>();
 
+        // TODO dungeon prefab is required (make a ref)
         dungeon->m_prefab = &PrefabManager()->get_prefab(name);
 
         //VLOG(2) << "Loading dungeon " << name;
 
-        // TODO
-        //  read new format
-        assert(false);
+        // Dungeon custom position
         {
-            bool useTransform            = pkg.read<bool>();
-            dungeon->m_interior_position = pkg.read<Vector3f>();
-            pkg.read<Quaternion>();// TODO
-            dungeon->m_original_position = pkg.read<Vector3f>();
+            bool useTransform = pkg.read<bool>();
+            if (useTransform) {
+                dungeon->m_interior_position = pkg.read<Vector3f>();
+                pkg.read<Quaternion>();// TODO
+                dungeon->m_original_position = pkg.read<Vector3f>();
+            }
         }
-        //dungeon->m_interior_position = pkg.read<Vector3f>();
-        //dungeon->m_original_position = pkg.read<Vector3f>();
 
+        static_assert(std::is_same_v<std::underlying_type_t<Dungeon::Algorithm>, std::int32_t>);
         dungeon->m_algorithm                 = (Dungeon::Algorithm) pkg.read<std::int32_t>();
         dungeon->m_alternative_functionality = pkg.read<bool>();
         dungeon->m_camp_radius_max           = pkg.read<float>();
@@ -68,8 +77,22 @@ void IDungeonManager::post_prefab_init()
 
         auto doorCount = pkg.read<std::int32_t>();
         for (int i2 = 0; i2 < doorCount; i2++) {
+            // Debug anchor
+            if (pkg.read<avledet::util::Hash>() != VUtils::get_stable_hash("dungeonDoor")) {
+                throw std::runtime_error("bad read anchor");
+            }
+
             Dungeon::DoorDef door;
-            door.m_prefab = PrefabManager()->find_prefab(pkg.read<avledet::util::Hash>());
+            auto doorName = pkg.read<std::string_view>();//Debug
+            (void) doorName;
+            auto doorHash = pkg.read<avledet::util::Hash>();
+
+            //auto compHash = VUtils::get_stable_hash(doorName);
+            //if (doorHash != compHash) {
+            //    throw std::runtime_error("dg door hash unequal to computed");
+            //}
+
+            door.m_prefab = PrefabManager()->find_prefab(doorHash);
             if (!door.m_prefab) {
                 throw std::runtime_error("dungeon door missing prefab");
             }
@@ -88,16 +111,20 @@ void IDungeonManager::post_prefab_init()
         dungeon->m_min_rooms          = pkg.read<std::int32_t>();
         dungeon->m_perimeter_buffer   = pkg.read<float>();
         dungeon->m_perimeter_sections = pkg.read<std::int32_t>();
-        //decltype(Dungeon::m_requiredRooms)::be
-        dungeon->m_requiredRooms = pkg.read<decltype(Dungeon::m_requiredRooms)>();
+        dungeon->m_requiredRooms      = pkg.read<decltype(Dungeon::m_requiredRooms)>();
 
         dungeon->m_spawn_chance = pkg.read<float>();
-        dungeon->m_themes       = (Room::Theme) pkg.read<std::int32_t>();
+        dungeon->m_themes       = pkg.read<avledet::util::Theme>();
         dungeon->m_tile_width   = pkg.read<float>();
 
         auto roomCount = pkg.read<std::int32_t>();
         for (int i2 = 0; i2 < roomCount; i2++) {
             auto room(std::make_unique<Room>());
+
+            // Debug anchor
+            if (pkg.read<avledet::util::Hash>() != VUtils::get_stable_hash("dungeonRoom")) {
+                throw std::runtime_error("bad read anchor");
+            }
 
             room->m_name          = pkg.read<std::string>();
             room->m_hash          = avledet::util::get_stable_hash(room->m_name);
@@ -108,9 +135,16 @@ void IDungeonManager::post_prefab_init()
             room->m_faceCenter    = pkg.read<bool>();
             room->m_minPlaceOrder = pkg.read<std::int32_t>();
             room->m_perimeter     = pkg.read<bool>();
+            room->m_size          = pkg.read<Vector3f>();
+            room->m_theme         = pkg.read<avledet::util::Theme>();
+            room->m_weight        = pkg.read<float>();
+            room->m_pos           = pkg.read<Vector3f>();
+            room->m_rot           = pkg.read<Quaternion>();
 
+            // Parsing room-connections
             auto connCount = pkg.read<std::int32_t>();
             for (int i3 = 0; i3 < connCount; i3++) {
+                // TODO does this need to be unique? how are connections compared / referenced
                 auto conn(std::make_unique<RoomConnection>());
 
                 conn->m_type                          = pkg.read<std::string>();
@@ -127,9 +161,18 @@ void IDungeonManager::post_prefab_init()
             for (int i3 = 0; i3 < viewCount; i3++) {
                 Prefab::Instance instance;
 
+                // Debug anchor
+                if (pkg.read<avledet::util::Hash>() != VUtils::get_stable_hash("dungeonView")) {
+                    throw std::runtime_error("bad read anchor");
+                }
+
+                auto viewName = pkg.read<std::string_view>();// For debug
+                (void) viewName;
                 instance.m_prefabHash = pkg.read<avledet::util::Hash>();
                 instance.m_pos        = pkg.read<Vector3f>();
                 instance.m_rot        = pkg.read<Quaternion>();
+
+                // Write NV RandomSpawn
 
                 // ensure prefab existence
                 instance.get_prefab();
@@ -137,11 +180,8 @@ void IDungeonManager::post_prefab_init()
                 room->m_netViews.push_back(instance);
             }
 
-            room->m_size   = pkg.read<Vector3f>();
-            room->m_theme  = (Room::Theme) pkg.read<std::int32_t>();
-            room->m_weight = pkg.read<float>();
-            room->m_pos    = pkg.read<Vector3f>();
-            room->m_rot    = pkg.read<Quaternion>();
+            // RandomSpawn list parsing
+            room->m_random_spawns = avledet::gen::RandomSpawn::parse_list(pkg);
 
             dungeon->m_available_rooms.push_back(std::move(room));
         }

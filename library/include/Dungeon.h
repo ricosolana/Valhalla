@@ -43,7 +43,7 @@ class Dungeon
 
     bool m_alternative_functionality;
 
-    Room::Theme m_themes = Room::Theme::Crypt;
+    avledet::util::Theme m_themes = avledet::util::Theme::Crypt;
 
     // Order is significant (polled with Seeded Random)
     std::vector<DoorDef> m_door_types;// Serialized

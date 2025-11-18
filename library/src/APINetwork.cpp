@@ -42,9 +42,8 @@ void IScriptManager::load_userdata_network()
 
     this->new_usertype<INetManager>("INetManager", 
         sol::no_constructor,
-        "find_peer", &INetManager::FindPeer
-        // TODO unsafe, mutable container is returned
-        //"peers", sol::property(&INetManager::GetPeers) //TODO stop using odd references
+        "find_peer", &INetManager::FindPeer,
+        "peers", sol::property(&INetManager::GetPeers) //TODO require immutable container
     );
 
     // clang-format on

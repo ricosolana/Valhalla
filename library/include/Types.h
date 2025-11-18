@@ -148,6 +148,24 @@ namespace avledet::util {
         TERRAIN
     };
 
+    enum class Theme
+    {
+        Crypt             = 1,
+        SunkenCrypt       = 2,
+        Cave              = 4,
+        ForestCrypt       = 8,
+        GoblinCamp        = 16,
+        MeadowsVillage    = 32,
+        MeadowsFarm       = 64,
+        DvergerTown       = 128,
+        DvergerBoss       = 256,
+        ForestCryptHildir = 512,
+        CaveHildir        = 1024,
+        PlainsFortHildir  = 2048,
+        AshlandRuins      = 4096,
+        FortressRuins     = 8192
+    };
+
     using ZoneID = Vector2s;
 
 }// namespace avledet::util

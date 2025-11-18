@@ -8,6 +8,7 @@
 
     #include "Prefab.h"
     #include "Quaternion.h"
+    #include "RandomSpawn.h"
     #include "VUtilsPhysics.h"
     #include "VUtilsRandom.h"
 
@@ -16,19 +17,6 @@ class Room
     friend class IDungeonManager;
 
   public:
-    enum class Theme
-    {
-        Crypt          = 1,
-        SunkenCrypt    = 2,
-        Cave           = 4,
-        ForestCrypt    = 8,
-        GoblinCamp     = 16,
-        MeadowsVillage = 32,
-        MeadowsFarm    = 64,
-        DvergerTown    = 128,
-        DvergerBoss    = 256
-    };
-
   private:
     //static std::vector<RoomConnection*> tempConnections;
 
@@ -38,7 +26,7 @@ class Room
     //Vector3Int m_size = new Vector3Int(8, 4, 8);
     Vector3f m_size = Vector3f(8, 4, 8);
 
-    Theme m_theme = Theme::Crypt;
+    avledet::util::Theme m_theme = avledet::util::Theme::Crypt;
 
     bool m_entrance;
 
@@ -64,9 +52,7 @@ class Room
     Quaternion m_rot;
 
     std::vector<Prefab::Instance> m_netViews;
-
-    // TODO later...
-    //std::vector<RandomSpawn>
+    std::vector<avledet::gen::RandomSpawn> m_random_spawns;
 
     // TODO later...
     //public MusicVolume m_musicPrefab;
