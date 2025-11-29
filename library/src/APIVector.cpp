@@ -8,11 +8,11 @@
 
 void IScriptManager::load_userdata_vector()
 {
-    LOG_DEBUG(AVL_LOGGER, "Initializing API types - CSU::VectorX");
+    LOG_DEBUG(AVL_LOGGER, "Initializing API types - CSU::Vec");
 
     // clang-format off
 
-    this->new_usertype<Vector3f>("Vector3f", 
+    this->new_usertype<Vector3f>("Vec3f", 
         sol::constructors<Vector3f(), Vector3f(float, float, float)>(), 
         "ZERO", sol::var(Vector3f::ZERO), 
         "x", &Vector3f::x, 
@@ -40,7 +40,7 @@ void IScriptManager::load_userdata_vector()
         sol::meta_function::equal_to, &Vector3f::operator==
     );
 
-    this->new_usertype<Vector2f>("Vector2f", 
+    this->new_usertype<Vector2f>("Vec2f", 
         sol::constructors<Vector2f(), Vector2f(float, float)>(), 
         "ZERO", sol::var(Vector2f::ZERO), 
         "x", &Vector2f::x, 
@@ -64,7 +64,7 @@ void IScriptManager::load_userdata_vector()
         sol::meta_function::equal_to, &Vector2f::operator==
     );
 
-    this->new_usertype<Vector2i>("Vector2i", 
+    this->new_usertype<Vector2i>("Vec2i", 
         sol::constructors<Vector2i(), Vector2i(std::int32_t, std::int32_t)>(), 
         "ZERO", sol::var(Vector2i::ZERO), 
         "x", &Vector2i::x, 
@@ -88,7 +88,7 @@ void IScriptManager::load_userdata_vector()
         sol::meta_function::equal_to, &Vector2i::operator==
     );
 
-    this->new_usertype<Vector2s>("Vector2s", 
+    this->new_usertype<Vector2s>("Vec2s", 
         sol::constructors<Vector2s(), Vector2s(std::int16_t, std::int16_t)>(), 
         "ZERO", sol::var(Vector2s::ZERO), 
         "x", &Vector2s::x, 

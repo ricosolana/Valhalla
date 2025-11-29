@@ -23,13 +23,22 @@ void IScriptManager::load_userdata_zdo()
         "SPAWNED", ZDOConnector::Type::Spawned, 
         "TARGET", ZDOConnector::Type::Target);
 
+    this->new_usertype<ZDOID>("ZDOID",
+        sol::factories([](Int64Wrapper uuid, std::uint32_t id) { return ZDOID((std::int64_t) uuid, id); }),
+        "NONE", sol::var(ZDOID::NONE),
+        "user_id", sol::property(
+            [](ZDOID &self) { return (Int64Wrapper) self.get_user_id(); },
+            [](ZDOID &self, Int64Wrapper value) { self.set_user_id((std::int64_t) value); }),
+        "id", sol::property(&ZDOID::get_id, &ZDOID::set_id)
+    );
+
     this->new_usertype<ZDO>("ZDO", 
         sol::no_constructor, 
         "id", sol::property(&ZDO::get_id), 
         "pos", sol::property(&ZDO::get_position, &ZDO::set_position), 
         "zone", sol::property(&ZDO::get_zone), 
         "rot", sol::property(&ZDO::get_rotation, &ZDO::set_rotation), 
-        "prefab", sol::property(&ZDO::get_prefab),
+        "prefab", sol::property(&ZDO::get_prefab), // TODO make return a ptr / std ref, not by &reference
         "prefab_hash", sol::property(&ZDO::get_prefab_hash), 
         "owner", sol::property( [](ZDO self) { return Int64Wrapper(self.get_owner()); },
                                 [](ZDO self, Int64Wrapper owner) { self.set_owner((std::int64_t) owner); }),
@@ -62,7 +71,7 @@ void IScriptManager::load_userdata_zdo()
             sol::resolve<Quaternion(Hash) const>(&ZDO::get_quat),
             sol::resolve<Quaternion(std::string_view, Quaternion) const>(&ZDO::get_quat),
             sol::resolve<Quaternion(std::string_view) const>(&ZDO::get_quat)),
-        "get_vec3", sol::overload(sol::resolve<Vector3f(Hash, Vector3f) const>(&ZDO::get_vec3),
+        "get_vec3f", sol::overload(sol::resolve<Vector3f(Hash, Vector3f) const>(&ZDO::get_vec3),
             sol::resolve<Vector3f(Hash) const>(&ZDO::get_vec3),
             sol::resolve<Vector3f(std::string_view, Vector3f) const>(&ZDO::get_vec3),
             sol::resolve<Vector3f(std::string_view) const>(&ZDO::get_vec3)),

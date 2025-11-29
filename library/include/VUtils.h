@@ -440,17 +440,17 @@ class Inflater
     //    return Inflater(0);
     //}
 
-    // Inflater expecting zlib header only
-    static Inflater ZLib()
-    {
-        return Inflater(15);
-    }
-
     // Inflater expecting gz header only
     static Inflater Gz()
     {
         return Inflater(16);
     };
+
+    // Inflater expecting zlib header only
+    static Inflater ZLib()
+    {
+        return Inflater(15);
+    }
 
     // Inflater with automatic zlib/gz header detection
     static Inflater Auto()

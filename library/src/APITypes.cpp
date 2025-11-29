@@ -4,6 +4,9 @@
 #include "Types.h"
 #include "Vector.h"
 #include "VUtils.h"
+#include <cstdint>
+#include <luaconf.h>
+#include <sol/overload.hpp>
 #include <sol/resolve.hpp>
 #include <string_view>
 
@@ -21,41 +24,32 @@ void IScriptManager::load_userdata_types()
 
     // clang-format off
 
-    this->new_usertype<ZDOID>("ZDOID",
-        sol::factories([](Int64Wrapper uuid, std::uint32_t id) { return ZDOID((std::int64_t) uuid, id); }),
-        "NONE", sol::var(ZDOID::NONE),
-        "user_id", sol::property(
-            [](ZDOID &self) { return (Int64Wrapper) self.get_user_id(); },
-            [](ZDOID &self, Int64Wrapper value) { self.set_user_id((std::int64_t) value); }),
-        "id", sol::property(&ZDOID::get_id, &ZDOID::set_id)
-    );
-
     m_state.new_enum("Type", 
         "BOOL", StreamType::BOOL,
 
-        "STRING", StreamType::STRING, 
-        "STRINGS", StreamType::STRINGS,
+        "STRING", StreamType::STRING, "str", StreamType::STRING,
+        "STRINGS", StreamType::STRINGS, "strs", StreamType::STRINGS,
 
         "BYTES", StreamType::BYTES,
 
-        "ZDOID", StreamType::ZDOID, 
+        "ZDOID", StreamType::ZDOID, "zid", StreamType::ZDOID,
         "VECTOR3f", StreamType::VECTOR3f, "vec3f", StreamType::VECTOR3f, 
         "VECTOR2i", StreamType::VECTOR2i, "vec2i", StreamType::VECTOR2i,
         "QUATERNION", StreamType::QUATERNION, "quat", StreamType::QUATERNION,
 
         "HASH", StreamType::INT32, 
 
-        "INT8", StreamType::INT8, "s8", StreamType::INT8, 
-        "INT16", StreamType::INT16, "SHORT", StreamType::INT16, "s16", StreamType::INT16,
-        "INT32", StreamType::INT32, "INT", StreamType::INT32, "s32", StreamType::INT32, 
-        "INT64", StreamType::INT64, "LONG", StreamType::INT64, "s64", StreamType::INT64,
+        "INT8", StreamType::INT8, "i8", StreamType::INT8, 
+        "INT16", StreamType::INT16, "SHORT", StreamType::INT16, "i16", StreamType::INT16,
+        "INT32", StreamType::INT32, "INT", StreamType::INT32, "i32", StreamType::INT32, 
+        "INT64", StreamType::INT64, "LONG", StreamType::INT64, "i64", StreamType::INT64,
         "UINT8", StreamType::UINT8, "BYTE", StreamType::UINT8, "u8", StreamType::UINT8, 
         "UINT16", StreamType::UINT16, "USHORT", StreamType::UINT16, "u16", StreamType::UINT16, 
         "UINT32", StreamType::UINT32, "UINT", StreamType::UINT32, "u32", StreamType::UINT32, 
         "UINT64", StreamType::UINT64, "ULONG", StreamType::UINT64, "u64", StreamType::UINT64,
-        "FLOAT", StreamType::FLOAT, 
-        "DOUBLE", StreamType::DOUBLE,
-        "CHAR16", StreamType::CHAR16
+        "FLOAT", StreamType::FLOAT, "f32", StreamType::FLOAT,
+        "DOUBLE", StreamType::DOUBLE, "f64", StreamType::DOUBLE,
+        "CHAR16", StreamType::CHAR16, "utf", StreamType::CHAR16
     );
 
     // TODO
@@ -90,14 +84,58 @@ void IScriptManager::load_userdata_types()
         "write_vec2i", &Writer::write<Vector2i>, 
         "write_quat", &Writer::write<Quaternion>,
         //"write_profile", &DataWriter::write<UserProfile>, //TODO
-        "write_s8", &Writer::write<std::int8_t>,
-        "write_s16", &Writer::write<std::int16_t>, 
-        "write_s32", &Writer::write<std::int32_t>,
-        "write_s64", &Writer::write<Int64Wrapper>,
-        "write_u8", &Writer::write<std::uint8_t>, 
-        "write_u16", &Writer::write<std::uint16_t>,
-        "write_u32", &Writer::write<std::uint32_t>, 
-        "write_u64", &Writer::write<UInt64Wrapper>,
+        "write_i8", sol::overload(
+            &Writer::write<std::int8_t>,
+            [](Writer& self, Int64Wrapper value) { self.write((std::int8_t)(std::int64_t(value))); },
+            [](Writer& self, UInt64Wrapper value) { self.write((std::int8_t)(std::int64_t(value))); }
+        ),
+        "write_i16", sol::overload(
+            &Writer::write<std::int16_t>,
+            [](Writer& self, Int64Wrapper value) { self.write((std::int16_t)(std::int64_t(value))); },
+            [](Writer& self, UInt64Wrapper value) { self.write((std::int16_t)(std::int64_t(value))); }
+        ), 
+        "write_i32", sol::overload(
+            &Writer::write<std::int32_t>,
+            [](Writer& self, Int64Wrapper value) { self.write((std::int32_t)(std::int64_t(value))); },
+            [](Writer& self, UInt64Wrapper value) { self.write((std::int32_t)(std::int64_t(value))); }
+        ), 
+        "write_i64", sol::overload(
+            &Writer::write<std::int64_t>,
+            &Writer::write<Int64Wrapper>,
+            [](Writer& self, UInt64Wrapper value) { self.write((std::int64_t)(std::int64_t(value))); }
+        ), 
+        //unsigned
+        "write_u8", sol::overload(
+            &Writer::write<std::uint8_t>,
+            [](Writer& self, Int64Wrapper value) { self.write((std::uint8_t)(std::uint64_t(value))); },
+            [](Writer& self, UInt64Wrapper value) { self.write((std::uint8_t)(std::uint64_t(value))); }
+        ),
+        "write_u16", sol::overload(
+            &Writer::write<std::uint16_t>,
+            [](Writer& self, Int64Wrapper value) { self.write((std::uint16_t)(std::uint64_t(value))); },
+            [](Writer& self, UInt64Wrapper value) { self.write((std::uint16_t)(std::uint64_t(value))); }
+        ), 
+        "write_u32", sol::overload(
+            &Writer::write<std::uint32_t>,
+            [](Writer& self, Int64Wrapper value) { self.write((std::uint32_t)(std::uint64_t(value))); },
+            [](Writer& self, UInt64Wrapper value) { self.write((std::uint32_t)(std::uint64_t(value))); }
+        ), 
+        "write_u64", sol::overload(
+            &Writer::write<std::uint64_t>,
+            &Writer::write<Int64Wrapper>,
+            &Writer::write<UInt64Wrapper>
+        ), 
+
+
+
+        //"write_i8", &Writer::write<std::int8_t>,
+        //"write_i16", &Writer::write<std::int16_t>, 
+        //"write_i32", &Writer::write<std::int32_t>,
+        //"write_i64", &Writer::write<Int64Wrapper>,
+        //"write_u8", &Writer::write<std::uint8_t>, 
+        //"write_u16", &Writer::write<std::uint16_t>,
+        //"write_u32", &Writer::write<std::uint32_t>, 
+        //"write_u64", &Writer::write<UInt64Wrapper>,
         "write_float", &Writer::write<std::float_t>, 
         "write_double", &Writer::write<std::double_t>, 
         "write_char16", &Writer::write<char16_t>, 
@@ -201,7 +239,7 @@ void IScriptManager::load_userdata_types()
     );
 
 
-    this->new_usertype<Deflater>("Deflater", 
+    this->new_usertype<Deflater>("Deflator", 
         sol::no_constructor,
         "gz", sol::property(sol::resolve<Deflater()>(Deflater::Gz)), 
         "zlib", sol::property(sol::resolve<Deflater()>(Deflater::ZLib)), 
@@ -209,12 +247,12 @@ void IScriptManager::load_userdata_types()
         "compress", sol::resolve<std::optional<Bytes>(ByteView const &) const>(&Deflater::Compress)
     );
 
-    this->new_usertype<Inflater>("Inflater",
+    this->new_usertype<Inflater>("Inflator",
         sol::no_constructor,
         //"any", sol::property(Inflater::Any),
-        "zlib", sol::property(Inflater::Gz), 
         "gz", sol::property(Inflater::Gz), 
-        "auto", sol::property(Inflater::Auto), 
+        "zlib", sol::property(Inflater::ZLib), 
+        "auto", sol::property(Inflater::Auto), //TODO rename to Any / Magic
         "raw", sol::property(Inflater::Raw), 
         "decompress", sol::resolve<std::optional<Bytes>(ByteView const &) const>(&Inflater::Decompress)
     );

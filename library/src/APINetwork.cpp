@@ -36,7 +36,7 @@ void IScriptManager::load_userdata_network()
         "status", sol::property(&ISocket::get_status), 
         "send", &ISocket::send, 
         "ping", sol::property(&ISocket::get_ping), 
-        "quality", sol::property(&ISocket::get_connection_quality),
+        "quality", sol::property(&ISocket::get_connection_quality), //TODO this is a func, interpreted as a prop, which returns multiples values. TEST
         "outbound", sol::property(&ISocket::is_outbound)
     );
 
