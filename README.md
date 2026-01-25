@@ -38,16 +38,16 @@ The below is my `./vcpkg list`:
 
 <sub> yes, I spent my time manually formatting this table... </sub>
 
-Using anything later, or earlier, will (99% Guaranteed, without your money back) result in compiler errors from hell.
+Using any different version dependencies from above will likely result in hellish compiler errors.
 
 ### Installation
 
 - Install your favorite **IDE** (VSC / MSVC)
-  - **VSC** (or even better VSCodium)
+  - **VSCodium**
     - Extensions
-      - `CMake Tools`
-      - `C/C++`
-      - `clangd` (optional; 'better' intellisense)
+      - `CMake Tools` - `ctrl + p` -> `ext install ms-vscode.cmake-tools`
+      - ~~`C/C++`~~ <sub> msft decides to enforce their fucky-wucky eula...</sub>
+      - `clangd` - `ctrl + p` -> `ext install llvm-vs-code-extensions.vscode-clangd`
       - `Clang-Format` (optional; automatic C++ code formatting)
       - `EmmyLua` (optional; Lua formatting + highlighting)
   - **MSVC**
