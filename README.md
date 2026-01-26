@@ -1,5 +1,7 @@
 # Avledet
 
+The latest branch is currently https://github.com/ricosolana/Valhalla/tree/0.221.6
+
 Valheim server written in modern C++. 
 
 Includes Discord integration, Lua scripting, and potential Valheim modding support between clients (WIP).
