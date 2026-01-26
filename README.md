@@ -46,7 +46,7 @@ Using any different version dependencies from above will likely result in hellis
   - **VSCodium**
     - Extensions
       - `CMake Tools` - `ctrl + p` -> `ext install ms-vscode.cmake-tools`
-      - ~~`C/C++`~~ <sub> msft decides to enforce their fucky-wucky eula...</sub>
+      - `C/C++` - unfortunately youll have to install manually
       - `clangd` - `ctrl + p` -> `ext install llvm-vs-code-extensions.vscode-clangd`
       - `Clang-Format` (optional; automatic C++ code formatting)
       - `EmmyLua` (optional; Lua formatting + highlighting)
@@ -89,7 +89,7 @@ Using any different version dependencies from above will likely result in hellis
     - Installation:
       - `Ctrl + P` , then paste `ext install llvm-vs-code-extensions.vscode-clangd`
     - Must disable C++ Intellisense for clangd to take over:
-      - `Ctrl + P`, edit settings.json (User settings), paste following:
+      - `Ctrl + Shift + P` -> `Preferences: Open User Settings (JSON)`, paste in:
         ```
         "C_Cpp.intelliSenseEngine": "disabled",
             
