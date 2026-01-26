@@ -102,6 +102,7 @@ Using any different version dependencies from above will likely result in hellis
                             ]
         ```
     - See https://stackoverflow.com/a/59820115 for more
+  - clangd language server `ctrl + p` -> `clangd language server`
   - clang-format
     - cpp file formatter
   - emmy-lua
