@@ -15,7 +15,7 @@ else()
         PRIVATE
             -Wall 
             -Wextra 
-            -Wconversion 
+            #-Wconversion # many compile errors due to migration
             -Werror 
             -Wno-unknown-pragmas 
             -Wno-unused-variable 
@@ -36,6 +36,7 @@ target_include_directories(avledet_library
         PUBLIC
             ${STEAMWORKS_SDK_SOURCE_DIR}
             ${GTL_INCLUDE_DIRS}
+            ${LUA_INCLUDE_DIR}
             ankerl::unordered_dense
         PRIVATE
             # ... ?
@@ -46,7 +47,10 @@ add_subdirectory("src")
 if (NOT DEFINED AVL_ENABLE_SCRIPTING OR AVL_ENABLE_SCRIPTING)
     target_link_libraries(avledet_library
         PUBLIC 
-            lua #sol2
+            #lua #sol2
+            #lua::lua
+            ${LUA_LIBRARIES}
+            sol2::sol2
     )
 endif()
 

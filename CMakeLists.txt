@@ -158,7 +158,8 @@ find_package(isptr CONFIG REQUIRED) #intrusive pointer
 
 if (NOT DEFINED AVL_ENABLE_SCRIPTING OR AVL_ENABLE_SCRIPTING)
     message("Lua: enabled")
-    find_package(lua CONFIG REQUIRED) # could replace with LuaJIT
+    #find_package(lua CONFIG REQUIRED) # could replace with LuaJIT
+    find_package(Lua REQUIRED)
     find_package(sol2 CONFIG REQUIRED)
 else()
     message("Lua: disabled")
