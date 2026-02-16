@@ -4,41 +4,43 @@ Valheim server written in modern C++.
 
 Includes Discord integration, Lua scripting, and potential Valheim modding support between clients (WIP).
 
+## TODO
+
+- remove discord integration
+- remove tracy profiler
+- fix worldgen
+- other stuff thats cool! like better lua...
+
 ## Building
 
 ### Dependencies
 The below is my `./vcpkg list`:
 
-|name | version | description |
-|--------------------------------|--------------|-----------------------------------------------------|
-| abseil:x64-linux               | 20250127.1#1 | Abseil is an open-source collection of C++ libra... |
-| asio:x64-linux                 | 1.32.0       | Asio is a cross-platform C++ library for network... |
-| dpp:x64-linux                  | 10.1.2       | D++ Extremely Lightweight C++ Discord Library.      |
-| gtest:x64-linux                | 1.17.0#1     | Google Testing and Mocking Framework                |
-| gtl:x64-linux                  | 1.2.0        | Greg's Template Library of useful classes.          |
-| intrusive-shared-ptr:x64-linux | 1.9          | Intrusive reference counting smart pointer, high... |
-| lua:x64-linux                  | 5.4.8        | A powerful, fast, lightweight, embeddable script... | 
-| magic-enum:x64-linux           | 0.9.7#1      | Header-only C++17 library provides static reflec... |
-| nlohmann-json:x64-linux        | 3.12.0       | JSON for Modern C++                                 |
-| openssl:x64-linux              | 3.5.0#1      | OpenSSL is an open source project that provides ... |
-| opus:x64-linux                 | 1.5.2        | Totally open, royalty-free, highly versatile aud... |
-| pthreads:x64-linux             | 3.0.0#14     | Meta-package that provides PThreads4W on Windows... |
-| quill:x64-linux                | 10.0.0       | Asynchronous Low Latency C++ Logging Library        |
-| range-v3:x64-linux             | 0.12.0#4     | Range library for C++14/17/20, basis for C++20's... |
-| sol2:x64-linux                 | 3.5.0        | Sol3 (sol2 v3.0) - a C++ <-> Lua API wrapper wit... |
-| tracy:x64-linux                | 0.11.1#2     | A real time, nanosecond resolution, remote telem... |
-| tracy[crash-handler]:x64-linux |              | Enable crash handler                                |
-| unordered-dense:x64-linux      | 4.5.0        | A fast & densely stored hashmap and hashset base... |
-| vcpkg-cmake-config:x64-linux   | 2024-05-23   |                                                     |
-| vcpkg-cmake-get-vars:x64-linux | 2025-05-29   | |
-| vcpkg-cmake:x64-linux          | 2024-04-23   | |
-| yaml-cpp:x64-linux             | 0.8.0#3      | yaml-cpp is a YAML parser and emitter in C++ mat... |
-| zlib:x64-linux                 | 1.3.1        | A compression library |
-| zstd:x64-linux                 | 1.5.7        | Zstandard - Fast real-time compression algorithm  |
-
-<sub> yes, I spent my time manually formatting this table... </sub>
-
-Using any different version dependencies from above will likely result in hellish compiler errors.
+ | name                           | version    | description                                         |
+ |--------------------------------|------------|-----------------------------------------------------|
+ | abseil:x64-linux               | 20250814.1 | Abseil is an open-source collection of C++ libra... |
+ | asio:x64-linux                 | 1.32.0     | Asio is a cross-platform C++ library for network... |
+ | gtest:x64-linux                | 1.17.0#2   | Google Testing and Mocking Framework                |
+ | gtl:x64-linux                  | 1.2.0      | Greg's Template Library of useful classes.          |
+ | intrusive-shared-ptr:x64-linux | 1.9        | Intrusive reference counting smart pointer, high... |
+ | lua:x64-linux                  | 5.5.0#1    | A powerful, fast, lightweight, embeddable script... |
+ | magic-enum:x64-linux           | 0.9.7#1    | Header-only C++17 library provides static reflec... |
+ | nlohmann-json:x64-linux        | 3.12.0#2   | JSON for Modern C++                                 |
+ | openssl:x64-linux              | 3.6.1#2    | OpenSSL is an open source project that provides ... |
+ | opus:x64-linux                 | 1.5.2#1    | Totally open, royalty-free, highly versatile aud... |
+ | pthreads:x64-linux             | 3.0.0#14   | Meta-package that provides PThreads4W on Windows... |
+ | quill:x64-linux                | 11.0.2     | Asynchronous Low Latency C++ Logging Library        |
+ | range-v3:x64-linux             | 0.12.0#4   | Range library for C++14/17/20, basis for C++20's... |
+ | sol2:x64-linux                 | 3.5.0#1    | Sol3 (sol2 v3.0) - a C++ <-> Lua API wrapper wit... |
+ | tracy:x64-linux                | 0.13.1     | A real time, nanosecond resolution, remote telem... |
+ | tracy[crash-handler]:x64-linux |            | Enable crash handler                                |
+ | unordered-dense:x64-linux      | 4.8.1      | A fast & densely stored hashmap and hashset base... |
+ | vcpkg-cmake-config:x64-linux   | 2024-05-23 |                                                     |
+ | vcpkg-cmake-get-vars:x64-linux | 2025-05-29 |                                                     |
+ | vcpkg-cmake:x64-linux          | 2024-04-23 |                                                     |
+ | yaml-cpp:x64-linux             | 0.9.0      | yaml-cpp is a YAML parser and emitter in C++ mat... |
+ | zlib:x64-linux                 | 1.3.1      | A compression library                               |
+ | zstd:x64-linux                 | 1.5.7      | Zstandard - Fast real-time compression algorithm    |
 
 ### Installation
 
@@ -52,8 +54,7 @@ Using any different version dependencies from above will likely result in hellis
       - `EmmyLua` (optional; Lua formatting + highlighting)
   - **MSVC**
     - Visual Studio Installer
-      - Install C++ Desktop Environment (or similar)
-        - Uncheck some things <sub>(like *copilot* and some of the other default checked things that take up an extra 5GB when my computer is on the other side of the house on 4MB/s download speed)</sub>
+      - Install C++ Desktop Environment
       - Install CMake Tools
 - Install **Steamworks SDK**
   - Download from https://partner.steamgames.com/downloads/list (sign in)
