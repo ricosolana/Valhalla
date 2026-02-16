@@ -270,7 +270,7 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(std::string_view name,
 {
     // load world from file
 
-    LOG_NOTICE(AVL_LOGGER, "Locating world meta \'{}\'", name);
+    LOG_NOTICE(AVL_LOGGER, "Locating world meta [{}]", name);
 
     std::unique_ptr<World> world;
 

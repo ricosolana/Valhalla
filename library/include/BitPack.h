@@ -43,7 +43,7 @@ class BitPack
 
 
     template<std::size_t index>
-    using capacity = std::integral_constant<std::size_t, (1ULL << count<index>::value) - 1ULL>;
+    using capacity = std::integral_constant<type, (1ULL << count<index>::value) - 1ULL>;
 
     template<std::size_t index>
     static constexpr auto capacity_v = capacity<index>::value;

@@ -55,7 +55,7 @@ namespace avledet::util {
         // Get the index of a UserID
         //  The UserID is inserted if it does not exist
         //  Returns the insertion index or the existing index of the UserID
-        static std::size_t _get_user_id_index(std::int64_t user_id)
+        static decltype(m_pack)::type _get_user_id_index(std::int64_t user_id)
         {
             if (user_id == 0)
                 return 0;
@@ -65,9 +65,9 @@ namespace avledet::util {
                 // after first index, values of 0 mean free
                 if (INDEXED_USERID[i] == 0) {
                     INDEXED_USERID[i] = user_id;
-                    return i;
+                    return static_cast<decltype(m_pack)::type>(i);
                 } else if (INDEXED_USERID[i] == user_id) {
-                    return i;
+                    return static_cast<decltype(m_pack)::type>(i);
                 }
             }
 
@@ -192,8 +192,8 @@ namespace avledet::util {
                 if (sharing
                     < BIT_SHARING) {// if there are upper bits set, which we can handle (without overflow)
                     _set_user_id_index(sharing);
-                    id &= decltype(m_pack)::capacity<
-                            ID_PACK_INDEX>();// the & trims off the significant bits, which we just denoted within user id index
+                    id &= static_cast<decltype(id)>(decltype(m_pack)::capacity<
+                            ID_PACK_INDEX>());// the & trims off the significant bits, which we just denoted within user id index
                 }
             }
 

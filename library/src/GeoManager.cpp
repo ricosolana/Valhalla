@@ -4,6 +4,16 @@
 #include "GeoManager.h"
 #include "Types.h"
 
+/*
+    TODO
+
+    this class is deep outdated since ashlands
+
+    many changes have been made since which havnt been migrated into here
+
+    
+*/
+
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
     #include "VUtilsMath.h"
     #include "VUtilsMath2.h"
@@ -34,15 +44,15 @@ void IGeoManager::PostWorldInit()
     }
 
     VUtils::Random::State state(m_world->m_seed);
-    m_offset0 = state.range(-worldSize, worldSize);
-    m_offset1 = state.range(-worldSize, worldSize);
-    m_offset2 = state.range(-worldSize, worldSize);
-    m_offset3 = state.range(-worldSize, worldSize);
+    m_offset0 = (float)state.range(-worldSize, worldSize);
+    m_offset1 = (float)state.range(-worldSize, worldSize);
+    m_offset2 = (float)state.range(-worldSize, worldSize);
+    m_offset3 = (float)state.range(-worldSize, worldSize);
     m_riverSeed
             = state.range(std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max());
     m_streamSeed
             = state.range(std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max());
-    m_offset4 = state.range(-worldSize, worldSize);
+    m_offset4 = (float)state.range(-worldSize, worldSize);
 
     // TODO rename run-once generator functions from 'Find...' to 'Generate...' for clarity
 
@@ -193,7 +203,7 @@ void IGeoManager::GenerateRivers()
         if (num != -1) {
             River river;
             river.p0              = vector;
-            river.p1              = m_lakes[num];
+            river.p1              = m_lakes[(std::size_t)num];
             river.center          = (river.p0 + river.p1) * 0.5f;
             river.widthMax        = state.range(minRiverWidth, maxRiverWidth);
             river.widthMin        = state.range(minRiverWidth, river.widthMax);
@@ -224,7 +234,7 @@ int IGeoManager::FindRandomRiverEnd(VUtils::Random::State &state, std::vector<Ri
     if (list.empty())
         return -1;
 
-    return list[state.range(0, (int) list.size())];
+    return list[(std::size_t)state.range(0, (int) list.size())];
 }
 
 bool IGeoManager::HaveRiver(std::vector<River> const &rivers, Vector2f p0) const
@@ -644,8 +654,8 @@ bool IGeoManager::InsideRiverGrid(Vector2i grid, Vector2f p, float r)
 
 Vector2i IGeoManager::GetRiverGrid(float wx, float wy)
 {
-    auto x = (std::int32_t) std::floorf((wx + riverGridSize * .5f) / riverGridSize);
-    auto y = (std::int32_t) std::floorf((wy + riverGridSize * .5f) / riverGridSize);
+    auto x = (std::int32_t) std::floor((wx + riverGridSize * .5f) / riverGridSize);
+    auto y = (std::int32_t) std::floor((wy + riverGridSize * .5f) / riverGridSize);
     return Vector2i(x, y);
 }
 

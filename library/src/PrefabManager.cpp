@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstddef>
 #include <iterator>
 #include <limits>
@@ -7,6 +8,7 @@
 #include "Avledet.h"
 #include "Hashes.h"
 #include "PrefabManager.h"
+#include "Prefab.h"
 #include "Types.h"
 #include "VUtilsResource.h"
 #include "ZDO.h"
@@ -96,6 +98,7 @@ Prefab::IndexType IPrefabManager::get_prefab_index(avledet::util::Hash hash) con
 {
     auto &&itr = m_prefabs.find(hash);
     if (itr != m_prefabs.end()) {
+        // TODO must check-cast std::distance to uint16
         return std::distance(m_prefabs.begin(), itr);
     }
     throw std::runtime_error("prefab not found");
@@ -118,9 +121,9 @@ void IPrefabManager::Register(std::string name, Vector3f scale, Prefab::Flag fla
 
     if (!emp.second) {
         if (emp.first->m_name != name) {
-            LOG_WARNING(AVL_LOGGER, "Possible hash collision between prefabs {}, {}", name, prefab.m_name);
+            LOG_WARNING(AVL_LOGGER, "Possible hash collision between prefabs [{}], [{}]", name, prefab.m_name);
         } else {
-            LOG_WARNING(AVL_LOGGER, "Duplicate prefab tried to register: {}", prefab.m_name);
+            LOG_WARNING(AVL_LOGGER, "Duplicate prefab tried to register: [{}]", prefab.m_name);
         }
     }
 

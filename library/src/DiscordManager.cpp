@@ -1,8 +1,6 @@
 #include "DiscordManager.h"
 #include "ModManager.h"
 #include "WorldManager.h"
-#include <dpp/intents.h>
-#include <dpp/queues.h>
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
 
@@ -10,6 +8,8 @@
     #include <dpp/dispatcher.h>
     #include <dpp/dpp.h>
     #include <dpp/restresults.h>
+    #include <dpp/intents.h>
+    #include <dpp/queues.h>
     #include <isteamgameserver.h>
     #include <range/v3/all.hpp>
 

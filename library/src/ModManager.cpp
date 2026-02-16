@@ -9,11 +9,12 @@
     #include <filesystem>
     #include <functional>
     #include <memory>
-    #include <ranges>
+    
     #include <stdexcept>
     #include <string_view>
     #include <vector>
 
+    #include <range/v3/all.hpp>
     #include <lua.h>
     #include <quill/Backend.h>
     #include <quill/Frontend.h>
@@ -222,15 +223,26 @@ void IScriptManager::Init()
     std::error_code ec;
     std::filesystem::create_directories(AVLEDET_SCRIPTS_PATH, ec);
 
-    if (ec)
+    if (ec) {
         return;
+    }
 
-    auto sorted = std::filesystem::directory_iterator(AVLEDET_SCRIPTS_PATH, ec)
-                  | std::views::filter([](std::filesystem::directory_entry e) -> bool {
+    auto dir_range = ranges::subrange(
+        std::filesystem::directory_iterator(AVLEDET_SCRIPTS_PATH, ec),
+        std::filesystem::directory_iterator{}
+    );
+
+    //auto dir = std::filesystem::directory_iterator(AVLEDET_SCRIPTS_PATH, ec);
+
+    //auto dir_range = ranges::views::all(dir);
+
+    auto sorted = dir_range
+                  | ranges::views::filter([](std::filesystem::directory_entry e) -> bool {
                         return e.is_directory() && !e.path().filename().string().starts_with("--");
                     })
-                  | std::ranges::to<std::vector>();
-    std::ranges::sort(sorted);
+                  | ranges::to<std::vector>();
+                  
+    ranges::sort(sorted);
 
     for (auto const &dir : sorted) {
         try {
@@ -243,9 +255,9 @@ void IScriptManager::Init()
             auto [info, code] = load_file_script(dir.path());
             execute(info, code, false);
 
-            LOG_NOTICE(AVL_LOGGER, "Loaded script '{}'", info.m_name);
+            LOG_NOTICE(AVL_LOGGER, "Loaded script [{}]", info.m_name);
         } catch (std::exception const &e) {
-            LOG_ERROR(AVL_LOGGER, "Failed to load script: {}, {}", dir.path().string(), e.what());
+            LOG_ERROR(AVL_LOGGER, "Failed to load script: [{}], {}", dir.path().string(), e.what());
         }
     }
 

@@ -144,12 +144,12 @@ namespace avledet::util::CSU {
 
         constexpr float dot(Vector2<T> const &rhs) const
         {
-            return x * rhs.x + y * rhs.y;
+            return (float)(x * rhs.x + y * rhs.y);
         }
 
         constexpr float sq_magnitude() const
         {
-            return x * x + y * y;
+            return (float)(x * x + y * y);
         }
 
         constexpr float magnitude() const
@@ -159,7 +159,7 @@ namespace avledet::util::CSU {
 
         constexpr float sq_distance_to(Vector2<T> const &rhs) const
         {
-            return (x - rhs.x) * (x - rhs.x) + (y - rhs.y) * (y - rhs.y);
+            return (float)((x - rhs.x) * (x - rhs.x) + (y - rhs.y) * (y - rhs.y));
         }
 
         constexpr float distance_to(Vector2<T> const &rhs) const

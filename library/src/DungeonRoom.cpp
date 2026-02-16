@@ -21,7 +21,7 @@ RoomConnection const &Room::GetConnection(VUtils::Random::State &state, RoomConn
     if (tempConnections.empty())
         throw std::runtime_error("missing guaranteed room");
 
-    return tempConnections[state.range(0, tempConnections.size())];
+    return tempConnections[state.range(0, (std::int32_t)tempConnections.size())];
 }
 
 RoomConnection const &Room::GetEntrance() const

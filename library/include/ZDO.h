@@ -597,8 +597,10 @@ class ZDO
         std::int64_t userID {};
         if (this->extract(key.first, userID)) {
             std::int64_t id {};
-            if (extract(key.second, id)) {
-                out = ZDOID(userID, id);
+            if (this->extract(key.second, id)) {
+                // TODO ensure that id fits within a uint
+                assert(false);
+                out = ZDOID(userID, (std::uint32_t)id);
                 return true;
             }
         }
@@ -715,7 +717,9 @@ class ZDO
 
     [[nodiscard]] ZDOID get_zdoid(std::pair<avledet::util::Hash, avledet::util::Hash> key, ZDOID value) const
     {
-        return ZDOID(get_long(key.first, value.get_user_id()), get_long(key.second, value.get_id()));
+        assert(false);
+        // TODO check size of 'id' fits within int32
+        return ZDOID(get_long(key.first, value.get_user_id()), (std::int32_t)get_long(key.second, value.get_id()));
     }
 
     /*******************

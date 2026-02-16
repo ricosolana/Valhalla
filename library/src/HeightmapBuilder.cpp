@@ -1,3 +1,5 @@
+#include <cstddef>
+#include <iterator>
 #include <quill/LogMacros.h>
 #include <quill/sinks/ConsoleSink.h>
 
@@ -56,8 +58,9 @@ void IHeightmapBuilder::PostGeoInit()
                 baked.clear();
 
                 // Bake any pending heightmaps
-                for (int i = next.size() - 1; i >= 0; --i) {
-                    auto &&zone = next[i];
+                for (decltype(next)::reverse_iterator it = next.rbegin(); it != next.rend(); ++it) {
+                    const auto& zone = *it;
+
                     auto base(std::make_unique<BaseHeightmap>());
                     Build(base.get(), zone);
                     baked.push_back(std::make_unique<Heightmap>(zone, std::move(base)));
@@ -71,6 +74,23 @@ void IHeightmapBuilder::PostGeoInit()
                         return;
                     }
                 }
+
+                /*
+                for (std::size_t i = next.size() - 1; i >= 0; --i) {
+                    auto &&zone = next[i];
+                    auto base(std::make_unique<BaseHeightmap>());
+                    Build(base.get(), zone);
+                    baked.push_back(std::make_unique<Heightmap>(zone, std::move(base)));
+                    //if (baked.size() > next.size() / 10)
+                    if (baked.size() > 10)
+                        break;
+
+                    // early stop
+                    if (token.stop_requested()) {
+                        FrameMarkEnd(name.c_str());
+                        return;
+                    }
+                }*/
 
                 next.resize(next.size() - baked.size());
 
@@ -157,11 +177,11 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone)
     base->m_vegMask.resize(IZoneManager::UNITS_PER_ZONE * IZoneManager::UNITS_PER_ZONE);
 
     for (int ry = 0; ry < Heightmap::E_WIDTH; ry++) {
-        float const world_y = baseWorldPos.z + ry;
+        float const world_y = baseWorldPos.z + (float)ry;
         float const ty      = VUtils::Mathf::SmoothStep(0, 1, (float) ry / IZoneManager::UNITS_PER_ZONE);
 
         for (int rx = 0; rx < Heightmap::E_WIDTH; rx++) {
-            float const world_x = baseWorldPos.x + rx;
+            float const world_x = baseWorldPos.x + (float)rx;
             float const tx      = VUtils::Mathf::SmoothStep(0, 1, (float) rx / IZoneManager::UNITS_PER_ZONE);
 
             //avledet::util::Color color = avledet::util::Colors::BLACK;
@@ -191,11 +211,11 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone)
                 height   = std::lerp(h1, h2, ty);
             }
 
-            base->m_baseHeights[ry * Heightmap::E_WIDTH + rx] = height;
+            base->m_baseHeights[(std::size_t)(ry * Heightmap::E_WIDTH + rx)] = height;
 
             // color mask is a bit smaller, so check bounds
             if (rx < IZoneManager::UNITS_PER_ZONE && ry < IZoneManager::UNITS_PER_ZONE) {
-                base->m_vegMask[ry * IZoneManager::UNITS_PER_ZONE + rx] = mistlandsMask;
+                base->m_vegMask[(std::size_t)(ry * IZoneManager::UNITS_PER_ZONE + rx)] = mistlandsMask;
             }
         }
     }

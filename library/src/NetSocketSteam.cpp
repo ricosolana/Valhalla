@@ -96,10 +96,10 @@ namespace avledet::network {
 
         EBeginAuthSessionResult result {};
         if (AVL_SETTINGS.serverDedicated) {
-            result = SteamGameServer()->BeginAuthSession(ticket.data(), ticket.size(),
+            result = SteamGameServer()->BeginAuthSession(ticket.data(), (int)ticket.size(),
                                                          m_steam_id.GetSteamID());
         } else {
-            result = SteamUser()->BeginAuthSession(ticket.data(), ticket.size(), m_steam_id.GetSteamID());
+            result = SteamUser()->BeginAuthSession(ticket.data(), (int)ticket.size(), m_steam_id.GetSteamID());
         }
 
         return result == k_EBeginAuthSessionResultOK;

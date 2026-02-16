@@ -174,7 +174,7 @@ float Heightmap::Distance(float x, float y, float rx, float ry)
     // (sqrt(2) - sqrt(x ^ 2 + y ^ 2)) ^ 3
     // https://www.math3d.org/sL5gEdMjk
 
-    float num4 = std::sqrtf(2) - VUtils::Math::magnitude(num, num2);
+    float num4 = std::sqrt(2) - VUtils::Math::magnitude(num, num2);
     return num4 * num4 * num4;
 }
 
