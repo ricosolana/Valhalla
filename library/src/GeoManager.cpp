@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <cstdlib>
 #include <quill/sinks/ConsoleSink.h>
 
 #include "GeoManager.h"
@@ -35,13 +36,17 @@ void IGeoManager::PostWorldInit()
     m_world = WorldManager()->GetWorld();
     assert(m_world);
 
-    if (m_world->m_worldGenVersion <= 0)
+    /* "VersionSetup"
+    */
+    if (m_world->m_worldGenVersion <= 0) {
         m_minMountainDistance = 1500;
+    }
 
     if (m_world->m_worldGenVersion <= 1) {
         minDarklandNoise = 0.5f;
         maxMarshDistance = 8000;
     }
+    // end
 
     VUtils::Random::State state(m_world->m_seed);
     m_offset0 = (float)state.range(-worldSize, worldSize);
@@ -56,6 +61,10 @@ void IGeoManager::PostWorldInit()
 
     // TODO rename run-once generator functions from 'Find...' to 'Generate...' for clarity
 
+    // TODO devs added a FastNoise class, which is much more
+    //  complicated than Unity Perlin Noise...
+    //  in no time, we're going to match minecraft levels of complexity...
+
     Generate();
 }
 
@@ -69,8 +78,9 @@ void IGeoManager::Generate()
 void IGeoManager::GenerateLakes()
 {
     std::vector<Vector2f> list;
-    for (float num = -worldSize; num <= worldSize; num += 128) {
-        for (float num2 = -worldSize; num2 <= worldSize; num2 += 128) {
+    // good on the devs for finally realizing the precision issues when perlin float values become large
+    for (float num = -worldSize; num <= worldSize; num = (float)((double)num + 128.0)) {
+        for (float num2 = -worldSize; num2 <= worldSize; num2 = (float)((double)num2 + 128.0)) {
             if (VUtils::Math::magnitude(num2, num) <= worldSize && GetBaseHeight(num2, num) < 0.05f) {
                 list.push_back(Vector2f(num2, num));
             }
@@ -379,42 +389,59 @@ float IGeoManager::WorldAngle(float wx, float wy)
     return std::sin(std::atan2(wx, wy) * 20.f);
 }
 
-float IGeoManager::GetBaseHeight(float wx, float wy) const
+float IGeoManager::GetBaseHeight(float wx1, float wy1) const
 {
     //float num2 = VUtils.Length(wx, wy);
-    float num2 = VUtils::Math::magnitude(wx, wy);
-    wx += 100000 + m_offset0;
-    wy += 100000 + m_offset1;
-    float num3 = 0;
-    num3 += VUtils::Math::PerlinNoise(wx * 0.002f * 0.5f, wy * 0.002f * 0.5f)
-            * VUtils::Math::PerlinNoise(wx * 0.003f * 0.5f, wy * 0.003f * 0.5f) * 1.0f;
-    num3 += VUtils::Math::PerlinNoise(wx * 0.002f * 1.0f, wy * 0.002f * 1.0f)
-            * VUtils::Math::PerlinNoise(wx * 0.003f * 1.0f, wy * 0.003f * 1.0f) * num3 * 0.9f;
-    num3 += VUtils::Math::PerlinNoise(wx * 0.005f * 1.0f, wy * 0.005f * 1.0f)
-            * VUtils::Math::PerlinNoise(wx * 0.010f * 1.0f, wy * 0.010f * 1.0f) * 0.5f * num3;
-    num3 -= 0.07f;
-    float num4 = VUtils::Math::PerlinNoise(wx * 0.002f * 0.25f + 0.123f, wy * 0.002f * 0.25f + 0.15123f);
-    float num5 = VUtils::Math::PerlinNoise(wx * 0.002f * 0.25f + 0.321f, wy * 0.002f * 0.25f + 0.231f);
-    float v    = std::abs(num4 - num5);
-    float num6 = 1.f - VUtils::Math::LerpStep(0.02f, 0.12f, v);
-    num6 *= VUtils::Math::SmoothStep(744, 1000, num2);
-    num3 *= 1.f - num6;
-    if (num2 > 10000) {
-        float t    = VUtils::Math::LerpStep(10000, waterEdge, num2);
-        num3       = VUtils::Mathf::Lerp(num3, -0.2f, t);
-        float num7 = 10490;
+    float num2 = VUtils::Math::magnitude(wx1, wy1);
+    double wx = (double)wx + 100000.0 + (double)m_offset0;
+    double wy = (double)wy + 100000.0 + (double)m_offset1;
+    float num3 = 0.0f;
+    // trying to convert 0.002 to double bytes is apparently imperfect. wtf
+    //  double can handle QUITE a number of right hand decimals, ESPECIALLY when a number is lt 0.
+
+    //                                                                     0.0019999999
+    //                                                                     0.0020000000000000005
+    num3 = (float)((double)num3 + (double)VUtils::Math::PerlinNoise((float)(wx * 0.0020000000949949026 * 0.5), (float)(wy * 0.0020000000949949026 * 0.5))
+            * (double)VUtils::Math::PerlinNoise((float)(wx * 0.003000000026077032 * 0.5), (float)(wy * 0.003000000026077032 * 0.5) * 1.0));
+    
+
+
+
+
+    num3 = (float)((double)num3 + (double)VUtils::Math::PerlinNoise((float)(wx * 0.0020000000949949026 * 1.0), (float)(wy * 0.0020000000949949026 * 1.0))
+            * (double)VUtils::Math::PerlinNoise((float)(wx * 0.003000000026077032 * 1.0), (float)(wy * 0.003000000026077032 * 1.0)) * (double)num3 * 0.8999999761581421);
+
+
+
+
+
+    num3 = (float)((double)num3 + (double)VUtils::Math::PerlinNoise((float)(wx * 0.004999999888241291 * 1.0), (float)(wy * 0.004999999888241291 * 1.0))
+            * (double)VUtils::Math::PerlinNoise((float)(wx * 0.009999999776482582 * 1.0), (float)(wy * 0.009999999776482582 * 1.0)) * 0.5 * (double)num3);
+
+
+
+    num3 = (float)((double)num3 - 0.07000000029802322);
+    double num4 = (double)VUtils::Math::PerlinNoise((float)(wx * 0.0020000000949949026 * 0.25 + 0.12300000339746475), (float)(wy * 0.0020000000949949026 * 0.25 + 0.15123000741004944));
+    float num5 = VUtils::Math::PerlinNoise((float)(wx * 0.0020000000949949026 * 0.25 + 0.32100000977516174), (float)(wy * 0.0020000000949949026 * 0.25 + 0.23100000619888306));
+    float v    = std::abs((float)(num4 - (double)num5));
+    float num6 = (float)(1.0 - (double)VUtils::Math::LerpStep(0.02f, 0.12f, v));
+    num6 = (float)((double)num6 * (double)VUtils::Math::SmoothStep(744.0f, 1000.0f, num2));
+    num3 = (float)((double)num3 * (1.0 - (double)num6));
+    if (num2 > 10000.0f) {
+        float t    = VUtils::Math::LerpStep(10000.0f, waterEdge, num2);
+        num3       = VUtils::Math::Lerp(num3, -0.2f, t);
+        float num7 = 10490.0f;
         if (num2 > num7) {
             float t2 = VUtils::Math::LerpStep(num7, waterEdge, num2);
-            num3     = VUtils::Mathf::Lerp(num3, -2, t2);
+            num3     = VUtils::Math::Lerp(num3, -2.0f, t2);
         }
     }
+    else if (num2 < m_minMountainDistance && num3 > 0.28f) {
+        float t3 = (float)VUtils::Math::Clamp01(((double)num3 - 0.2800000011920929) / 0.09999999403953552);
 
-    if (num2 < m_minMountainDistance && num3 > 0.28f) {
-        float t3 = VUtils::Mathf::Clamp01((num3 - 0.28f) / 0.099999994f);
-
-        num3 = VUtils::Mathf::Lerp(
-                VUtils::Mathf::Lerp(0.28f, 0.38f, t3), num3,
-                VUtils::Math::LerpStep(m_minMountainDistance - 400.f, m_minMountainDistance, num2));
+        num3 = VUtils::Math::Lerp(
+                VUtils::Math::Lerp(0.28f, 0.38f, t3), num3,
+                VUtils::Math::LerpStep((float)((double)m_minMountainDistance - 400.0), m_minMountainDistance, num2));
     }
     return num3;
 }
@@ -426,18 +453,19 @@ float IGeoManager::AddRivers(float wx, float wy, float h)
     float num;
     float v;
     GetRiverWeight(wx, wy, num, v);
-    if (num <= 0)
+    if (num <= 0) {
         return h;
+    }
 
-    float t    = VUtils::Math::LerpStep(20, 60, v);
-    float num2 = VUtils::Mathf::Lerp(0.14f, 0.12f, t);
-    float num3 = VUtils::Mathf::Lerp(0.139f, 0.128f, t);
+    float t    = VUtils::Math::LerpStep(20.0f, 60.0f, v);
+    float num2 = VUtils::Math::Lerp(0.14f, 0.12f, t);
+    float num3 = VUtils::Math::Lerp(0.139f, 0.128f, t);
     if (h > num2) {
-        h = VUtils::Mathf::Lerp(h, num2, num);
+        h = VUtils::Math::Lerp(h, num2, num);
     }
     if (h > num3) {
-        float t2 = VUtils::Math::LerpStep(0.85f, 1, num);
-        h        = VUtils::Mathf::Lerp(h, num3, t2);
+        float t2 = VUtils::Math::LerpStep(0.85f, 1.0f, num);
+        h        = VUtils::Math::Lerp(h, num3, t2);
     }
     return h;
 }
@@ -640,6 +668,22 @@ float IGeoManager::GetDeepNorthHeight(float wx, float wy)
     return num + VUtils::Math::PerlinNoise(wx * 0.4f, wy * 0.4f) * 0.003f;
 }
 
+double IGeoManager::CreateAshlandsGap(float wx, float wy)
+{
+    double num = (double)WorldAngle(wx, wy) * 100.0;
+    double num2 = (double)VUtils::Math::magnitude(wx, wy + ashlandsYOffset) - ((double)ashlandsMinDistance + num);
+    num2 = VUtils::Math::Clamp01(std::abs(num2) / 400.0);
+    return VUtils::Math::MathfLikeSmoothStep(0.0, 1.0, (double)((float)num2));
+}
+
+double IGeoManager::CreateDeepNorthGap(float wx, float wy)
+{
+    double num = (double)WorldAngle(wx, wy) * 100.0;
+    double num2 = (double)VUtils::Math::magnitude(wx, wy + 4000.0f) - (12000.0 + num);
+    num2 = VUtils::Math::Clamp01(std::abs(num2) / 400.0);
+    return VUtils::Math::MathfLikeSmoothStep(0.0, 1.0, (double)((float)num2));
+}
+
 //
 // public accessed methods:
 //
@@ -755,29 +799,116 @@ avledet::util::Biome IGeoManager::GetBiomes(float x, float z)
 
 float IGeoManager::GetHeight(float wx, float wy)
 {
-    float dummy;
+    // wtf was i thinking
+    //float dummy;
+    avledet::util::Color dummy;
     return GetHeight(wx, wy, dummy);
 }
 
-float IGeoManager::GetHeight(float wx, float wy, float &mask)
+float IGeoManager::GetHeight(float wx, float wy, avledet::util::Color &mask)
 {
     auto biome = GetBiome(wx, wy);
-    return GetBiomeHeight(biome, wx, wy, mask);
+    return GetBiomeHeight(biome, wx, wy, mask, false);
 }
 
 // Used only early during generation
 float IGeoManager::GetGenerationHeight(float wx, float wy)
 {
     auto biome = GetBiome(wx, wy);
-    if (biome == avledet::util::Biome::Mistlands)
-        return GetForestHeight(wx, wy) * 200.f;
-    float dummy;
-    return GetBiomeHeight(biome, wx, wy, dummy);
+    //if (biome == avledet::util::Biome::Mistlands)
+        //return GetForestHeight(wx, wy) * 200.f;
+    avledet::util::Color dummy;
+    return GetBiomeHeight(biome, wx, wy, dummy, false);
 }
 
 // public
-float IGeoManager::GetBiomeHeight(avledet::util::Biome biome, float wx, float wy, float &mask)
+float IGeoManager::GetBiomeHeight(avledet::util::Biome biome, float wx, float wy, avledet::util::Color &mask, bool preGeneration)
 {
+		float num;
+		if (preGeneration)
+		{
+			//num = WorldGenerator.GetHeightMultiplier();
+            num = 200.0f;
+		}
+		else
+		{
+			num = (float)(200.0 * this.CreateAshlandsGap(wx, wy) * this.CreateDeepNorthGap(wx, wy));
+		}
+		mask = Color.black;
+		if (this.m_world.m_menu)
+		{
+			if (biome == Heightmap.Biome.Mountain)
+			{
+				return (float)((double)this.GetSnowMountainHeight(wx, wy, true) * (double)num);
+			}
+			return (float)((double)this.GetMenuHeight(wx, wy) * (double)num);
+		}
+		else
+		{
+			if (DUtils.Length(wx, wy) > 10500f)
+			{
+				return -2f * WorldGenerator.GetHeightMultiplier();
+			}
+			if (biome <= Heightmap.Biome.Plains)
+			{
+				switch (biome)
+				{
+				case Heightmap.Biome.Meadows:
+					return (float)((double)this.GetMeadowsHeight(wx, wy) * (double)num);
+				case Heightmap.Biome.Swamp:
+					return (float)((double)this.GetMarshHeight(wx, wy) * (double)num);
+				case Heightmap.Biome.Meadows | Heightmap.Biome.Swamp:
+					break;
+				case Heightmap.Biome.Mountain:
+					return (float)((double)this.GetSnowMountainHeight(wx, wy, false) * (double)num);
+				default:
+					if (biome == Heightmap.Biome.BlackForest)
+					{
+						return (float)((double)this.GetForestHeight(wx, wy) * (double)num);
+					}
+					if (biome == Heightmap.Biome.Plains)
+					{
+						return (float)((double)this.GetPlainsHeight(wx, wy) * (double)num);
+					}
+					break;
+				}
+			}
+			else if (biome <= Heightmap.Biome.DeepNorth)
+			{
+				if (biome != Heightmap.Biome.AshLands)
+				{
+					if (biome == Heightmap.Biome.DeepNorth)
+					{
+						return (float)((double)this.GetDeepNorthHeight(wx, wy) * (double)num);
+					}
+				}
+				else
+				{
+					if (preGeneration)
+					{
+						return (float)((double)this.GetAshlandsHeightPregenerate(wx, wy) * (double)num);
+					}
+					return (float)((double)this.GetAshlandsHeight(wx, wy, out mask, false) * (double)num);
+				}
+			}
+			else
+			{
+				if (biome == Heightmap.Biome.Ocean)
+				{
+					return (float)((double)this.GetOceanHeight(wx, wy) * (double)num);
+				}
+				if (biome == Heightmap.Biome.Mistlands)
+				{
+					if (preGeneration)
+					{
+						return (float)((double)this.GetForestHeight(wx, wy) * (double)num);
+					}
+					return (float)((double)this.GetMistlandsHeight(wx, wy, out mask) * (double)num);
+				}
+			}
+			return 0f;
+		}
+
     switch (biome) {
     case avledet::util::Biome::Meadows: return GetMeadowsHeight(wx, wy) * 200.f;
     case avledet::util::Biome::Swamp: return GetMarshHeight(wx, wy) * 200.f;
@@ -835,10 +966,6 @@ void IGeoManager::GetTerrainDelta(VUtils::Random::State &state, Vector3f center,
 // public
 int IGeoManager::GetSeed()
 {
-    #ifdef RUN_TESTS
-    return 0;
-    #else
     return m_world->m_seed;
-    #endif
 }
 #endif// AVL_GENERATE_ZONES

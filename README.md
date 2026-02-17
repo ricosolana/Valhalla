@@ -6,10 +6,17 @@ Includes Discord integration, Lua scripting, and potential Valheim modding suppo
 
 ## TODO
 
+- fully rename project to avledet
 - remove discord integration
 - remove tracy profiler
 - fix worldgen
 - other stuff thats cool! like better lua...
+- prune tmp lua test case scripts
+
+## Documentation
+
+- I realize the documentation is very lacking and outdated
+- I started revising it but will need more time
 
 ## Building
 

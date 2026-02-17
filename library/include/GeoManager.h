@@ -61,8 +61,9 @@ class IGeoManager
     //ReaderWriterLockSlim m_riverCacheLock; // for terrian builder?
     //std::vector<Heightmap::Biome> m_biomes; // seems unused
 
-    static constexpr float riverGridSize             = 64;
-    static constexpr float minRiverWidth             = 60;
+    static constexpr float heightMultiplier         = 200.0f;
+    static constexpr float riverGridSize             = 64.0f;
+    static constexpr float minRiverWidth             = 60.0f;
     static constexpr float maxRiverWidth             = 100;
     static constexpr float minRiverCurveWidth        = 50;
     static constexpr float maxRiverCurveWidth        = 80;
@@ -156,7 +157,7 @@ class IGeoManager
     float GetMarshHeight(float wx, float wy);
     float GetMeadowsHeight(float wx, float wy);
     float GetForestHeight(float wx, float wy);
-    float GetMistlandsHeight(float wx, float wy, float &mask);
+    float GetMistlandsHeight(float wx, float wy, avledet::util::Color &mask);
     float GetPlainsHeight(float wx, float wy);
     float GetAshlandsHeight(float wx, float wy);
     float GetEdgeHeight(float wx, float wy);
@@ -164,6 +165,9 @@ class IGeoManager
     float BaseHeightTilt(float wx, float wy);
     float GetSnowMountainHeight(float wx, float wy);
     float GetDeepNorthHeight(float wx, float wy);
+
+    double CreateAshlandsGap(float wx, float wy);
+    double CreateDeepNorthGap(float wx, float wy);
 
   public:
     void PostWorldInit();
@@ -190,8 +194,9 @@ class IGeoManager
     float GetHeight(float x, float z);
 
     // Get the terrain height at world coordinates, with mistlands color mask
-    float GetHeight(float x, float z, float &mask);
-    float GetBiomeHeight(avledet::util::Biome biome, float wx, float wy, float &mask);
+    //  preGeneration: bool (used only for river gen)
+    float GetHeight(float x, float z, avledet::util::Color &mask);
+    float GetBiomeHeight(avledet::util::Biome biome, float wx, float wy, avledet::util::Color &mask, bool preGeneration);
 
     bool InForest(Vector3f pos);
 

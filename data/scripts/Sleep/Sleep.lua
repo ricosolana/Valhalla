@@ -46,6 +46,7 @@ Avledet:subscribe(
                 --print('afternoon / night')
 
                 local peers = NetManager.peers
+                local pre_size = #peers
 
                 ----TEST DUMMY SECTION
                 print("first peer count: " .. tostring(#peers))
@@ -53,8 +54,11 @@ Avledet:subscribe(
                     --peers[#peers] = nil
                     print("doing experimental pop")
                     peers:erase(#peers)
+                    local fn_size = #NetManager.peers
                     print("LOCAL: " .. tostring(#peers))
-                    print("FUNC: " .. tostring(#NetManager.peers))
+                    print("FUNC: " .. tostring(fn_size))
+
+                    assert(fn_size == pre_size)
                 end
                 ----END TEST DUMMY SECTION
 

@@ -177,7 +177,9 @@ void my_sethook_cb(lua_State *L, lua_Debug *ar)
 {
     (void) L;
     (void) ar;
-    LOG_INFO(AVL_LOGGER, "HOOKAH!!!");
+    //LOG_INFO(AVL_LOGGER, "HOOKAH!!!");
+
+    LOG_WARNING(AVL_LOGGER, "Lua function taking too long, maybe early terminate?");
 };
 
 IScriptManager::~IScriptManager() {}
@@ -218,7 +220,7 @@ void IScriptManager::Init()
     //        },
     //        LUA_MASKCOUNT, 1);
 
-    //lua_sethook(m_state.lua_state(), &my_sethook_cb, LUA_MASKCOUNT, 1);
+    //lua_sethook(m_state.lua_state(), &my_sethook_cb, LUA_MASKCOUNT, 1000);
 
     std::error_code ec;
     std::filesystem::create_directories(AVLEDET_SCRIPTS_PATH, ec);

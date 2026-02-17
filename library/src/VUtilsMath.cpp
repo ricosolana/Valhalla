@@ -10,10 +10,20 @@
 namespace VUtils::Math {
     float sq_magnitude(float x, float y)
     {
+        return (double)x * (double)x + (double)y * (double)y;
+    }
+
+    double sq_magnitude(double x, double y)
+    {
         return x * x + y * y;
     }
 
     float magnitude(float x, float y)
+    {
+        return std::sqrt(sq_magnitude(x, y));
+    }
+
+    double magnitude(double x, double y)
     {
         return std::sqrt(sq_magnitude(x, y));
     }
@@ -48,6 +58,31 @@ namespace VUtils::Math {
         return std::sqrt(sq_distance_to(x1, y1, z1, x2, y2, z2));
     }
 
+    float Lerp(float a, float b, float t) {
+        return Lerp((double)a, (double)b, (double)t);
+        //if (t <= 0.0f)
+		//{
+		//	return a;
+		//}
+		//if (t >= 1.0f)
+		//{
+		//	return b;
+		//}
+		//return (float)((double)a * (1.0 - (double)t) + (double)b * (double)t);
+    }
+
+    double Lerp(double a, double b, double t) {
+        if (t <= 0.0)
+		{
+			return a;
+		}
+		if (t >= 1.0)
+		{
+			return b;
+		}
+		return a * (1.0 - t) + b * t;
+    }
+
     float Clamp(float value, float min, float max)
     {
         return std::min(std::max(value, min), max);
@@ -55,43 +90,59 @@ namespace VUtils::Math {
 
     float LerpStep(float l, float h, float v)
     {
-        return Mathf::Clamp01((v - l) / (h - l));
+        //return Mathf::Clamp01((v - l) / (h - l));
+        return LerpStep((double)l, (double)h, (double)v);
+    }
+
+    double LerpStep(double l, double h, double v) {
+        return Clamp01((v - l) / (h - l));
     }
 
     float SmoothStep(float p_Min, float p_Max, float p_X)
     {
-        float num = Mathf::Clamp01((p_X - p_Min) / (p_Max - p_Min));
-        return num * num * (3.f - 2.f * num);
+        float num = (float)Clamp01(((double)p_X - (double)p_Min) / ((double)p_Max - (double)p_Min));
+		return (float)((double)num * (double)num * (3.0 - 2.0 * (double)num));
     }
 
-    double LerpStep(double l, double h, double v)
-    {
-        return Mathf::Clamp01((float) ((v - l) / (h - l)));
+	double MathfLikeSmoothStep(double from, double to, double t)
+	{
+		t = Clamp01(t);
+		t = -2.0 * t * t * t + 3.0 * t * t;
+		return (double)((float)(to * t + from * (1.0 - t)));
+	}
+
+    double Clamp01(double value) {
+        return value > 1.0 ? 1.0 : value < 0.0 ? 0.0 : value;
     }
+
+    //double LerpStep(double l, double h, double v)
+    //{
+    //    return Mathf::Clamp01((float) ((v - l) / (h - l)));
+    //}
 
     float Fbm(Vector3f p, int octaves, float lacunarity, float gain)
     {
         return Fbm(Vector2f(p.x, p.z), octaves, lacunarity, gain);
     }
 
-    float FbmMaxValue(int octaves, float gain)
-    {
-        float num  = 0;
-        float num2 = 1;
-        for (int i = 0; i < octaves; i++) {
-            num += num2;
-            num2 *= gain;
-        }
-        return num;
-    }
+    //float FbmMaxValue(int octaves, float gain)
+    //{
+    //    float num  = 0;
+    //    float num2 = 1;
+    //    for (int i = 0; i < octaves; i++) {
+    //        num += num2;
+    //        num2 *= gain;
+    //    }
+    //    return num;
+    //}
 
     float Fbm(Vector2f p, int octaves, float lacunarity, float gain)
     {
         float num  = 0;
         float num2 = 1;
         for (int i = 0; i < octaves; i++) {
-            num += num2 * VUtils::Math::PerlinNoise(p.x, p.y);
-            num2 *= gain;
+            num = (float)((double)num + (double)num2 * (double)VUtils::Math::PerlinNoise(p.x, p.y));
+            num2 = (float)((double)num2 * (double)gain);
             p *= lacunarity;
         }
         return num;
@@ -200,6 +251,11 @@ namespace VUtils::Math {
 
         return (res + .69f) / 1.483f;
     }
+
+    /*
+    float PerlinNoise(double x, double y) {
+        return PerlinNoise((float)x, float(y));
+    }*/
 
     float FixDegAngle(float p_Angle)
     {

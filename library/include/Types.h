@@ -40,6 +40,7 @@ namespace avledet::util {
     template<typename K, typename Hash = ankerl::unordered_dense::hash<K>, typename Equal = std::equal_to<K>>
     using Set = ankerl::unordered_dense::set<K, Hash, Equal>;
 
+    // TODO rename under CSU
     struct Color
     {
         float r, g, b, a;
@@ -71,6 +72,7 @@ namespace avledet::util {
         Color Lerp(Color const &other, float t);
     };
 
+    // TODO renaem under CSU (if true)
     struct Color32
     {
         avledet::util::Byte r, g, b, a;
