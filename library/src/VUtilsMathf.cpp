@@ -21,6 +21,10 @@ namespace VUtils::Mathf {
         return to * t + from * (1.f - t);
     }
 
+    //int CeilToInt(float f) {
+    //    return (int)std::ceil(f);
+    //}
+
     float Lerp(float a, float b, float t)
     {
         return a + (b - a) * Mathf::Clamp01(t);

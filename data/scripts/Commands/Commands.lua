@@ -269,14 +269,22 @@ local commands = {
 Avledet:subscribe(
     "Join",
     function(peer)
-        print("Registering command vs")
+        print("Registering command avl")
 
         peer:register(
-            MethodSig.new("OnCommand", Type.STRING, Type.STRINGS),
-            function(peer, label, args)
+            MethodSig.new("_AvlCommand", Type.INT, Type.STRINGS),
+            function(peer, _, rargs)
                 if not peer.admin then
                     peer:console_message("must be an admin")
                 else
+                    local label = rargs[1]
+                    if not label then 
+                        peer:console_message("Avledet " .. Avledet.version .. ", time: " .. tostring(Avledet.world_time))
+                        return
+                    end
+
+                    local args = table.remove(rargs, 1)
+
                     local command = commands[string.lower(label)]
 
                     if command then

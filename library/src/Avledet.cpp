@@ -565,7 +565,7 @@ void IAvledet::LoadFiles(bool reloading)
     if (reloading) {
         // then iterate players, settings active and inactive
         for (auto &&peer : NetManager()->GetPeers()) {
-            peer->SetAdmin(m_admin.contains(peer->m_name));
+            peer->SetAdmin(m_admin.contains(peer->m_socket->get_host_name()));
 
             // TODO add a 'previously gated' bit
             //  so discord integration doesnt get messed up

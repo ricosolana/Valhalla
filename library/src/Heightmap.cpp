@@ -70,6 +70,12 @@ bool Heightmap::IsRegenerateQueued() {
 // Used to be the Regenerate() method
 void Heightmap::Regenerate()
 {
+    /* Note:
+        - There IS a reason these are commented out
+            - The necessary operations of building the heightmap (vegetation / location placement) and paint mask (mistlands vegetation placement)
+                has already been unpacked as you see below
+            - The other CancelQueuedRegeneration and Generate have been inlined because they are used just once
+    */
     //CancelQueuedRegeneration();
 
     //Generate();
@@ -78,17 +84,19 @@ void Heightmap::Regenerate()
     m_cornerBiomes  = m_base->m_cornerBiomes;
     this->m_heights = m_base->m_baseHeights;
 
-    this->m_paintMask.resize(m_base->m_vegMask.size());
-    for (std::size_t i = 0; i < m_base->m_vegMask.size(); i++) {
-        this->m_paintMask[i].a = m_base->m_vegMask[i];
+    this->m_paintMask.resize(m_base->m_base_mask.size());
+    for (std::size_t i = 0; i < m_base->m_base_mask.size(); i++) {
+        // TODO use copy assign instead for readability
+        this->m_paintMask[i] = m_base->m_base_mask[i];
     }
 
-    m_oceanDepth[0] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(0, IZoneManager::UNITS_PER_ZONE));
+    // UpdateCornerDepths
+    m_oceanDepth[0] = std::max(0.f, (float)((double)IZoneManager::WATER_LEVEL - (double)GetHeight(0, IZoneManager::UNITS_PER_ZONE)));
     m_oceanDepth[1]
-            = std::max(0.f, IZoneManager::WATER_LEVEL
-                                    - GetHeight(IZoneManager::UNITS_PER_ZONE, IZoneManager::UNITS_PER_ZONE));
-    m_oceanDepth[2] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(IZoneManager::UNITS_PER_ZONE, 0));
-    m_oceanDepth[3] = std::max(0.f, IZoneManager::WATER_LEVEL - GetHeight(0, 0));
+            = std::max(0.f, (float)((double)IZoneManager::WATER_LEVEL
+                                    - (double)GetHeight(IZoneManager::UNITS_PER_ZONE, IZoneManager::UNITS_PER_ZONE)));
+    m_oceanDepth[2] = std::max(0.f, (float)((double)IZoneManager::WATER_LEVEL - (double)GetHeight(IZoneManager::UNITS_PER_ZONE, 0)));
+    m_oceanDepth[3] = std::max(0.f, (float)((double)IZoneManager::WATER_LEVEL - (double)GetHeight(0, 0)));
 }
 
 /*

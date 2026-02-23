@@ -52,8 +52,9 @@ class Peer : public std::enable_shared_from_this<Peer>,
     friend class INetManager;
     friend class IScriptManager;
 
-    constexpr static int VISIBLE_PACK_INDEX = 0;
-    constexpr static int GATED_PACK_INDEX   = 1;
+    constexpr static int ADMIN_PACK_INDEX   = 0;
+    constexpr static int VISIBLE_PACK_INDEX = 1;
+    constexpr static int GATED_PACK_INDEX   = 2;
 
   private:
     std::chrono::steady_clock::time_point m_lastPing;
@@ -78,7 +79,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
     Vector3f m_pos;
     ZDOID m_characterID;
 
-    // Visible: 0, Gated: 1
+    // Admin: 0, Visible: 1, Gated: 2
     BitPack<std::uint8_t, 1, 1, 1, 5> m_pack;
 
     avledet::util::Map<std::string, std::string, ankerl::unordered_dense::string_hash, std::equal_to<>>
@@ -117,32 +118,13 @@ class Peer : public std::enable_shared_from_this<Peer>,
         return m_characterID.get_user_id();
     }
 
-    bool IsMapVisible() const
-    {
-        return m_pack.get<VISIBLE_PACK_INDEX>();
-    }
-
-    bool IsAdmin() const
-    {
-        return Avledet()->m_admin.contains(m_socket->get_host_name());
-    }
-
-    bool IsGated() const
-    {
-        return m_pack.get<GATED_PACK_INDEX>();
-    }
-
-    void SetMapVisible(bool enable)
-    {
-        m_pack.set<VISIBLE_PACK_INDEX>(enable);
-    }
+    bool IsAdmin() const;
+    bool IsMapVisible() const;
+    bool IsGated() const;
 
     void SetAdmin(bool enable);
-
-    void SetGated(bool enable)
-    {
-        m_pack.set<GATED_PACK_INDEX>(enable);
-    }
+    void SetMapVisible(bool enable);
+    void SetGated(bool enable);
 
     /**
         * @brief Register a static method for remote invocation

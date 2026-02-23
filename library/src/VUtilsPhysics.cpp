@@ -143,6 +143,7 @@ namespace VUtils::Physics {
                && PointInsideRect(size1, pos1, rot1, pos2 + rot * Vector3f(-size2.x, -size2.y, size2.z));
     }
 
+    [[deprecated("probably broken")]]
     bool RectOverlapRect(Vector3f size1, Vector3f pos1, Quaternion rot1, Vector3f size2, Vector3f pos2,
                          Quaternion rot2, std::string &desmos)
     {
@@ -288,6 +289,7 @@ namespace VUtils::Physics {
         return overlaps;
     }
 
+    [[deprecated("broken impl")]]
     bool RectOverlapRect(Vector3f size1, Vector3f pos1, Quaternion rot1, Vector3f size2, Vector3f pos2,
                          Quaternion rot2)
     {
@@ -299,6 +301,93 @@ namespace VUtils::Physics {
         (void) rot2;
         assert(false);
         throw std::runtime_error("not implemented");
+    }
+
+    bool BoxBoxOverlap(
+        Vector3f pos1, Vector3f size1, Quaternion rot1,
+        Vector3f pos2, Vector3f size2, Quaternion rot2)
+    {
+        // Ensure normalized rotations (important for correctness)
+        rot1 = rot1.normalized();
+        rot2 = rot2.normalized();
+
+        // Half sizes
+        float ea[3] = { size1.x * 0.5f, size1.y * 0.5f, size1.z * 0.5f };
+        float eb[3] = { size2.x * 0.5f, size2.y * 0.5f, size2.z * 0.5f };
+
+        // Box local axes in world space (Unity-style)
+        Vector3f A[3];
+        Vector3f B[3];
+
+        A[0] = rot1 * Vector3f{1,0,0};
+        A[1] = rot1 * Vector3f{0,1,0};
+        A[2] = rot1 * Vector3f{0,0,1};
+
+        B[0] = rot2 * Vector3f{1,0,0};
+        B[1] = rot2 * Vector3f{0,1,0};
+        B[2] = rot2 * Vector3f{0,0,1};
+
+        // Rotation matrix R = A^T * B
+        float R[3][3], AbsR[3][3];
+
+        for(int i = 0; i < 3; i++) {
+            for(int j = 0; j < 3; j++)
+            {
+                R[i][j] = A[i].dot(B[j]);
+                AbsR[i][j] = std::abs(R[i][j]) + std::numeric_limits<float>::epsilon();
+            }
+        }
+
+        // Translation
+        Vector3f tVec = pos2 - pos1;
+
+        // Bring translation into A's local frame
+        float t[3] = {
+            tVec.dot(A[0]),
+            tVec.dot(A[1]),
+            tVec.dot(A[2])
+        };
+
+        float ra, rb;
+
+        // 1) Test A's axes
+        for(int i = 0; i < 3; i++)
+        {
+            ra = ea[i];
+            rb = eb[0]*AbsR[i][0] + eb[1]*AbsR[i][1] + eb[2]*AbsR[i][2];
+            if (std::abs(t[i]) > ra + rb) return false;
+        }
+
+        // 2) Test B's axes
+        for(int j = 0; j < 3; j++)
+        {
+            ra = ea[0]*AbsR[0][j] + ea[1]*AbsR[1][j] + ea[2]*AbsR[2][j];
+            rb = eb[j];
+
+            float tProj = t[0]*R[0][j] + t[1]*R[1][j] + t[2]*R[2][j];
+            if (std::abs(tProj) > ra + rb) return false;
+        }
+
+        // 3) Test cross products
+        for(int i = 0; i < 3; i++) {
+            for(int j = 0; j < 3; j++)
+            {
+                ra = ea[(i+1)%3]*AbsR[(i+2)%3][j] +
+                    ea[(i+2)%3]*AbsR[(i+1)%3][j];
+
+                rb = eb[(j+1)%3]*AbsR[i][(j+2)%3] +
+                    eb[(j+2)%3]*AbsR[i][(j+1)%3];
+
+                float tVal =
+                    std::abs(
+                        t[(i+2)%3]*R[(i+1)%3][j] -
+                        t[(i+1)%3]*R[(i+2)%3][j]);
+
+                if (tVal > ra + rb) return false;
+            }
+        }
+
+        return true; // No separating axis found
     }
 
     std::pair<Vector3f, Quaternion> LocalToGlobal(Vector3f const &childLocalPos,

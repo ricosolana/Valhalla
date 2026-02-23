@@ -406,7 +406,7 @@ void INetManager::Update()
     // Update peers
     for (auto &&peer : m_connectedPeers) {
         try {
-            if (VUtils::run_periodic<struct log_trace_player_status>(1s)) {
+            if (VUtils::run_periodic<struct log_trace_player_status>(3s)) {
                 LOG_TRACE_L1(AVL_LOGGER, "{}, {}, {}ms", peer->m_socket->get_host_name(),
                              peer->m_socket->get_address(), peer->m_socket->get_ping());
             }
@@ -460,10 +460,11 @@ void INetManager::OnPeerQuit(Peer::Ptr peer)
 
     ZDOManager()->OnPeerQuit(peer);
 
-    if (peer->IsAdmin())
+    if (peer->IsAdmin()) {
         Avledet()->m_admin.insert(peer->m_socket->get_host_name());
-    else
+    } else {
         Avledet()->m_admin.erase(peer->m_socket->get_host_name());
+    }
 }
 
 void INetManager::OnPeerDisconnect(Peer::Ptr peer)

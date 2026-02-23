@@ -21,11 +21,17 @@ namespace VUtils::Physics {
 
     // Check whether 2 rectangles intersect
     // Quaternion x,z should not be assigned due to non-implementation
+    [[deprecated("broken")]]
     bool RectOverlapRect(Vector3f size1, Vector3f pos1, Quaternion rot1, Vector3f size2, Vector3f pos2,
                          Quaternion rot2, std::string &desmos);
 
+    [[deprecated("broken")]]
     bool RectOverlapRect(Vector3f size1, Vector3f pos1, Quaternion rot1, Vector3f size2, Vector3f pos2,
                          Quaternion rot2);
+
+    bool BoxBoxOverlap(
+        Vector3f pos1, Vector3f size1, Quaternion rot1,
+        Vector3f pos2, Vector3f size2, Quaternion rot2);
 
     std::pair<Vector3f, Quaternion> LocalToGlobal(Vector3f const &childLocalPos,
                                                   Quaternion const &childLocalRot, Vector3f const &parentPos,

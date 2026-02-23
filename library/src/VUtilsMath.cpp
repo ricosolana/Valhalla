@@ -58,6 +58,17 @@ namespace VUtils::Math {
         return std::sqrt(sq_distance_to(x1, y1, z1, x2, y2, z2));
     }
 
+    double BlendOverlay(double a, double b)
+	{
+		double num = 2.0 * a * b;
+		double num2 = 1.0 - 2.0 * (1.0 - a) * (1.0 - b);
+		if (a >= 0.5)
+		{
+			return num2;
+		}
+		return num;
+	}
+
     float Lerp(float a, float b, float t) {
         return Lerp((double)a, (double)b, (double)t);
         //if (t <= 0.0f)
@@ -251,6 +262,20 @@ namespace VUtils::Math {
 
         return (res + .69f) / 1.483f;
     }
+
+    double Remap(double value, double inLow, double inHigh, double outLow, double outHigh)
+	{
+		return Lerp(outLow, outHigh, InverseLerp(inLow, inHigh, value));
+	}
+
+    double InverseLerp(double a, double b, double value)
+	{
+		if (a == b)
+		{
+			return 0.0;
+		}
+		return Clamp01((value - a) / (b - a));
+	}
 
     /*
     float PerlinNoise(double x, double y) {

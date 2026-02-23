@@ -27,6 +27,7 @@ namespace VUtils::Math {
     float distance_to(float x1, float y1, float z1, float x2, float y2, float z2);
 
 
+    double BlendOverlay(double a, double b);
 
     float Lerp(float a, float b, float t);
 
@@ -48,10 +49,20 @@ namespace VUtils::Math {
     // Fast inverse square root
     float FISQRT(float n);
 
+    double Remap(double value, double inLow, double inHigh, double outLow, double outHigh);
+
+    double InverseLerp(double a, double b, double value);
+
     // Perlin noise
+    //  TODO must migrate to CSU for consistency
     float PerlinNoise(float x, float y);
 
     //float PerlinNoise(double x, double y);
 
     bool Between(float i, float a, float b);
+
+    // I woudl include, but seems dumb
+    //float Sin(float x);
+//
+    //float Cos(float x);
 }// namespace VUtils::Math

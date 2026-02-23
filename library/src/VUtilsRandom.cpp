@@ -63,13 +63,13 @@ namespace avledet::util {
             m_seed[3] = m_seed[2] * 0x6c078965 + 1;
         }
 
-        Random::Random(Random const &other)
-        {
-            m_seed[0] = other.m_seed[0];
-            m_seed[1] = other.m_seed[1];
-            m_seed[2] = other.m_seed[2];
-            m_seed[3] = other.m_seed[3];
-        }
+        //Random::Random(Random const &other)
+        //{
+        //    m_seed[0] = other.m_seed[0];
+        //    m_seed[1] = other.m_seed[1];
+        //    m_seed[2] = other.m_seed[2];
+        //    m_seed[3] = other.m_seed[3];
+        //}
 
         std::uint32_t Random::next_int()
         {

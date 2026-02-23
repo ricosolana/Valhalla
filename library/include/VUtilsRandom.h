@@ -3,6 +3,7 @@
 // reverse engineered implementation of Unity Random and associated functions
 // these are algorithms only, not steps, so shoo patent lawyers!
 
+#include <array>
 #include <cstdint>
 
 #include "Vector.h"
@@ -14,12 +15,13 @@ namespace avledet::util {
         class Random
         {
           private:
-            std::uint32_t m_seed[4];
+            //std::uint32_t m_seed[4];
+            std::array<std::uint32_t, 4> m_seed;
 
           public:
             Random();
             Random(std::int32_t seed);
-            Random(Random const &other);// copy construct
+            //Random(Random const &other);// copy construct
 
             // Returns a random float from 0 to 1
             float next_float();

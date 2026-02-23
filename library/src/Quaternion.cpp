@@ -1,4 +1,5 @@
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 #include "Quaternion.h"
@@ -132,6 +133,16 @@ namespace avledet::util::CSU {
     float Quaternion::dot(Quaternion b) const
     {
         return x * b.x + y * b.y + z * b.z + w * b.w;
+    }
+
+    Quaternion Quaternion::normalized() const {
+        float sq = this->length_squared();
+        if (sq < std::numeric_limits<float>::epsilon()) {
+            return IDENTITY;
+        }
+        
+        sq = std::sqrt(sq);
+        return Quaternion(x / sq, y / sq, z / sq, w / sq);
     }
 
     bool Quaternion::operator==(Quaternion other) const

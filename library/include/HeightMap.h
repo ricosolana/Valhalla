@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Types.h"
 #include "VUtils.h"
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
@@ -39,7 +40,7 @@ class BaseHeightmap
     std::array<avledet::util::Biome, 4> m_cornerBiomes;
     Heights_t m_baseHeights;
     //Mask_t m_baseMask;
-    std::vector<float> m_vegMask;
+    std::vector<avledet::util::Color> m_base_mask;
 };
 
 class Heightmap

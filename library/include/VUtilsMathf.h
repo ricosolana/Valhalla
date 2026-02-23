@@ -7,7 +7,9 @@ namespace VUtils::Mathf {
 
     float SmoothStep(float from, float to, float t);
 
-    //float Lerp(float a, float b, float t);
+    float Lerp(float a, float b, float t);
+
+    //int CeilToInt(float f);
 
     // Bankers rounding
     float Round(float f);

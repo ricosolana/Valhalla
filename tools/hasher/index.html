@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>StableHash Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+        }
+
+        input {
+            padding: 8px;
+            width: 300px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        #output {
+            margin-top: 20px;
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        #tests {
+            margin-top: 30px;
+            font-size: 14px;
+            display: none; /* Hidden by default */
+        }
+
+        .pass {
+            color: green;
+        }
+
+        .fail {
+            color: red;
+        }
+
+        #warningBox {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #ffe0e0;
+            border: 1px solid red;
+            color: darkred;
+            font-weight: bold;
+            display: none; /* Hidden unless failure */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>StableHash Converter</h1>
+
+    <input type="text" id="inputString" placeholder="Enter string here">
+    <button onclick="convert()">Convert to StableHash</button>
+
+    <div id="output"></div>
+
+    <div id="tests">
+        <h3>Test Results:</h3>
+        <ul id="testResults"></ul>
+        <div id="warningBox">
+            ⚠ WARNING: One or more StableHash test cases failed. Please check the hashing implementation for bugs.
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

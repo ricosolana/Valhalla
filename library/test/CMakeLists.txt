@@ -1,5 +1,6 @@
+add_subdirectory("arithmetic")
 #add_subdirectory("crypto")
 #add_subdirectory("rpc")
 #add_subdirectory("scripting")
 #add_subdirectory("sol")
-add_subdirectory("stream")
+#add_subdirectory("stream")

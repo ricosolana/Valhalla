@@ -78,7 +78,7 @@ namespace avledet::network {
             SteamUser()->EndAuthSession(steam_id);
         }
 
-        LOG_TRACE_L2(AVL_LOGGER, "close for {}, status {}, linger {}", get_host_name(),
+        LOG_TRACE_L1(AVL_LOGGER, "close for {}, status {}, linger {}", get_host_name(),
                      magic_enum::enum_name(m_status), linger);
 
         get_steam_sockets()->CloseConnection(m_conn, 0, "", linger);
@@ -171,13 +171,13 @@ namespace avledet::network {
 
         SteamNetConnectionRealTimeStatus_t rt {};
         if (get_steam_sockets()->GetConnectionRealTimeStatus(m_conn, &rt, 0, nullptr) == k_EResultOK) {
-            LOG_TRACE_L2(AVL_LOGGER,
+            LOG_TRACE_L3(AVL_LOGGER,
                          "get_send_queue_size for {}, queued {}, reliable {}, unreliable {}, unacked {}",
                          get_host_name(), num, rt.m_cbPendingReliable, rt.m_cbPendingUnreliable,
                          rt.m_cbSentUnackedReliable);
             num += rt.m_cbPendingReliable + rt.m_cbPendingUnreliable + rt.m_cbSentUnackedReliable;
         } else {
-            LOG_TRACE_L2(AVL_LOGGER, "get_send_queue_size failed, hostname {}", get_host_name());
+            LOG_TRACE_L3(AVL_LOGGER, "get_send_queue_size failed, hostname {}", get_host_name());
         }
 
         return num;

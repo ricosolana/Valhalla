@@ -48,6 +48,7 @@ namespace avledet::util::CSU {
         Vector3f xyz() const;
         Vector3f euler_angles() const;
         float dot(Quaternion b) const;
+        Quaternion normalized() const;
 
         Vector3f operator*(Vector3f other) const;
         Quaternion operator*(Quaternion rhs) const;

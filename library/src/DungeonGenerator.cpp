@@ -1,5 +1,8 @@
 #include "DungeonGenerator.h"
+#include "Quaternion.h"
+#include "Vector.h"
 #include <cstddef>
+#include <limits>
 
 #if AVL_IS_ON(AVL_DUNGEON_GENERATION)
     #include "GeoManager.h"
@@ -657,17 +660,21 @@ bool DungeonGenerator::IsInsideZone(Room const &room, Vector3f pos, Quaternion r
     //	room.m_size, pos, rot);
 }
 
-static bool RectOverlapRect(Vector3f size1, Vector3f pos1, Vector3f size2, Vector3f pos2)
-{
-    assert(size1.x >= 0 && size1.y >= 0 && size1.z >= 0 && size2.x >= 0 && size2.y >= 0 && size2.z >= 0);
+[[deprecated("axis aligned only")]]
+//tatic bool RectOverlapRect(Vector3f size1, Vector3f pos1, Vector3f size2, Vector3f pos2)
+//
+//   assert(size1.x >= 0 && size1.y >= 0 && size1.z >= 0 && size2.x >= 0 && size2.y >= 0 && size2.z >= 0);
+//
+//   size1 *= .5f;
+//   size2 *= .5f;
+//
+//   return !(pos1.x + size1.x < pos2.x - size2.x || pos1.y + size1.y < pos2.y - size2.y
+//            || pos1.z + size1.z < pos2.z - size2.z || pos1.x - size1.x > pos2.x + size2.x
+//            || pos1.y - size1.y > pos2.y + size2.y || pos1.z - size1.z > pos2.z + size2.z);
+//
 
-    size1 *= .5f;
-    size2 *= .5f;
 
-    return !(pos1.x + size1.x < pos2.x - size2.x || pos1.y + size1.y < pos2.y - size2.y
-             || pos1.z + size1.z < pos2.z - size2.z || pos1.x - size1.x > pos2.x + size2.x
-             || pos1.y - size1.y > pos2.y + size2.y || pos1.z - size1.z > pos2.z + size2.z);
-}
+
 
 bool DungeonGenerator::TestCollision(Room const &room, Vector3f pos, Quaternion rot)
 {
@@ -684,64 +691,16 @@ bool DungeonGenerator::TestCollision(Room const &room, Vector3f pos, Quaternion 
             return true;
     }
 
-    //if (room.m_endCap)
-    //return false;
+    auto size1 = room.m_size - Vector3f::ONE * AVL_SETTINGS.dungeonsRoomsInsetSize;
 
-    Vector3f size;
-    if (m_dungeon.m_algorithm == Dungeon::Algorithm::Dungeon) {
-        // Rotate this room by either IDENTITY (0 deg), or 90deg
-        // Assumes that dungeon rooms fit together like axis aligned boxes
-        size = rot * room.m_size;
-
-        size.x = std::abs(size.x);
-        size.z = std::abs(size.z);
-    } else {
-        // Resize the room to its smallest fitting circular region
-        size = room.m_size.normal() * Vector2f(room.m_size.x, room.m_size.z).magnitude();
+    for (auto const& other : m_placed_rooms) {
+        if (VUtils::Physics::BoxBoxOverlap(
+            pos, size1, rot, 
+            other->m_pos, other->m_room.get().m_size, other->m_rot)) 
+            {
+                return true;
+            }
     }
-
-    if (room.m_endCap)
-        //size *= .5f;
-        size *= AVL_SETTINGS.dungeonsEndcapsInsetFrac;
-    else
-        //size -= Vector3f(.1f, .1f, .1f);
-        size -= Vector3f(1, 1, 1) * AVL_SETTINGS.dungeonsRoomsInsetSize;
-
-    //if (AVL_SETTINGS.dungeonsRoomsInsetSize)
-    //size -= Vector3f(.1f, .1f, .1f);
-    //if (room.m_endCap)
-    //size -= Vector3f(.2f, .2f, .2f); // subtract because edge touching rectangles always overlap (so prevent that)
-    //else size += Vector3f(.2f, .2f, .2f);
-
-    // determine whether the room collides with any other room
-    for (auto &&other : m_placed_rooms) {
-        auto &&otherRoom = other->m_room.get();
-
-        Vector3f otherSize;
-        if (m_dungeon.m_algorithm == Dungeon::Algorithm::Dungeon) {
-            otherSize = other->m_rot * otherRoom.m_size;
-
-            otherSize.x = std::abs(otherSize.x);
-            otherSize.z = std::abs(otherSize.z);
-        } else {
-            otherSize = otherRoom.m_size.normal()
-                        * Vector2f(otherRoom.m_size.x, otherRoom.m_size.z).magnitude();
-        }
-
-        //otherSize -= Vector3f(.1f, .1f, .1f);
-
-        if (RectOverlapRect(size, pos, otherSize, other->m_pos))
-            return true;
-    }
-
-    size *= .5f;
-
-    ////LOG(INFO)
-    //	<< "polygon(("
-    //	<< pos.x - size.x << "," << pos.z - size.z << "),("
-    //	<< pos.x - size.x << "," << pos.z + size.z << "),("
-    //	<< pos.x + size.x << "," << pos.z + size.z << "),("
-    //	<< pos.x + size.x << "," << pos.z - size.z << "))";
 
     return false;
 }

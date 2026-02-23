@@ -69,7 +69,7 @@ namespace avledet::util {
         {
         }
 
-        Color Lerp(Color const &other, float t);
+        static Color Lerp(Color const &a, Color const &b, float t);
     };
 
     // TODO renaem under CSU (if true)
@@ -104,7 +104,7 @@ namespace avledet::util {
 
         //Color Lerp(const Color& other, float t);
 
-        Color32 Lerp(Color32 const &other, float t);
+        static Color32 Lerp(Color32 const &a, Color32 const &b, float t);
     };
 
     // TODO inline within Color

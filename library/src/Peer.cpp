@@ -6,8 +6,11 @@
 #include "ZDOManager.h"
 
 //#include <magic_enum.hpp> //TODO magic
+#include <algorithm>
+#include <cstddef>
 #include <magic_enum/magic_enum.hpp>
 #include <quill/LogMacros.h>
+#include <quill/Utility.h>
 
 // Static globals initialized once
 //std::string Peer::PASSWORD;
@@ -131,6 +134,16 @@ void Peer::update()
                 m_lastPing = now;
             }
         } else [[likely]] {
+            auto max_size = std::min(reader.size() - reader.get_pos(), (std::size_t)32);
+            // cap printing
+            if (max_size > 32) {
+                LOG_TRACE_L2(AVL_LOGGER, "{}, {}, {} ... [{}]", m_socket->get_host_name(), hash, 
+                                    quill::utility::to_hex(reader.data() + reader.get_pos(), max_size), reader.size());
+            } else {
+                LOG_TRACE_L2(AVL_LOGGER, "{}, {}, {}", m_socket->get_host_name(), hash, 
+                    quill::utility::to_hex(reader.data() + reader.get_pos(), max_size));
+            }
+
             InternalInvoke(hash, reader);
         }
     }
@@ -154,12 +167,34 @@ bool Peer::close(ConnectionStatus status)
     return false;
 }
 
+bool Peer::IsAdmin() const
+{
+    return m_pack.get<ADMIN_PACK_INDEX>();
+}
+
+bool Peer::IsMapVisible() const
+{
+    return m_pack.get<VISIBLE_PACK_INDEX>();
+}
+
+bool Peer::IsGated() const
+{
+    return m_pack.get<GATED_PACK_INDEX>();
+}
+
 void Peer::SetAdmin(bool enable)
 {
-    if (enable)
-        Avledet()->m_admin.erase(m_socket->get_host_name());
-    else
-        Avledet()->m_admin.insert(m_socket->get_host_name());
+    m_pack.set<ADMIN_PACK_INDEX>(enable);
+}
+
+void Peer::SetMapVisible(bool enable)
+{
+    m_pack.set<VISIBLE_PACK_INDEX>(enable);
+}
+
+void Peer::SetGated(bool enable)
+{
+    m_pack.set<GATED_PACK_INDEX>(enable);
 }
 
 ZDO::optional Peer::find_zdo()
