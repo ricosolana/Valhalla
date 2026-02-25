@@ -1,6 +1,8 @@
 #pragma once
 
+#include "ModManager.h"
 #include "VUtils.h"
+#include <vector>
 
 #if AVL_IS_ON(AVL_DUNGEON_GENERATION)
 
@@ -50,6 +52,8 @@ class IDungeonManager
     ZDO::reference generate(Dungeon const &dungeon, Vector3f pos, Quaternion rot);
     ZDO::reference generate(Dungeon const &dungeon, Vector3f pos, Quaternion rot, avledet::util::Hash seed);
     void generate(Dungeon const &dungeon, ZDO::reference zdo);
+
+    std::vector<const Dungeon*> get_dungeons() const;
 };
 
 // Manager for everything related to dungeon spawning

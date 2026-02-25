@@ -2,7 +2,9 @@
 
 #include <cstddef>
 
+#include <functional>
 #include <gtl/btree.hpp>
+#include <memory>
 
 #include "DataStream.h"
 #include "Prefab.h"
@@ -17,7 +19,7 @@ class IPrefabManager
 
   private:
     // TODO use set and use hash within from prefab
-    avledet::util::Set<Prefab, ankerl::unordered_dense::hash<Prefab>, std::equal_to<>> m_prefabs;
+    avledet::util::Set<std::unique_ptr<Prefab>, ankerl::unordered_dense::hash<Prefab>, std::equal_to<>> m_prefabs;
 
   public:
     void Init();
@@ -30,17 +32,17 @@ class IPrefabManager
 
     // Get a definite prefab
     //	Throws if prefab not found
-    Prefab const &get_prefab(avledet::util::Hash hash) const;
+    Prefab::Reference get_prefab(avledet::util::Hash hash) const;
 
     // Get a definite prefab
     //	Throws if prefab not found
-    Prefab const &get_prefab(std::string_view name) const;
+    Prefab::Reference get_prefab(std::string_view name) const;
 
-    Prefab const &get_indexed_prefab(Prefab::IndexType index) const;
+    Prefab::Reference get_indexed_prefab(Prefab::IndexType index) const;
 
     Prefab::IndexType get_prefab_index(avledet::util::Hash hash) const;
 
-    Prefab::IndexType get_prefab_index(Prefab &prefab) const;
+    Prefab::IndexType get_prefab_index(Prefab::Reference prefab) const;
 
     void Register(std::string name, Vector3f scale, Prefab::Flag flags);
 

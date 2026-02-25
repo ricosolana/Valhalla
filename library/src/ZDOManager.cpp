@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <functional>
 #include <quill/LogMacros.h>
 #include <stdexcept>
 
@@ -425,14 +426,14 @@ std::pair<IZDOManager::ZDO_iterator, bool> IZDOManager::_GetOrInstantiate(ZDOID 
 }*/
 
 
-ZDO::reference IZDOManager::Instantiate(Prefab const &prefab, Vector3f pos)
+ZDO::reference IZDOManager::Instantiate(Prefab::Reference prefab, Vector3f pos)
 {
     auto &&zdo = _Instantiate(pos);
     //zdo.get().m_encoded.SetPrefabIndex(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
     //zdo.get().m_pack.Set<ZDO::PREFAB_PACK_INDEX>(PrefabManager()->RequirePrefabIndexByHash(prefab.m_hash));
-    zdo->_set_prefab_hash(prefab.m_hash);
-    if (prefab.AllFlagsPresent(Prefab::Flag::SYNC_INITIAL_SCALE)) {
-        zdo->set_local_scale(prefab.m_localScale, false);
+    zdo->_set_prefab_hash(prefab.get().m_hash);
+    if (prefab.get().AllFlagsPresent(Prefab::Flag::SYNC_INITIAL_SCALE)) {
+        zdo->set_local_scale(prefab.get().m_localScale, false);
     }
 
     return zdo;

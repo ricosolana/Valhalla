@@ -1,22 +1,23 @@
-function stable_hash_code5(str) {
-    var num = 5381;
-    var num2 = num;
+function stable_hash(str) {
+    var num = 5381 | 0;
+    var num2 = 5381 | 0;
     var num3 = 0;
 
     while (num3 < str.length) {
-        num = ((num << 5) + num ^ str.charCodeAt(num3)) & 0xFFFFFFFF;
+        num = (((num << 5) + num) ^ str.charCodeAt(num3)) | 0;
 
-        if (num3 == str.length - 1) {
+        if (num3 === str.length - 1) {
             break;
         }
 
-        num2 = ((num2 << 5) + num2 ^ str.charCodeAt(num3 + 1)) & 0xFFFFFFFF;
-            num3 += 2;
+        num2 = (((num2 << 5) + num2) ^ str.charCodeAt(num3 + 1)) | 0;
+        num3 += 2;
     }
 
-    var b = BigInt(num) + (BigInt(num2) * BigInt(1566083941));
-    var bhash = b & BigInt(0xFFFFFFFF);
-    return Number(bhash);
+    // Multiply using 32-bit signed math
+    var result = (num + Math.imul(num2, 1566083941)) | 0;
+
+    return result; // Proper signed 32-bit output
 }
 
 function convert() {
@@ -25,7 +26,7 @@ function convert() {
     //document.getElementById("output").innerText = result;
 
     const input = document.getElementById("inputString").value;
-    const result = stable_hash_code5(input);
+    const result = stable_hash(input);
 
     // Force to signed 32-bit
     const signed32 = result | 0;
@@ -59,8 +60,9 @@ function convert() {
 function runTests() {
     const tests = [
         { input: "ClientHandshake", expected: 1021693670 },
-        { input: "Disconnect", expected: 838896224 },
-        { input: "Error", expected: 22442200 }
+        { input: "PeerInfo", expected: -725574882 },
+        { input: "PlayerList", expected: -265949079 },
+        { input: "ServerSyncedPlayerData", expected: 542500494 },
     ];
 
     const testResults = document.getElementById("testResults");
@@ -70,7 +72,7 @@ function runTests() {
     let hasFailure = false;
 
     tests.forEach(test => {
-        const actual = stable_hash_code5(test.input);
+        const actual = stable_hash(test.input);
         const li = document.createElement("li");
 
         if (actual === test.expected) {

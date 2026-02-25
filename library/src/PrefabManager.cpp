@@ -2,6 +2,7 @@
 #include <cstddef>
 #include <iterator>
 #include <limits>
+#include <memory>
 #include <stdexcept>
 #include <utility>
 
@@ -53,7 +54,7 @@ Prefab const *IPrefabManager::find_prefab(avledet::util::Hash hash) const
 {
     auto &&find = m_prefabs.find(hash);
     if (find != m_prefabs.end())
-        return &(*find);
+        return find->get();
     return nullptr;
 }
 
@@ -66,22 +67,22 @@ Prefab const *IPrefabManager::find_prefab(std::string_view name) const
 
 // Get a definite prefab
 //	Throws if prefab not found
-Prefab const &IPrefabManager::get_prefab(avledet::util::Hash hash) const
+Prefab::Reference IPrefabManager::get_prefab(avledet::util::Hash hash) const
 {
     auto prefab = find_prefab(hash);
     if (!prefab)
         throw std::runtime_error("prefab not found");
-    return *prefab;
+    return std::ref(*prefab);
 }
 
 // Get a definite prefab
 //	Throws if prefab not found
-Prefab const &IPrefabManager::get_prefab(std::string_view name) const
+Prefab::Reference IPrefabManager::get_prefab(std::string_view name) const
 {
     return get_prefab(avledet::util::get_stable_hash(name));
 }
 
-Prefab const &IPrefabManager::get_indexed_prefab(Prefab::IndexType index) const
+Prefab::Reference IPrefabManager::get_indexed_prefab(Prefab::IndexType index) const
 {
     //Do not query a "NULL" prefab
     assert(index != Prefab::NONE);
@@ -91,7 +92,7 @@ Prefab const &IPrefabManager::get_indexed_prefab(Prefab::IndexType index) const
     auto itr = m_prefabs.begin();
     assert(index < (std::size_t) std::distance(itr, std::end(m_prefabs)));
     std::advance(itr, index);
-    return *itr;
+    return std::ref(*itr->get());
 }
 
 Prefab::IndexType IPrefabManager::get_prefab_index(avledet::util::Hash hash) const
@@ -106,29 +107,29 @@ Prefab::IndexType IPrefabManager::get_prefab_index(avledet::util::Hash hash) con
     //throw std::runtime_error("nyi");
 }
 
-Prefab::IndexType IPrefabManager::get_prefab_index(Prefab &prefab) const
+Prefab::IndexType IPrefabManager::get_prefab_index(Prefab::Reference prefab) const
 {
-    return this->get_prefab_index(prefab.m_hash);
+    return this->get_prefab_index(prefab.get().m_hash);
 }
 
 void IPrefabManager::Register(std::string name, Vector3f scale, Prefab::Flag flags)
 {
     //avledet::util::Hash hash = avledet::util::get_stable_hash(name);
-    auto &&emp    = m_prefabs.emplace(Prefab(std::move(name), scale, flags));
+    auto &&emp    = m_prefabs.emplace(std::make_unique<Prefab>(name, scale, flags));
     auto &&prefab = *emp.first;
 
-    assert(!prefab.m_name.empty());
+    assert(!prefab->m_name.empty());
 
     if (!emp.second) {
-        if (emp.first->m_name != name) {
-            LOG_WARNING(AVL_LOGGER, "Possible hash collision between prefabs [{}], [{}]", name, prefab.m_name);
+        if (prefab->m_name != name) {
+            LOG_ERROR(AVL_LOGGER, "Possible hash collision between prefabs [{}], [{}]", name, prefab->m_name);
         } else {
-            LOG_WARNING(AVL_LOGGER, "Duplicate prefab tried to register: [{}]", prefab.m_name);
+            LOG_WARNING(AVL_LOGGER, "Duplicate prefab tried to register: [{}]", prefab->m_name);
         }
     }
 
-    if (prefab.m_name == "_TerrainCompiler") {
-        assert(prefab.GetObjectType() == avledet::util::ObjectType::TERRAIN);
+    if (prefab->m_name == "_TerrainCompiler") {
+        assert(prefab->GetObjectType() == avledet::util::ObjectType::TERRAIN);
     }
     //assert(false);//TODO ^^^
 }
@@ -143,5 +144,5 @@ void IPrefabManager::Register(DataReader &reader)
     auto localScale = reader.read<Vector3f>();
     auto flags      = reader.read<Prefab::Flag>();
 
-    Register(std::move(name), localScale, flags);
+    Register(name, localScale, flags);
 }

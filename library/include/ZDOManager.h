@@ -27,8 +27,8 @@ class IZDOManager
     {
         auto &&prefab = zdo->get_prefab();
 
-        return prefab.AllFlagsAbsent(flagsAbsent) && (prefabHash == 0 || prefab.m_hash == prefabHash)
-               && prefab.AllFlagsPresent(flagsPresent);
+        return prefab.get().AllFlagsAbsent(flagsAbsent) && (prefabHash == 0 || prefab.get().m_hash == prefabHash)
+               && prefab.get().AllFlagsPresent(flagsPresent);
     }
 
     // these are just here for easy access
@@ -209,7 +209,7 @@ class IZDOManager
     // Used when loading the world from disk
     void Load(DataReader &reader, int version);
 
-    [[maybe_unused]] ZDO::reference Instantiate(Prefab const &prefab, Vector3f pos);
+    [[maybe_unused]] ZDO::reference Instantiate(Prefab::Reference prefab, Vector3f pos);
 
     //[[maybe_unused]] ZDO::unsafe_value InstantiateBounded(avledet::util::Hash hash, Vector3f pos, const Prefab** outPrefab);
 

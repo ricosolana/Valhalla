@@ -264,7 +264,7 @@ void DungeonGenerator::PlaceDoors(VUtils::Random::State &state)
             auto global = VUtils::Physics::LocalToGlobal(
                     roomConnection.get().m_pos, roomConnection.get().m_rot, this->m_pos, this->m_rot);
 
-            auto &&zdo = ZDOManager()->Instantiate(*doorDef->m_prefab, global.first);
+            auto &&zdo = ZDOManager()->Instantiate(doorDef->m_prefab, global.first);
             zdo->set_rotation(global.second);
             num++;
         }

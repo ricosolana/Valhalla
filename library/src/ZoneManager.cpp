@@ -131,11 +131,11 @@ void IZoneManager::PostPrefabInit()
 
         auto count = pkg.read<std::int32_t>();
         for (int i = 0; i < count; i++) {
-            auto veg = std::make_unique<Foliage>();
-
             auto prefabName = pkg.read<std::string>();
 
-            veg->m_prefab = &PrefabManager()->get_prefab(prefabName);
+            auto veg = std::make_unique<Foliage>(PrefabManager()->get_prefab(prefabName));
+
+            //veg->m_prefab = PrefabManager()->get_prefab(prefabName);
 
             veg->m_biome                 = (avledet::util::Biome) pkg.read<std::int32_t>();
             veg->m_biomeArea             = (avledet::util::BiomeArea) pkg.read<std::int32_t>();
@@ -205,7 +205,7 @@ void IZoneManager::PostPrefabInit()
                              [this](Peer::Ptr peer, std::string_view locationName, Vector3f point,
                                     std::string_view pinName, int pinType, bool showMap) {
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
-                                 if (auto &&instance = GetNearestFeature(locationName, point)) {
+                                 if (auto &&instance = find_nearest_feature(locationName, point)) {
                                      LOG_INFO(AVL_LOGGER, "Found location: '{}'", locationName);
                                      RouteManager()->Invoke(peer->GetUserID(),
                                                             avledet::util::hashes::Routed::S2C_ResponseIcon,
@@ -215,7 +215,7 @@ void IZoneManager::PostPrefabInit()
                                  }
 #else
         Vector3f out;
-        if (GetNearestFeature(locationName, point, out)) {
+        if (find_nearest_feature(locationName, point, out)) {
             LOG_INFO(AVL_LOGGER, "Found location: '{}'", locationName);
             RouteManager()->Invoke(peer->m_uuid,
                 avledet::util::hashes::Routed::S2C_ResponseIcon,
@@ -588,7 +588,7 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
         // TODO make unique per vegetation instance
         // this state will be the same for all same vegetation within a given zone, in a given world
         VUtils::Random::State state(seed + zoneID.x * 4271 + zoneID.y * 9187
-                                    + zoneVegetation->m_prefab->m_hash);
+                                    + zoneVegetation->m_prefab.get().m_hash);
 
         std::int32_t num3 = 1;
         // max is used for both chance, and quantity in conjunction with min
@@ -728,7 +728,7 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
                             //  this is proven because of the correct world loaded zdos,
                             //  however new generated zone zdos are not correctly rotated
 
-                            auto &&zdo = ZDOManager()->Instantiate(*zoneVegetation->m_prefab, pos);
+                            auto &&zdo = ZDOManager()->Instantiate(zoneVegetation->m_prefab, pos);
                             zdo->set_rotation(rotation);
 
                             // basically any solid objects cannot be overlapped
@@ -736,7 +736,7 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
                             if (zoneVegetation->m_radius > 0)
                                 placedAreas.push_back({pos, zoneVegetation->m_radius});
 
-                            if (scale != zoneVegetation->m_prefab->m_localScale.x) {
+                            if (scale != zoneVegetation->m_prefab.get().m_localScale.x) {
                                 zdo->set_local_scale(Vector3f(scale, scale, scale), true);
                             }
 
@@ -1125,7 +1125,7 @@ void IZoneManager::GenerateFeature(Feature const &location, avledet::util::Hash 
         //      Interior (InteriorTransform)
         //          DG_(dungeon)
 
-        if (!(AVL_SETTINGS.dungeonsEnabled && piece.get_prefab().AllFlagsPresent(Prefab::Flag::DUNGEON))) {
+        if (!(AVL_SETTINGS.dungeonsEnabled && piece.get_prefab().get().AllFlagsPresent(Prefab::Flag::DUNGEON))) {
             auto &&zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
             zdo->set_rotation(rot * piece.m_rot);
         } else {
@@ -1251,7 +1251,7 @@ Heightmap &IZoneManager::GetGroundData(Vector3f &p, Vector3f &normal, avledet::u
 }
 
 // public
-IZoneManager::Feature::Instance *IZoneManager::GetNearestFeature(std::string_view name, Vector3f point)
+IZoneManager::Feature::Instance *IZoneManager::find_nearest_feature(std::string_view name, Vector3f point)
 {
     float closestDist = std::numeric_limits<float>::max();
 
@@ -1274,7 +1274,7 @@ IZoneManager::Feature::Instance *IZoneManager::GetNearestFeature(std::string_vie
 #else
 
 // public
-bool IZoneManager::GetNearestFeature(std::string_view name, Vector3f in, Vector3f &out)
+bool IZoneManager::find_nearest_feature(std::string_view name, Vector3f in, Vector3f &out)
 {
     float sqMin = std::numeric_limits<float>::max();
 

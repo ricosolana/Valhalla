@@ -280,14 +280,14 @@ void ZDO::set_rotation(Quaternion rot)
     }
 }
 
-Prefab const &ZDO::get_prefab() const
+Prefab::Reference ZDO::get_prefab() const
 {
     return PrefabManager()->get_indexed_prefab(m_prefab_index);
 }
 
 avledet::util::Hash ZDO::get_prefab_hash() const
 {
-    return this->get_prefab().m_hash;
+    return this->get_prefab().get().m_hash;
 }
 
 void ZDO::set_local_scale(Vector3f scale, bool allowIdentity)
@@ -374,17 +374,17 @@ std::uint32_t ZDO::get_data_rev() const
 
 bool ZDO::is_persistent() const
 {
-    return this->get_prefab().is_persistent();
+    return this->get_prefab().get().is_persistent();
 }
 
 bool ZDO::is_distant() const
 {
-    return this->get_prefab().is_distant();
+    return this->get_prefab().get().is_distant();
 }
 
 avledet::util::ObjectType ZDO::get_type() const
 {
-    return this->get_prefab().GetObjectType();
+    return this->get_prefab().get().GetObjectType();
 }
 
 #if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)

@@ -249,7 +249,7 @@ void IScriptManager::load_userdata_zdo()
             sol::resolve<void(ZDOID const &)>(&IZDOManager::DestroyZDO),
             sol::resolve<void(ZDO::reference)>(&IZDOManager::DestroyZDO)),
         "instantiate", sol::overload(
-            sol::resolve<ZDO::reference(Prefab const &, Vector3f)>(&IZDOManager::Instantiate),
+            sol::resolve<ZDO::reference(Prefab::Reference, Vector3f)>(&IZDOManager::Instantiate),
             [](IZDOManager &self, std::string_view name, Vector3f pos) {
                 return self.Instantiate(get_stable_hash(name), pos);
             },

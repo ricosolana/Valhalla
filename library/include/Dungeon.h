@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VUtils.h"
+#include <functional>
 
 #if AVL_IS_ON(AVL_DUNGEON_GENERATION)
 
@@ -19,17 +20,21 @@ class Dungeon
 
     struct DoorDef
     {
-        //GameObject m_prefab;
-        Prefab const *m_prefab = nullptr;
-
+        Prefab::Reference m_prefab;
         std::string m_connection_type = "";
-
         float m_chance = 0;
+
+        DoorDef(Prefab::Reference prefab, 
+            std::string connection_type,
+            float chance) : m_prefab(prefab), m_connection_type(connection_type), m_chance(chance) {
+
+        }
     };
 
     //std::string m_name;
 
-    Prefab const *m_prefab = nullptr;
+    //Prefab const *m_prefab = nullptr;
+    Prefab::Reference m_prefab;
 
     Algorithm m_algorithm;
 
@@ -77,6 +82,11 @@ class Dungeon
     std::vector<std::unique_ptr<Room const>> m_available_rooms;
 
   public:
+    Dungeon(Prefab::Reference prefab) 
+        : m_prefab(prefab) {
+
+    }
+
     //std::unique_ptr<DungeonGenerator> Generate(const Vector3f& pos, const Quaternion& rot) const;
     //std::unique_ptr<DungeonGenerator> Generate(const Vector3f& pos, const Quaternion& rot, avledet::util::Hash seed) const;
     //

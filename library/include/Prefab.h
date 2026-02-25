@@ -4,22 +4,26 @@
 #include "Quaternion.h"
 #include "Vector.h"
 #include <cstdint>
+#include <functional>
 #include <limits>
+#include <memory>
 
 class Prefab
 {
   public:
+    using Reference = std::reference_wrapper<const Prefab>;
+
     using IndexType            = std::uint16_t;
     static constexpr auto NONE = std::numeric_limits<IndexType>::max();
 
-    // TODO rename Template / Placeholder / Def
+    // TODO rename Placement
     struct Instance
     {
         avledet::util::CSU::Quaternion m_rot;// 16 bytes
         avledet::util::CSU::Vector3f m_pos;  // 12 bytes
         avledet::util::Hash m_prefabHash;    // 4 bytes
 
-        Prefab const &get_prefab() const;
+        Prefab::Reference get_prefab() const;
     };
 
     // MineRock/5 is interesting
@@ -97,9 +101,12 @@ class Prefab
     bool is_persistent() const noexcept;
     avledet::util::ObjectType GetObjectType() const noexcept;
 
-    bool operator==(Prefab const &other) const noexcept;
+    bool operator==(std::unique_ptr<Prefab> const& other) const noexcept;
+    bool operator==(Prefab::Reference other) const noexcept;
     bool operator==(avledet::util::Hash other) const noexcept;
     bool operator==(std::string_view other) const noexcept;
+    friend bool operator==(std::unique_ptr<Prefab> const& lhs, std::unique_ptr<Prefab> const& rhs);
+    friend bool operator==(avledet::util::Hash lhs, std::unique_ptr<Prefab> const& rhs);
 };
 
 template<>
@@ -108,9 +115,14 @@ struct ankerl::unordered_dense::hash<Prefab>
     using is_transparent = void;
     using is_avalanching = void;// mark class as high quality avalanching hash
 
-    [[nodiscard]] auto operator()(Prefab const &prefab) const noexcept -> std::uint64_t
+    [[nodiscard]] auto operator()(std::unique_ptr<Prefab> const& prefab) const noexcept -> std::uint64_t
     {
-        return ankerl::unordered_dense::hash<avledet::util::Hash> {}(prefab.m_hash);
+        return ankerl::unordered_dense::hash<avledet::util::Hash> {}(prefab->m_hash);
+    }
+
+    [[nodiscard]] auto operator()(Prefab::Reference prefab) const noexcept -> std::uint64_t
+    {
+        return ankerl::unordered_dense::hash<avledet::util::Hash> {}(prefab.get().m_hash);
     }
 
     [[nodiscard]] auto operator()(avledet::util::Hash hash) const noexcept -> std::uint64_t

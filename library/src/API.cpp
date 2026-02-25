@@ -274,7 +274,7 @@ sol::environment IScriptManager::create_sandbox()
             auto stringUtilsTable = utilsTable["String"].get_or_create<sol::table>();
 
             //TODO
-            //stringUtilsTable["GetStableHashCode"] = get_stable_hash;
+            stringUtilsTable["get_stable_hash"] = [](std::string_view val) { avledet::util::get_stable_hash(val); };
         }
 
         {

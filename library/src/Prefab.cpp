@@ -1,7 +1,7 @@
 #include "Prefab.h"
 #include "PrefabManager.h"
 
-Prefab const &Prefab::Instance::get_prefab() const
+Prefab::Reference Prefab::Instance::get_prefab() const
 {
     return PrefabManager()->get_prefab(m_prefabHash);
 }
@@ -63,9 +63,14 @@ avledet::util::ObjectType Prefab::GetObjectType() const noexcept
     return (avledet::util::ObjectType) v;
 }
 
-bool Prefab::operator==(Prefab const &other) const noexcept
+bool Prefab::operator==(std::unique_ptr<Prefab> const& other) const noexcept
 {
-    return this->m_hash == other.m_hash;
+    return this->m_hash == other->m_hash;
+}
+
+bool Prefab::operator==(Prefab::Reference other) const noexcept
+{
+    return this->m_hash == other.get().m_hash;
 }
 
 bool Prefab::operator==(avledet::util::Hash other) const noexcept
@@ -76,4 +81,14 @@ bool Prefab::operator==(avledet::util::Hash other) const noexcept
 bool Prefab::operator==(std::string_view other) const noexcept
 {
     return this->m_hash == avledet::util::get_stable_hash(other);
+}
+
+bool operator==(std::unique_ptr<Prefab> const& lhs, std::unique_ptr<Prefab> const& rhs) {
+    assert(lhs && rhs);
+    return lhs->m_hash == rhs->m_hash;
+}
+
+bool operator==(avledet::util::Hash lhs, std::unique_ptr<Prefab> const& rhs) {
+    assert(rhs);
+    return lhs == rhs->m_hash;
 }

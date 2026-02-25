@@ -1,10 +1,13 @@
 #include "DungeonManager.h"
+#include "Dungeon.h"
 #include "Quaternion.h"
 #include "RandomSpawn.h"
 #include "Types.h"
 #include "Vector.h"
+#include <range/v3/view/map.hpp>
 #include <stdexcept>
 #include <type_traits>
+#include <vector>
 
 #if AVL_IS_ON(AVL_DUNGEON_GENERATION)
     #include "DataStream.h"
@@ -42,7 +45,7 @@ void IDungeonManager::post_prefab_init()
 
     std::int32_t count = pkg.read<std::int32_t>();
     for (int i = 0; i < count; i++) {
-        auto dungeon = std::make_unique<Dungeon>();
+        
 
         //avledet::util::Hash hash = pkg.read<avledet::util::Hash>();
 
@@ -53,8 +56,10 @@ void IDungeonManager::post_prefab_init()
 
         auto name = pkg.read<std::string_view>();
 
+        auto dungeon = std::make_unique<Dungeon>(PrefabManager()->get_prefab(name));
+
         // TODO dungeon prefab is required (make a ref)
-        dungeon->m_prefab = &PrefabManager()->get_prefab(name);
+        //dungeon->m_prefab = PrefabManager()->get_prefab(name);
 
         //VLOG(2) << "Loading dungeon " << name;
 
@@ -82,7 +87,7 @@ void IDungeonManager::post_prefab_init()
                 throw std::runtime_error("bad read anchor");
             }
 
-            Dungeon::DoorDef door;
+            //Dungeon::DoorDef door;
             auto doorName = pkg.read<std::string_view>();//Debug
             (void) doorName;
             auto doorHash = pkg.read<avledet::util::Hash>();
@@ -92,15 +97,22 @@ void IDungeonManager::post_prefab_init()
             //    throw std::runtime_error("dg door hash unequal to computed");
             //}
 
-            door.m_prefab = PrefabManager()->find_prefab(doorHash);
-            if (!door.m_prefab) {
+            auto door_prefab = PrefabManager()->find_prefab(doorHash);
+            if (!door_prefab) {
                 throw std::runtime_error("dungeon door missing prefab");
             }
 
-            door.m_connection_type = pkg.read<std::string>();
-            door.m_chance          = pkg.read<float>();
+            auto connection_type = pkg.read<std::string>();
+            auto chance          = pkg.read<float>();
 
-            dungeon->m_door_types.push_back(door);
+            //Dungeon::DoorDef door(*door_prefab, connection_type, chance);
+
+            //door.m_prefab = *door_prefab;
+            //door.m_connection_type = pkg.read<std::string>();
+            //door.m_chance          = pkg.read<float>();
+
+            //dungeon->m_door_types.push_back(door);
+            dungeon->m_door_types.emplace_back(*door_prefab, std::move(connection_type), chance);
         }
 
         dungeon->m_grid_size          = pkg.read<std::int32_t>();
@@ -186,7 +198,7 @@ void IDungeonManager::post_prefab_init()
             dungeon->m_available_rooms.push_back(std::move(room));
         }
 
-        avledet::util::Hash hash = dungeon->m_prefab->m_hash;
+        avledet::util::Hash hash = dungeon->m_prefab.get().m_hash;
         m_dungeons.insert({hash, std::move(dungeon)});
     }
 
@@ -284,7 +296,7 @@ void IDungeonManager::TryRegenerateDungeons()
 
 ZDO::reference IDungeonManager::generate(Dungeon const &dungeon, Vector3f pos, Quaternion rot)
 {
-    auto &&zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
+    auto &&zdo = ZDOManager()->Instantiate(dungeon.m_prefab, pos);
     zdo->set_rotation(rot);
 
     DungeonGenerator(dungeon, zdo).Generate();
@@ -295,7 +307,7 @@ ZDO::reference IDungeonManager::generate(Dungeon const &dungeon, Vector3f pos, Q
 ZDO::reference IDungeonManager::generate(Dungeon const &dungeon, Vector3f pos, Quaternion rot,
                                          avledet::util::Hash seed)
 {
-    auto &&zdo = ZDOManager()->Instantiate(*dungeon.m_prefab, pos);
+    auto &&zdo = ZDOManager()->Instantiate(dungeon.m_prefab, pos);
     zdo->set_rotation(rot);
 
     DungeonGenerator(dungeon, zdo).Generate(seed);
@@ -307,4 +319,12 @@ void IDungeonManager::generate(Dungeon const &dungeon, ZDO::reference zdo)
 {
     DungeonGenerator(dungeon, zdo).Generate();
 }
+
+std::vector<const Dungeon*> IDungeonManager::get_dungeons() const {
+    return m_dungeons 
+    | ranges::views::values 
+    | ranges::views::transform([](auto const& p) -> const Dungeon* { return p.get(); })
+    | ranges::to<std::vector>();
+}
+
 #endif

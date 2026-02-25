@@ -949,7 +949,7 @@ class ZDO
 
     void set_rotation(Quaternion rot);
 
-    Prefab const &get_prefab() const;
+    Prefab::Reference get_prefab() const;
 
     avledet::util::Hash get_prefab_hash() const;
 

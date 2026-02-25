@@ -27,7 +27,7 @@ void IScriptManager::load_userdata_zone()
             return self.find_dungeon(avledet::util::get_stable_hash(name));
         },
         // TODO must make get_dungeon for lua use reference I guess...
-        //"get_dungeon", [](IDungeonManager& self, std::string_view name) { return self.get_dungeon(get_stable_hash(name)); }, //breaks compilation
+        //"get_dungeon", [](IDungeonManager& self, std::string_view name) { return self.get_dungeon(avledet::util::get_stable_hash(name)); }, //breaks compilation
         "generate", [](IDungeonManager &self, Dungeon &dungeon, Vector3f pos, Quaternion rot) {
             self.generate(dungeon, pos, rot);
         }
@@ -45,7 +45,7 @@ void IScriptManager::load_userdata_zone()
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
         "populate_zone", sol::resolve<void(ZoneID)>(&IZoneManager::PopulateZone),
 #endif
-        "get_nearest_feature", &IZoneManager::GetNearestFeature, 
+        "find_nearest_feature", &IZoneManager::find_nearest_feature, 
         "to_zone_pos", &IZoneManager::WorldToZonePos, 
         "to_world_pos", &IZoneManager::ZoneToWorldPos, 
         "global_keys", sol::property(&IZoneManager::m_globalKeys)

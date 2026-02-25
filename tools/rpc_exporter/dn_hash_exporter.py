@@ -1,0 +1,166 @@
+###
+### USAGE
+###
+### From within DnSpy, highlight ALL classes
+### Copy the 50,000+ lines of code
+### Save into a new file
+import re
+import numpy as np
+
+# conform to this git md format
+# https://github.com/Valheim-Modding/Wiki/wiki/RPC-Method-registrations
+
+# STEPS
+# locate the class name
+
+def stable_hash(s: str) -> str:
+    """
+    public static int GetStableHashCode(this string str)
+	{
+		int num = 5381;
+		int num2 = num;
+		int num3 = 0;
+		while (num3 < str.Length && str[num3] != '\0')
+		{
+			num = ((num << 5) + num) ^ (int)str[num3];
+			if (num3 == str.Length - 1 || str[num3 + 1] == '\0')
+			{
+				break;
+			}
+			num2 = ((num2 << 5) + num2) ^ (int)str[num3 + 1];
+			num3 += 2;
+		}
+		return num + num2 * 1566083941;
+	}
+    """
+    #num = 5381
+    num = np.uint32(5381)
+    num2 = num
+    num3 = np.uint32(0)
+
+    while num3 < len(s):
+        num = ((num << 5) + num) ^ ord(s[num3])
+        if num3 + 1 != len(s):
+            num2 = ((num2 << 5) + num2) ^ ord(s[num3 + 1])
+            num3 += 2
+        else:
+            break
+
+    return np.astype(num + num2 * np.uint32(1566083941), np.int32)
+
+__shash = stable_hash('ServerHandshake')
+assert __shash == 1233642074
+
+__shash = stable_hash('ChatMessage')
+assert __shash == -1182660091
+
+__shash = stable_hash('DamageText')
+assert __shash == 1659340188
+
+#assert stable_hash('ServerHandshake') == 1233642074
+#assert stable_hash('ChatMessage') == -1182660091
+#assert stable_hash('DamageText') == 1659340188
+
+open_braces = 0
+
+pub_cla_regex = re.compile(r' class (\w+)')
+#invoke_regex = re.compile('\.InvokeRPC\((".+"|)') # strip ""
+#register_pattern = re.compile('\.Register.*?\("?([a-zA-Z0-9]+)"?,[a-zA-Z0-9 .]+(<[a-zA-Z0-9, <>]+>)?\(([a-zA-Z0-9_.]+)')
+register_pattern = re.compile(r'\.Register.*?\(([a-zA-Z0-9_"]+?),[a-zA-Z0-9 .]+(<[a-zA-Z0-9, <>]+>)?.*?\(([a-zA-Z0-9_.]+)')
+
+class RpcEntry:
+    def __init__(self, hash_name, method_name, params, reg_rpc_type):
+        self.hash_name = hash_name
+        self.method_name = method_name
+        self.params = params
+        self.reg_rpc_type = reg_rpc_type
+        self.hash = stable_hash(hash_name)
+
+class ClazzEntry:
+    def __init__(self, clazz_name):
+        self.clazz_name = clazz_name
+        self.rpc_entries = {}
+
+    def add_rpc_entry(self, entry: RpcEntry):
+        self.rpc_entries[entry.hash_name] = entry
+
+# array thing of
+#   k: clazz_name, list<RpcEntry>
+clazzes = {
+
+}
+
+clazz_name = ''
+game_version = ''
+
+with open('input_cs_lines.txt') as ifile:
+    for line in ifile:
+        #clazz_matched = pub_cla_regex.match(line)
+        clazz_matches = pub_cla_regex.findall(line)
+        if len(clazz_matches) > 0:
+            g1 = clazz_matches[0]
+
+            clazz_name = g1
+
+        # now, check if invoke is present
+        else:
+            reg_matches = register_pattern.findall(line)
+            if len(reg_matches) > 0:
+                thing = reg_matches[0]
+
+                # remove qouted ""
+                hash_name = thing[0].replace('"', '')
+                params = thing[1][1:-1]
+                method_name = thing[2].replace('this.', '')
+
+                reg_type = ''
+                if 'ZRpc' in params: # probably ZRpc param
+                    reg_type = 'ZRpc'
+                elif 'oute' in line:
+                    reg_type = 'ZRoutedRpc'
+                else: #baah, probably nv
+                    reg_type = 'ZNetView'
+
+                clazz_entry = clazzes.get(clazz_name)
+                if clazz_entry is None:
+                    clazz_entry = ClazzEntry(clazz_name)
+                    clazzes[clazz_name] = clazz_entry
+
+                # TODO reg for Rpc / Route / ZNv
+                clazz_entry.add_rpc_entry(RpcEntry(hash_name, method_name, params, reg_type))
+
+            else:
+                if game_version == '' and clazz_name == 'Version':
+                    if 'CurrentVersion' in line:
+                        game_version = re.compile(r'GameVersion\((\d+),\s*(\d+),\s*(\d+)\)').findall(line)[0]
+                        game_version = 'v' + game_version[0] + '.' + game_version[1] + '.' + game_version[2]
+
+assert len(clazzes) > 0
+
+# TODO building tables
+
+table_str = ''
+
+for k, clazz_entry in clazzes.items():
+    rpc_entries = clazz_entry.rpc_entries
+    if len(rpc_entries) == 0:
+        continue
+
+    table_str += '**' + k + '**\n'
+    table_str += '| Name | Method | Params | Registers to | Hash |\n'
+    table_str += '|-|-|-|-|-|\n'
+
+    ordered_rpcs = dict(sorted(rpc_entries.items()))
+
+    #for rpc_entry in clazz_entry.rpc_entries.values():
+    for rpc_entry in ordered_rpcs.values():
+        table_str += '| {} | {} | {} | {} | {} |\n'.format(
+            rpc_entry.hash_name, rpc_entry.method_name, rpc_entry.params, rpc_entry.reg_rpc_type, rpc_entry.hash
+        )
+        #table_str += '| ' + rpc_entry.hash_name + ' | ' + rpc_entry.method_name + ' | ' + rpc_entry.params + ' | ' + rpc_entry.reg_rpc_type + ' | ' + rpc_entry.hash + '|\n'
+
+    table_str += '\n'
+
+print(table_str)
+
+print('Automatically generated by avl-rpc-wiki-gen for Valheim ' + game_version)

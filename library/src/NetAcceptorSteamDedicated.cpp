@@ -7,6 +7,7 @@
 
 #include "Avledet.h"
 #include "CompileSettings.h"
+#include "NetManager.h"
 #include "isteamnetworking.h"
 #include "isteamnetworkingutils.h"
 #include "NetAcceptor.h"
@@ -515,7 +516,7 @@ void AcceptorSteam::OnLobbyCreated(LobbyCreated_t *data, bool failure)
             LOG_ERROR(AVL_LOGGER, "Failed to set lobby name");
         }
 
-        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "password", "0")) {
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "password", NetManager()->m_passwordSalt.empty() ? "0" : "1")) {
             LOG_ERROR(AVL_LOGGER, "Unable to set lobby password flag");
         }
 
@@ -527,6 +528,11 @@ void AcceptorSteam::OnLobbyCreated(LobbyCreated_t *data, bool failure)
                                               std::to_string(VConstants::NETWORK).c_str())) {
             LOG_WARNING(AVL_LOGGER, "Failed to set lobby networkversion");
         }
+
+        // TODO list to serialized string
+        //if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "modifiers", "...")) {
+            //LOG_WARNING(AVL_LOGGER, "Failed to set lobby game modifiers");
+        //}
 
         if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "serverType", "Steam user")) {
             LOG_WARNING(AVL_LOGGER, "Failed to set lobby serverType");

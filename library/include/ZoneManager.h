@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <functional>
 #include <list>
 #include <string>
 #include <vector>
@@ -140,7 +141,7 @@ class IZoneManager
     class Foliage
     {
       public:
-        Prefab const *m_prefab = nullptr;
+        Prefab::Reference m_prefab;
 
         avledet::util::Biome m_biome         = avledet::util::Biome::None;
         avledet::util::BiomeArea m_biomeArea = avledet::util::BiomeArea::Everything;
@@ -173,6 +174,9 @@ class IZoneManager
         float m_chanceToUseGroundTilt        = 0;
         float m_minVegetation                = 0;
         float m_maxVegetation                = 0;
+
+        Foliage(Prefab::Reference prefab) 
+            : m_prefab(prefab) {}
     };
 
     struct ClearArea
@@ -329,9 +333,9 @@ class IZoneManager
 
     // Find the nearest location
     //	Nullable
-    Feature::Instance *GetNearestFeature(std::string_view name, Vector3f pos);
+    Feature::Instance *find_nearest_feature(std::string_view name, Vector3f pos);
 #else
-    bool GetNearestFeature(std::string_view name, Vector3f in, Vector3f &out);
+    bool find_nearest_feature(std::string_view name, Vector3f in, Vector3f &out);
 #endif
 
     static ZoneID WorldToZonePos(Vector3f pos);
