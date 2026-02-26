@@ -99,6 +99,7 @@ struct ServerSettings
     std::string serverPassword;
     bool serverPublic;
     bool serverDedicated;
+    std::string serverBindAddress;
     bool TEST_serverTcp;
 
     bool playerWhitelist;

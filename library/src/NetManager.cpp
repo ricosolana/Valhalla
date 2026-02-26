@@ -358,9 +358,9 @@ void INetManager::PostInit()
     //m_acceptor->Listen();
     if (AVL_SETTINGS.TEST_serverTcp) {
         m_acceptor
-                = IAcceptor::tcp_dedicated("0.0.0.0:" + std::to_string(AVL_SETTINGS.serverPort));// m_acceptor
+                = IAcceptor::tcp_dedicated(AVL_SETTINGS.serverBindAddress + ":" + std::to_string(AVL_SETTINGS.serverPort));// m_acceptor
     } else {
-        m_acceptor = IAcceptor::steam_dedicated("0.0.0.0:"
+        m_acceptor = IAcceptor::steam_dedicated(AVL_SETTINGS.serverBindAddress + ":"
                                                 + std::to_string(AVL_SETTINGS.serverPort));      // m_acceptor
     }
 
