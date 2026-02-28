@@ -163,4 +163,6 @@ struct ServerSettings
     //bool            discordEnableDevCommands;
     //avledet::util::Set<dpp::snowflake> discordDevAccount;
     //bool            discordDeleteCommands;
+
+    bool luaUnsafe;
 };

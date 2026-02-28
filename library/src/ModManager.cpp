@@ -205,8 +205,9 @@ void IScriptManager::Init()
     //m_state.set_exception_handler(&my_exception_handler); // triggers on EVERY exception, which I dont want yet
 
     // open all, we'll worry about sandboxing later
-    //m_state.open_libraries();
+    m_state.open_libraries();
 
+    /*
     m_state.open_libraries(sol::lib::base,
                            //sol::lib::package, //unsafe; overridden
                            sol::lib::coroutine, sol::lib::string,
@@ -218,6 +219,7 @@ void IScriptManager::Init()
                            //sol::lib::ffi, //luajit; unsafe;
                            //sol::lib::jit, //luajit; unsafe;
                            sol::lib::utf8);
+    */
 
     // Load globally shared userdata
     load_userdata();

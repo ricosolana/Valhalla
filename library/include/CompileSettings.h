@@ -8,9 +8,9 @@
 //  TODO no longer used, because now using quill
 #define AVLEDET_LOGFILE_PATH "logs/log.txt"
 
-#define AVLEDET_LUA_PATH     "lua"
-#define AVLEDET_LUA_CPATH    "bin"
-#define AVLEDET_SCRIPTS_PATH "scripts"
+#define AVLEDET_LUA_PATH     "lua/libs"
+#define AVLEDET_LUA_CPATH    "lua/bin"
+#define AVLEDET_SCRIPTS_PATH "lua/scripts"
 
 #define AVL_RAW_IS_ON(OP_SYMBOL)          ((3 OP_SYMBOL 3) != 0)
 #define AVL_RAW_IS_OFF(OP_SYMBOL)         ((3 OP_SYMBOL 3) == 0)

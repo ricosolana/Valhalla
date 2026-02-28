@@ -3,6 +3,8 @@
 #include <sol/call.hpp>
 #include <sol/raii.hpp>
 #include <sol/resolve.hpp>
+#include <string_view>
+#include <vector>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
@@ -212,7 +214,7 @@ void IScriptManager::load_userdata()
     //);
 }
 
-// I think were fine from here...
+// I think we're fine from here...
 // clang-format on
 
 static std::vector<std::string_view> const safe_functions {// Global objects
@@ -234,9 +236,9 @@ static std::vector<std::string_view> const safe_functions {// Global objects
 //https://github.com/ThePhD/sol2/blob/develop/examples/source/environments.cpp
 sol::environment IScriptManager::create_sandbox()
 {
-    auto env  = sol::environment(m_state, sol::create, m_state.globals());
-    env["_G"] = env;// otherwise, will point to our state global table; defeating sandboxing...
-
+    //auto env  = sol::environment(m_state, sol::create, m_state.globals());
+    //sol::environment en1v;
+    auto env  = sol::environment(m_state, sol::create);
     using namespace avledet::util;
     using namespace CSU;
 
@@ -248,7 +250,6 @@ sol::environment IScriptManager::create_sandbox()
     env["DungeonManager"] = DungeonManager();
     env["ZoneManager"]    = ZoneManager();
     env["RouteManager"]   = RouteManager();
-
 
     {
         auto eventTable = env["event"].get_or_create<sol::table>();
@@ -304,60 +305,67 @@ sol::environment IScriptManager::create_sandbox()
         }
     }
 
-    /*
-        Lua stl sandboxing
-    */
+    env["_G"] = env;// otherwise, will point to our state global table; defeating sandboxing...
 
-    for (auto const &entry : safe_functions) {
-
+    if (AVL_SETTINGS.luaUnsafe) {
+        env[sol::create_if_nil][sol::metatable_key]["__index"] = m_state.globals();
+    } else {
         /*
-            Entire module loading
+            Lua stl sandboxing
         */
-        auto idx = entry.rfind(".*");
-        if (idx != std::string::npos) {
-            // load the package
-            auto package_name = entry.substr(0, idx);
-            assert(!package_name.contains("."));
 
-            auto copy = env[sol::create_if_nil][package_name];
-            for (auto [func_name, func] : m_state[package_name].get<sol::table>()) {
-                copy[func_name] = func;
+        for (auto const &entry : safe_functions) {
+
+            /*
+                Entire module loading
+            */
+            auto idx = entry.rfind(".*");
+            if (idx != std::string::npos) {
+                // load the package
+                auto package_name = entry.substr(0, idx);
+                assert(!package_name.contains("."));
+
+                auto copy = env[sol::create_if_nil][package_name];
+                for (auto [func_name, func] : m_state[package_name].get<sol::table>()) {
+                    copy[func_name] = func;
+
+                    assert(env.get<sol::table>(package_name)[func_name].valid());
+                }
+                continue;
+            }
+
+            /*
+                Partial module function loading
+            */
+            idx = entry.find(".");
+            if (idx != std::string::npos) {
+                // load the partial
+                auto package_name = entry.substr(0, idx);
+                assert(!package_name.contains("."));
+
+                auto func_name = entry.substr(idx + 1);
+                assert(!func_name.contains("."));
+
+                // https://github.com/ThePhD/sol2/blob/develop/examples/source/table_create_if_nil.cpp
+
+                auto func = m_state[package_name][func_name].get<sol::function>();
+                assert(func.valid());
+
+                env[sol::create_if_nil][package_name][func_name] = func;
 
                 assert(env.get<sol::table>(package_name)[func_name].valid());
+                assert(env.get<sol::table>(package_name)[func_name].get_type() == sol::type::function);
+
+                continue;
             }
-            continue;
+
+            /*
+                Global function loading
+            */
+
+            env[sol::create_if_nil][entry] = m_state[entry].get<sol::object>();
         }
 
-        /*
-            Partial module function loading
-        */
-        idx = entry.find(".");
-        if (idx != std::string::npos) {
-            // load the partial
-            auto package_name = entry.substr(0, idx);
-            assert(!package_name.contains("."));
-
-            auto func_name = entry.substr(idx + 1);
-            assert(!func_name.contains("."));
-
-            // https://github.com/ThePhD/sol2/blob/develop/examples/source/table_create_if_nil.cpp
-
-            auto func = m_state[package_name][func_name].get<sol::function>();
-            assert(func.valid());
-
-            env[sol::create_if_nil][package_name][func_name] = func;
-
-            assert(env.get<sol::table>(package_name)[func_name].valid());
-            assert(env.get<sol::table>(package_name)[func_name].get_type() == sol::type::function);
-
-            continue;
-        }
-
-        /*
-            Global function loading
-        */
-
-        env[sol::create_if_nil][entry] = m_state[entry].get<sol::object>();
     }
 
     return env;

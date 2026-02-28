@@ -507,6 +507,14 @@ void IAvledet::LoadFiles(bool reloading)
                 AVL_LOGGER->set_log_level(level);
             }
 
+            {
+                a(m_settings.luaUnsafe, general, "lua-unsafe", false, nullptr, reloading);
+
+                if (m_settings.luaUnsafe) {
+                    LOG_WARNING(AVL_LOGGER, "Unsafe Lua is enabled! This allows potentially unsafe code to run!");
+                }
+            }
+
             if (m_settings.serverPassword.empty()) {
                 LOG_INFO(AVL_LOGGER, "Server does not have a password");
             } else {
