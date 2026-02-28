@@ -104,14 +104,25 @@ local commands = {
     },
     gendungeon = {
         func = function(peer, cmd, args)
-            local dungeon = assert(DungeonManager:find_dungeon(args[1]))
+            local dungeon
+            if #args >= 1 then
+                dungeon = DungeonManager:find_dungeon(args[1])
+            end
 
-            local pos =
-                #args >= 4 and Vector3f.new(tonumber(args[2]), tonumber(args[3]), tonumber(args[4])) or peer.zdo.pos
+            if not dungeon then
+                peer:console_message('valid dungeons:')
+                for _, dg in pairs(DungeonManager.dungeons) do
+                    peer:console_message('-' .. dg.name)
+                end
 
-            DungeonManager:generate(dungeon, pos, Quaternion.IDENTITY)
+            else
+                local pos =
+                    #args >= 4 and Vector3f.new(tonumber(args[2]), tonumber(args[3]), tonumber(args[4])) or peer.zdo.pos
 
-            peer:console_message("generated dungeon at " .. tostring(pos))
+                DungeonManager:generate(dungeon, pos, Quaternion.IDENTITY)
+
+                peer:console_message("generated dungeon at " .. tostring(pos))
+            end
         end,
         usage = "<dungeon>",
         desc = "generates a dungeon by name"

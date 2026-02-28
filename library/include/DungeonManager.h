@@ -15,7 +15,7 @@ class IDungeonManager
     friend class IZDOManager;
     friend class IZoneManager;
 
-  private:
+  public:
     avledet::util::Map<avledet::util::Hash, std::unique_ptr<Dungeon>> m_dungeons;
 
     //robin_hood::unordered_set<ZDOID> m_dungeonInstances;
@@ -53,7 +53,7 @@ class IDungeonManager
     ZDO::reference generate(Dungeon const &dungeon, Vector3f pos, Quaternion rot, avledet::util::Hash seed);
     void generate(Dungeon const &dungeon, ZDO::reference zdo);
 
-    std::vector<const Dungeon*> get_dungeons() const;
+    //std::vector<const Dungeon*> get_dungeons() const;
 };
 
 // Manager for everything related to dungeon spawning

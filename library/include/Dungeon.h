@@ -91,5 +91,9 @@ class Dungeon
     //std::unique_ptr<DungeonGenerator> Generate(const Vector3f& pos, const Quaternion& rot, avledet::util::Hash seed) const;
     //
     //std::unique_ptr<DungeonGenerator> Generate(ZDO& zdo) const;
+
+    std::string_view get_name() {
+        return m_prefab.get().m_name;
+    }
 };
 #endif

@@ -1,5 +1,6 @@
 #include "ModManager.h"
 #include "VUtils.h"
+#include <sol/state_handling.hpp>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
@@ -134,7 +135,18 @@ void IScriptManager::execute(ScriptInfo const &_plugin_info, std::string const &
 
     // Important: loadmode::text
     //  Otherwise, loading raw binary Lua can cause sandbox escapes according to <>
-    m_state.script(code, env, plugin_info.m_chunk_name, sol::load_mode::text);
+    
+    // if file cannot be loaded because of syntax, mark it
+
+    //auto result = m_state.script(code, env, sol::script_pass_on_error, plugin_info.m_chunk_name, sol::load_mode::text);
+
+    auto result = m_state.script(code, env, plugin_info.m_chunk_name, sol::load_mode::text);
+
+    //if (!result.valid()) {
+    //    // mark it
+    //    sol::error err = result;
+    //    LOG_ERROR(AVL_LOGGER, "Execute failure: {}", err.what());
+    //}
 }
 
 //TODO
@@ -257,7 +269,7 @@ void IScriptManager::Init()
             auto [info, code] = load_file_script(dir.path());
             execute(info, code, false);
 
-            LOG_NOTICE(AVL_LOGGER, "Loaded script [{}]", info.m_name);
+            LOG_NOTICE(AVL_LOGGER, "Loaded script [{}] {}", info.m_name, info.m_version);
         } catch (std::exception const &e) {
             LOG_ERROR(AVL_LOGGER, "Failed to load script: [{}], {}", dir.path().string(), e.what());
         }
@@ -430,12 +442,16 @@ void IScriptManager::reload_script(decltype(m_scripts)::iterator &script_itr)
     LOG_NOTICE(AVL_LOGGER, "Unloaded script '{}'", script_info.m_name);
 
     // reload from scratch
-    auto [info, code] = load_file_script(root);
-    execute(info, code, true);
+    try {
+        auto [info, code] = load_file_script(root);
+        execute(info, code, true);
 
-    LOG_NOTICE(AVL_LOGGER, "Reloaded script '{}'", info.m_name);
+        LOG_NOTICE(AVL_LOGGER, "Reloaded script '{}'", info.m_name);
+    } catch (std::exception const &e) { 
+        LOG_ERROR(AVL_LOGGER, "Failed to reload: {}", e.what());
+    }
 
-    LOG_NOTICE(AVL_LOGGER, "Lua memory: {}kB", (m_state.memory_used() / 1024));
+    LOG_NOTICE(AVL_LOGGER, "Lua memory: {}kB", (m_state.memory_used() / 1024));    
 }
 
 bool IScriptManager::reload_script(std::string_view name)

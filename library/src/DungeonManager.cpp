@@ -320,11 +320,12 @@ void IDungeonManager::generate(Dungeon const &dungeon, ZDO::reference zdo)
     DungeonGenerator(dungeon, zdo).Generate();
 }
 
+/*
 std::vector<const Dungeon*> IDungeonManager::get_dungeons() const {
     return m_dungeons 
     | ranges::views::values 
     | ranges::views::transform([](auto const& p) -> const Dungeon* { return p.get(); })
     | ranges::to<std::vector>();
-}
+}*/
 
 #endif

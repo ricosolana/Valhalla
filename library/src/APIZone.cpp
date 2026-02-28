@@ -1,4 +1,6 @@
 #include "CompileSettings.h"
+#include "Dungeon.h"
+#include <sol/property.hpp>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
@@ -17,7 +19,9 @@ void IScriptManager::load_userdata_zone()
     //or AVL_DUNGEON_GENERATION?
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
     this->new_usertype<Dungeon>("Dungeon", 
-        sol::no_constructor
+        sol::no_constructor,
+        "name", sol::property(&Dungeon::get_name)
+        //"", Dungeon::
         //"Generate", sol::resolve<void(const Vector3f& pos, const Quaternion& rot) const>(&Dungeon::Generate)
     );
 
@@ -31,8 +35,12 @@ void IScriptManager::load_userdata_zone()
         "generate", [](IDungeonManager &self, Dungeon &dungeon, Vector3f pos, Quaternion rot) {
             self.generate(dungeon, pos, rot);
         }
+        //"dungeons", sol::property(&IDungeonManager::get_dungeons)
+        // TODO dungeons meant to be immutable
+        //  which readonly doesnt quite achieve (prevents assignment, not index assign)
+        //"dungeons", sol::readonly(&IDungeonManager::m_dungeons)
     );
-
+//DungeonManager()->m_dungeons.end()
     this->new_usertype<IZoneManager::Feature::Instance>("FeatureInstance", 
         sol::no_constructor,
         "pos", sol::property([](IZoneManager::Feature::Instance &self) { return self.m_pos; })

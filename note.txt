@@ -1,0 +1,15 @@
+zs2 and not zs2.zdodata.id.id and not zs2.msg_type==0 and not zs2.routedrpc.setevent.name and not zs2.nettime
+
+-----------
+
+windows guest (clumsy proxy):
+	netsh interface portproxy add v4tov4 listenport=2456 listenaddress=0.0.0.0 connectaddress=192.168.122.1 connectport=2460
+
+	netsh advfirewall firewall add rule name="PortProxy2456" dir=in action=allow protocol=TCP localport=2456
+
+	netsh interface portproxy show all
+
+-----------
+
+clumsy filtering:
+	tcp and (tcp.DstPort == 2456 or tcp.SrcPort == 2460)
