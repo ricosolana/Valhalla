@@ -1,6 +1,9 @@
 --[[
     Command mod
 --]]
+
+require("mobdebug").listen()
+
 local commands = {
     --[[
     reload = {

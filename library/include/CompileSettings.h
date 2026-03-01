@@ -2,15 +2,17 @@
 
 #include <cstdint>
 
-#define AVLEDET_VERSION "v1.0.1"
+#define AVL_VERSION "v1.0.1"
 
 // ELPP log file name
-//  TODO no longer used, because now using quill
-#define AVLEDET_LOGFILE_PATH "logs/log.txt"
+#define AVL_LOG_PATH "logs/log.txt"
 
-#define AVLEDET_LUA_PATH     "lua/libs"
-#define AVLEDET_LUA_CPATH    "lua/bin"
-#define AVLEDET_SCRIPTS_PATH "lua/scripts"
+//#define AVL_LUA_LIBS
+//#define AVL_LUA_C_PATH
+#define AVL_LUA_ROOT        "lua"
+#define AVL_LUA_LIBS_PATH   "lua/libs"
+#define AVL_LUA_C_PATH      "lua/bin"
+#define AVL_LUA_SCRIPT_PATH "lua/scripts"
 
 #define AVL_RAW_IS_ON(OP_SYMBOL)          ((3 OP_SYMBOL 3) != 0)
 #define AVL_RAW_IS_OFF(OP_SYMBOL)         ((3 OP_SYMBOL 3) == 0)

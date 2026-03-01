@@ -51,6 +51,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CXX_EXTENSIONS OFF)
 
+set(VCPKG_TARGET_TRIPLET x64-linux-dynamic)
+
 # TODO change this file impl or how defines are 'defined'
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(VHSettings)
@@ -106,7 +108,8 @@ endif()
 message("Steamworks: ${STEAMWORKS_SDK_LOCATION}")
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/steam_appid.txt
-     DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+    DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+)
 
 file(COPY ${STEAMWORKS_SDK_SHARED_DIR}
     DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
@@ -156,11 +159,18 @@ find_package(magic_enum CONFIG REQUIRED)
 find_package(unordered_dense CONFIG REQUIRED) # https://github.com/martinus/unordered_dense?tab=readme-ov-file#21-installing-using-cmake
 find_package(isptr CONFIG REQUIRED) #intrusive pointer
 
+
+
 if (NOT DEFINED AVL_ENABLE_SCRIPTING OR AVL_ENABLE_SCRIPTING)
     message("Lua: enabled")
     #find_package(lua CONFIG REQUIRED) # could replace with LuaJIT
-    find_package(Lua REQUIRED)
+    #######find_package(Lua CONFIG REQUIRED) ### THIS WORKED
     find_package(sol2 CONFIG REQUIRED)
+    ##if(TARGET Lua::Lua)
+    ##    message(STATUS "Lua target exists")
+    ##else()
+    ##    message(FATAL_ERROR "Lua::Lua target NOT found")
+    ##endif()
 else()
     message("Lua: disabled")
 endif()

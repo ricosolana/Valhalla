@@ -16,6 +16,8 @@
 #include <quill/sinks/Sink.h>
 #include <quill/std/FilesystemPath.h>
 
+#include <string>
+#include <string_view>
 #include <thread>
 #include <tracy/Tracy.hpp>
 #include <vector>
@@ -25,6 +27,7 @@
 
 #include "Avledet.h"
 #include "CompileSettings.h"
+#include "VUtils.h"
 
 //#include "Tests.h"
 
@@ -40,27 +43,55 @@ int main(int argc, char **argv)
 {
     std::filesystem::current_path("./data/");
 
-    /*
-    // I think ONLY windows requires this...
-    {
-        std::string path = (std::filesystem::current_path() / AVLEDET_LUA_PATH).string();
-        std::string path2 = (std::filesystem::current_path() / AVLEDET_SCRIPTS_PATH).string();
-        if (!VUtils::SetEnv("LUA_PATH",
-            path + "/?.lua;"
-            + path + "/?/?.lua;"
-            + path2 + "/?.lua;"
-            + path2 + "/?/?.lua"))
-            LOG_ERROR(AVL_LOGGER, "Failed to set Lua path");
-    }
+    auto set_lua_paths = [](std::string_view key, std::vector<std::filesystem::path> roots, std::string_view ext, bool deep) {
+        auto ext1 = "/?" + std::string(ext);
+        auto ext2 = "/?/?" + std::string(ext);
 
-    {
-        std::string path = (std::filesystem::current_path() / AVLEDET_LUA_CPATH).string();
-        if (!VUtils::SetEnv("LUA_CPATH",
-            path + "/?.dll;"
-            + path + "/?/?.dll"))
-            LOG_ERROR(AVL_LOGGER, "Failed to set Lua cpath");
-    }
-*/
+        std::string val;
+        for (auto const& path : roots) {
+            val += path.string() + ext1 + ";";
+            
+            if (deep) {
+                val += path.string() + ext2 + ";";
+            }
+        }
+
+        avledet::util::set_env(key, val);
+    };
+
+    set_lua_paths("LUA_PATH", 
+        { 
+            std::filesystem::current_path() / AVL_LUA_LIBS_PATH,
+            std::filesystem::current_path() / AVL_LUA_SCRIPT_PATH 
+        }
+        , ".lua", true);
+
+    set_lua_paths("LUA_CPATH", 
+        { 
+            std::filesystem::current_path() / AVL_LUA_C_PATH,
+            //"/opt/zbstudio/bin/linux/x64"
+        }
+        , ".so", false); // TODO; target clibs?
+
+    // I think ONLY windows requires this...
+    //{
+    //    std::string path = (std::filesystem::current_path() / AVL_LUA_LIBS_PATH).string();
+    //    std::string path2 = (std::filesystem::current_path() / AVL_LUA_SCRIPT_PATH).string();
+    //    if (!avledet::util::set_env("LUA_PATH",
+    //        path + "/?.lua;"
+    //        + path + "/?/?.lua;"
+    //        + path2 + "/?.lua;"
+    //        + path2 + "/?/?.lua"))
+    //        LOG_ERROR(AVL_LOGGER, "Failed to set Lua path");
+    //}
+//
+    //{
+    //    std::string path = (std::filesystem::current_path() / AVL_LUA_C_PATH).string();
+    //    if (!avledet::util::set_env("LUA_CPATH",
+    //        path + "/?.so;"
+    //        + path + "/?/?.so"))
+    //        LOG_ERROR(AVL_LOGGER, "Failed to set Lua cpath");
+    //}
 
 #ifndef _DEBUG
     try {

@@ -631,11 +631,11 @@ namespace avledet::util {
 
     // Set an environment variable
     //  Returns whether the assignment was successful
-    bool SetEnv(std::string_view key, std::string_view value);
+    bool set_env(std::string_view key, std::string_view value);
 
     // Retrieve an environment variable
     //  Returns the variable or an empty string
-    std::string GetEnv(std::string_view key);
+    std::string get_env(std::string_view key);
 }// namespace avledet::util
 
 namespace VUtils {

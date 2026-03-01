@@ -1,8 +1,14 @@
 #include "CompileSettings.h"
 #include "VUtilsRandom.h"
+#include <filesystem>
+#include <luaconf.h>
 #include <sol/call.hpp>
+#include <sol/load_result.hpp>
+#include <sol/protected_function_result.hpp>
 #include <sol/raii.hpp>
 #include <sol/resolve.hpp>
+#include <stdexcept>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -201,13 +207,89 @@ void IScriptManager::load_userdata()
         int line = ar.currentline;
         //ar.name
 
-        auto source = ar.source;
+        std::string_view source = ar.source;
         //auto short_src = ar.short_src;
 
         LOG_INFO(AVL_LOGGER, "[{}:{}] {}", source, line, s);
 
         //LOG_INFO(AVL_LOGGER, "[Lua] {}", s);
     };
+
+    // then load my safe, limited searcher
+    if (!AVL_SETTINGS.luaUnsafe) {
+        sol::table package = m_state.create_table();
+        sol::table loaded = m_state.create_table();
+        package["loaded"] = loaded;
+        m_state["package"] = package; // package.loaded ...
+
+        // Sandbox-safe require
+        m_state["require"] = [&](std::string_view module_name, sol::this_environment tenv) -> sol::object {
+            sol::environment &env = tenv;
+            
+            // Check cache
+            sol::object cached = loaded[module_name];
+            if (cached.valid()) {
+                return cached;
+            }
+
+            // module to path
+            //  lua.module.world    =>   lua/module/world
+            std::string filename = std::string(AVL_LUA_SCRIPT_PATH);
+            for (char c : module_name) {
+                filename += (c == '.') ? '/' : c;
+            }
+            filename += ".lua";
+
+            auto cano_test = std::filesystem::weakly_canonical(filename);
+            auto cano_root = std::filesystem::canonical(AVL_LUA_SCRIPT_PATH);
+
+            // Compare path components, not strings
+            auto mismatch_pair = std::mismatch(
+                cano_root.begin(), cano_root.end(),
+                cano_test.begin(), cano_test.end()
+            );
+
+            // If we reached the end of root, then candidate starts with root
+            auto is_safe_path = mismatch_pair.first == cano_root.end();
+            if (!is_safe_path) {
+                // directory traversal attempted
+                //  mitigate
+                throw std::runtime_error("external packages cannot be loaded");
+            }
+
+
+            sol::load_result load = m_state.load_file(cano_test.string(), sol::load_mode::text);
+            
+            if (!load.valid()) {
+                sol::error err = load;
+                throw std::runtime_error(err.what());
+            }
+
+            sol::protected_function chunk = load;
+            sol::set_environment(env, chunk);
+
+            // Execute module
+            //sol::protected_function_result result = load();
+            sol::protected_function_result result = chunk();
+            if (!result.valid()) {
+                sol::error err = result;
+                throw std::runtime_error(err.what());
+            }
+
+            sol::object lmodule;
+
+            if (result.return_count() == 0 || result.get_type() == sol::type::nil) {
+                lmodule = m_state.create_table(); // Lua default behavior
+            } else {
+                lmodule = result.get<sol::object>();
+            }
+
+            // Cache module
+            loaded[module_name] = lmodule;
+
+            return lmodule;
+        };
+    }
 
     //state.new_usertype<IMethod<Peer*>>("IMethodPeer",
     //    "Invoke", &IMethod<Peer*>::Invoke
@@ -221,6 +303,9 @@ static std::vector<std::string_view> const safe_functions {// Global objects
                                                            "assert", "error", "ipairs", "next", "pairs",
                                                            "pcall", "print", "select", "tonumber", "tostring",
                                                            "type", "unpack", "_VERSION", "xpcall",
+
+                                                           // Custom require
+
 
                                                            // Full packages
                                                            "coroutine.*", "string.*", "table.*", "math.*",

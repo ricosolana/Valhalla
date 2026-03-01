@@ -588,7 +588,7 @@ void IAvledet::LoadFiles(bool reloading)
     {
         //std::string title = m_settings.serverName + " - " + VConstants::GAME;
         std::string title
-                = "Valhalla " + std::string(AVLEDET_VERSION) + " - Valheim " + std::string(VConstants::GAME);
+                = "Valhalla " + std::string(AVL_VERSION) + " - Valheim " + std::string(VConstants::GAME);
         SetConsoleTitle(title.c_str());
     }
 #endif
@@ -769,7 +769,7 @@ void IAvledet::init()
 
     this->LoadFiles(false);
 
-    LOG_NOTICE(AVL_LOGGER, "Starting Valhalla {} (Valheim {})", AVLEDET_VERSION, VConstants::GAME);
+    LOG_NOTICE(AVL_LOGGER, "Starting Valhalla {} (Valheim {})", AVL_VERSION, VConstants::GAME);
 
     //m_worldTime = 2040;
     m_worldTime = GetMorning(1);

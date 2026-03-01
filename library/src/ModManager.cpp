@@ -237,18 +237,18 @@ void IScriptManager::Init()
     //lua_sethook(m_state.lua_state(), &my_sethook_cb, LUA_MASKCOUNT, 1000);
 
     std::error_code ec;
-    std::filesystem::create_directories(AVLEDET_SCRIPTS_PATH, ec);
+    std::filesystem::create_directories(AVL_LUA_SCRIPT_PATH, ec);
 
     if (ec) {
         return;
     }
 
     auto dir_range = ranges::subrange(
-        std::filesystem::directory_iterator(AVLEDET_SCRIPTS_PATH, ec),
+        std::filesystem::directory_iterator(AVL_LUA_SCRIPT_PATH, ec),
         std::filesystem::directory_iterator{}
     );
 
-    //auto dir = std::filesystem::directory_iterator(AVLEDET_SCRIPTS_PATH, ec);
+    //auto dir = std::filesystem::directory_iterator(AVL_LUA_SCRIPT_PATH, ec);
 
     //auto dir_range = ranges::views::all(dir);
 

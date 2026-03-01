@@ -102,3 +102,5 @@ ME_TEMP_WORLDS/modern/ClanWarsS01.fwl
 
 # binary build output
 build/
+
+data/lua/_bin/*

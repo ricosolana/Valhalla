@@ -6,6 +6,19 @@ Includes Discord integration, Lua scripting, and potential Valheim modding suppo
 
 ## TODO
 
+- You must define the below cmake arguments:
+
+  ![cmake configure args reference](./docs/cmake-args.png)
+  - CMAKE_TOOLCHAIN_FILE
+  - LUA_INCLUDE_DIR
+  - LUA_LIBRARY
+- ./vcpkg install lua:x64-linux-dynamic
+  - this allows resolution of shared lua for the server and luasocket
+
+- The `-vcpkg.json` must be worked on
+  - everything is fine, except for requiring triplet specification for lua (dynamic-linux...)
+  - Windows support is assumed to no longer work because of the massive changes (windows is terrible anyhow)
+
 - fully rename project to avledet
 - remove discord integration
 - remove tracy profiler
