@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#define AVL_VERSION "v1.0.1"
+#define AVL_VERSION "v1.0.6"
 
 // ELPP log file name
 #define AVL_LOG_PATH "logs/log.txt"

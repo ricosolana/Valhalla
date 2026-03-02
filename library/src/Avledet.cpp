@@ -35,11 +35,11 @@
 // Defined
 quill::Logger *AVL_LOGGER {};
 
-auto VALHALLA_INSTANCE = std::make_unique<IAvledet>();
+auto AVLEDET_INSTANCE = std::make_unique<IAvledet>();
 
 IAvledet *Avledet()
 {
-    return VALHALLA_INSTANCE.get();
+    return AVLEDET_INSTANCE.get();
 }
 
 template<class Enum>
@@ -358,7 +358,7 @@ void IAvledet::LoadFiles(bool reloading)
                 Server settings
             */
 
-            a(m_settings.serverName, server, "name", "Valhalla server",
+            a(m_settings.serverName, server, "name", "Avledet server",
               [](std::string const &val) { return val.empty() || val.length() < 3 || val.length() > 64; });
             a(m_settings.serverPassword, server, "password", "",
               [](std::string const &val) { return !val.empty() && (val.length() < 5 || val.length() > 11); });
@@ -588,7 +588,7 @@ void IAvledet::LoadFiles(bool reloading)
     {
         //std::string title = m_settings.serverName + " - " + VConstants::GAME;
         std::string title
-                = "Valhalla " + std::string(AVL_VERSION) + " - Valheim " + std::string(VConstants::GAME);
+                = "Avledet " + std::string(AVL_VERSION) + " - Valheim " + std::string(VConstants::GAME);
         SetConsoleTitle(title.c_str());
     }
 #endif
@@ -769,7 +769,7 @@ void IAvledet::init()
 
     this->LoadFiles(false);
 
-    LOG_NOTICE(AVL_LOGGER, "Starting Valhalla {} (Valheim {})", AVL_VERSION, VConstants::GAME);
+    LOG_NOTICE(AVL_LOGGER, "Starting Avledet {} (Valheim {})", AVL_VERSION, VConstants::GAME);
 
     //m_worldTime = 2040;
     m_worldTime = GetMorning(1);
