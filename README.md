@@ -6,6 +6,10 @@ Includes Discord integration, Lua scripting, and potential Valheim modding suppo
 
 ## TODO
 
+- I just found out that lua 5.3.~3 supports 64-bit integers. 
+  - This finally makes things a bit more streamline for Int64Wrapper.
+  - I assumed that ALL lua numbers were 64-bit floating point (double), but appears I was wrong for some time.
+
 - You must define the below cmake arguments:
 
   ![cmake configure args reference](./docs/cmake-args.png)

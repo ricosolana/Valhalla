@@ -536,7 +536,7 @@ struct avledet::util::Streamer<F, T...>
             return sol::make_object(state, reader.read<std::int32_t>());
         case IScriptManager::StreamType::INT64:
             // Userdata: Int64Wrapper
-            return sol::make_object(state, Int64Wrapper(reader.read<std::int64_t>()));// ReadInt64());
+            return sol::make_object(state, reader.read<std::int64_t>());// ReadInt64());
         case IScriptManager::StreamType::UINT8:
             // Primitive: number
             return sol::make_object(state, reader.read<std::uint8_t>());
@@ -548,7 +548,7 @@ struct avledet::util::Streamer<F, T...>
             return sol::make_object(state, reader.read<std::uint32_t>());
         case IScriptManager::StreamType::UINT64:
             // Userdata: UInt64Wrapper
-            return sol::make_object(state, UInt64Wrapper(reader.read<std::uint64_t>()));
+            return sol::make_object(state, reader.read<std::uint64_t>());
         case IScriptManager::StreamType::FLOAT:
             // Primitive: number
             return sol::make_object(state, reader.read<std::float_t>());

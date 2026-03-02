@@ -683,11 +683,6 @@ class ZDO
         return get<std::int64_t>(key, value);
     }
 
-    [[nodiscard]] Int64Wrapper get_long_wrapper(avledet::util::Hash key, Int64Wrapper value) const
-    {
-        return get<std::int64_t>(key, value);
-    }
-
     [[nodiscard]] Quaternion get_quat(avledet::util::Hash key, Quaternion value) const
     {
         return get<Quaternion>(key, value);
@@ -741,11 +736,6 @@ class ZDO
         return get<std::int64_t>(key, {});
     }
 
-    [[nodiscard]] Int64Wrapper get_long_wrapper(avledet::util::Hash key) const
-    {
-        return get<std::int64_t>(key, {});
-    }
-
     [[nodiscard]] Quaternion get_quat(avledet::util::Hash key) const
     {
         return get<Quaternion>(key, {});
@@ -786,11 +776,6 @@ class ZDO
     }
 
     [[nodiscard]] std::int64_t get_long(std::string_view key, std::int64_t value) const
-    {
-        return get<std::int64_t>(key, value);
-    }
-
-    [[nodiscard]] Int64Wrapper get_long_wrapper(std::string_view key, Int64Wrapper value) const
     {
         return get<std::int64_t>(key, value);
     }
@@ -841,11 +826,6 @@ class ZDO
     }
 
     [[nodiscard]] std::int64_t get_long(std::string_view key) const
-    {
-        return get<std::int64_t>(key, {});
-    }
-
-    [[nodiscard]] Int64Wrapper get_long_wrapper(std::string_view key) const
     {
         return get<std::int64_t>(key, {});
     }

@@ -85,45 +85,29 @@ void IScriptManager::load_userdata_types()
         "write_quat", &Writer::write<Quaternion>,
         //"write_profile", &DataWriter::write<UserProfile>, //TODO
         "write_i8", sol::overload(
-            &Writer::write<std::int8_t>,
-            [](Writer& self, Int64Wrapper value) { self.write((std::int8_t)(std::int64_t(value))); },
-            [](Writer& self, UInt64Wrapper value) { self.write((std::int8_t)(std::int64_t(value))); }
+            &Writer::write<std::int8_t>
         ),
         "write_i16", sol::overload(
-            &Writer::write<std::int16_t>,
-            [](Writer& self, Int64Wrapper value) { self.write((std::int16_t)(std::int64_t(value))); },
-            [](Writer& self, UInt64Wrapper value) { self.write((std::int16_t)(std::int64_t(value))); }
+            &Writer::write<std::int16_t>
         ), 
         "write_i32", sol::overload(
-            &Writer::write<std::int32_t>,
-            [](Writer& self, Int64Wrapper value) { self.write((std::int32_t)(std::int64_t(value))); },
-            [](Writer& self, UInt64Wrapper value) { self.write((std::int32_t)(std::int64_t(value))); }
+            &Writer::write<std::int32_t>
         ), 
         "write_i64", sol::overload(
-            &Writer::write<std::int64_t>,
-            &Writer::write<Int64Wrapper>,
-            [](Writer& self, UInt64Wrapper value) { self.write((std::int64_t)(std::int64_t(value))); }
+            &Writer::write<std::int64_t>
         ), 
         //unsigned
         "write_u8", sol::overload(
-            &Writer::write<std::uint8_t>,
-            [](Writer& self, Int64Wrapper value) { self.write((std::uint8_t)(std::uint64_t(value))); },
-            [](Writer& self, UInt64Wrapper value) { self.write((std::uint8_t)(std::uint64_t(value))); }
+            &Writer::write<std::uint8_t>
         ),
         "write_u16", sol::overload(
-            &Writer::write<std::uint16_t>,
-            [](Writer& self, Int64Wrapper value) { self.write((std::uint16_t)(std::uint64_t(value))); },
-            [](Writer& self, UInt64Wrapper value) { self.write((std::uint16_t)(std::uint64_t(value))); }
+            &Writer::write<std::uint16_t>
         ), 
         "write_u32", sol::overload(
-            &Writer::write<std::uint32_t>,
-            [](Writer& self, Int64Wrapper value) { self.write((std::uint32_t)(std::uint64_t(value))); },
-            [](Writer& self, UInt64Wrapper value) { self.write((std::uint32_t)(std::uint64_t(value))); }
+            &Writer::write<std::uint32_t>
         ), 
         "write_u64", sol::overload(
-            &Writer::write<std::uint64_t>,
-            &Writer::write<Int64Wrapper>,
-            &Writer::write<UInt64Wrapper>
+            &Writer::write<std::uint64_t>
         ), 
 
 
@@ -170,11 +154,11 @@ void IScriptManager::load_userdata_types()
         "read_s8", &Reader::read<std::int8_t>,
         "read_s16", &Reader::read<std::int16_t>,
         "read_s32", &Reader::read<std::int32_t>,
-        "read_s64", &Reader::read<Int64Wrapper>,
+        "read_s64", &Reader::read<std::int64_t>,
         "read_u8", &Reader::read<std::uint8_t>,
         "read_u16", &Reader::read<std::uint16_t>,
         "read_u32", &Reader::read<std::uint32_t>,
-        "read_u64", &Reader::read<UInt64Wrapper>,
+        "read_u64", &Reader::read<std::uint64_t>,
         "read_float", &Reader::read<std::float_t>,
         "read_double", &Reader::read<std::double_t>,
         "read_char16", &Reader::read<char16_t>,
@@ -183,41 +167,6 @@ void IScriptManager::load_userdata_types()
         "read", [](Reader &self, sol::state_view state, sol::variadic_args args) {
             return self.read(StreamTypes(args.begin(), args.end()), state);
         }
-    );
-
-
-    this->new_usertype<Int64Wrapper>("Int64",
-        sol::constructors<Int64Wrapper(), Int64Wrapper(std::int64_t),
-                          Int64Wrapper(std::uint32_t, std::uint32_t),
-                          Int64Wrapper(std::string const &)>(),
-
-        "tonumber", [](Int64Wrapper &self) { return (std::int64_t) self; }, 
-        sol::meta_function::addition, &Int64Wrapper::operator+, 
-        sol::meta_function::subtraction, sol::resolve<Int64Wrapper(Int64Wrapper const &) const>(&Int64Wrapper::operator-),
-        sol::meta_function::multiplication, &Int64Wrapper::operator*, 
-        sol::meta_function::division, &Int64Wrapper::operator/, 
-        sol::meta_function::floor_division, &Int64Wrapper::__divi,
-        sol::meta_function::unary_minus, sol::resolve<Int64Wrapper() const>(&Int64Wrapper::operator-),
-        sol::meta_function::equal_to, &Int64Wrapper::operator==, 
-        sol::meta_function::less_than, &Int64Wrapper::operator<, 
-        sol::meta_function::less_than_or_equal_to, &Int64Wrapper::operator<=
-    );
-
-    this->new_usertype<UInt64Wrapper>("UInt64",
-        sol::constructors<UInt64Wrapper(), UInt64Wrapper(std::uint64_t),
-                            Int64Wrapper(std::uint32_t, std::uint32_t),
-                            UInt64Wrapper(std::string const &)>(),
-
-        "tonumber", [](UInt64Wrapper &self) { return (std::uint64_t) self; },
-        sol::meta_function::addition, &UInt64Wrapper::operator+, 
-        sol::meta_function::subtraction, sol::resolve<UInt64Wrapper(UInt64Wrapper const &) const>(&UInt64Wrapper::operator-),
-        sol::meta_function::multiplication, &UInt64Wrapper::operator*, 
-        sol::meta_function::division, &UInt64Wrapper::operator/, 
-        sol::meta_function::floor_division, &UInt64Wrapper::__divi,
-        sol::meta_function::unary_minus, sol::resolve<UInt64Wrapper() const>(&UInt64Wrapper::operator-),
-        sol::meta_function::equal_to, &UInt64Wrapper::operator==, 
-        sol::meta_function::less_than, &UInt64Wrapper::operator<, 
-        sol::meta_function::less_than_or_equal_to, &UInt64Wrapper::operator<=
     );
 
     m_state.new_enum("TimeOfDay", 

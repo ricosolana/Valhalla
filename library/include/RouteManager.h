@@ -107,10 +107,10 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
     }
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-    void InvokeViewLua(Int64Wrapper target, ZDOID const &targetZDO, IScriptManager::MethodSig const &repr,
+    void InvokeViewLua(std::int64_t target, ZDOID const &targetZDO, IScriptManager::MethodSig const &repr,
                        sol::variadic_args const &args)
     {
-        if ((std::int64_t) target == EVERYBODY) {
+        if (target == EVERYBODY) {
             if (args.size() != repr.m_types.size())
                 throw std::runtime_error("mismatched number of args");
 
@@ -174,7 +174,7 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
     }
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-    void InvokeLua(Int64Wrapper target, IScriptManager::MethodSig const &repr, sol::variadic_args const &args)
+    void InvokeLua(std::int64_t target, IScriptManager::MethodSig const &repr, sol::variadic_args const &args)
     {
         InvokeViewLua(target, ZDOID::NONE, repr, args);
     }

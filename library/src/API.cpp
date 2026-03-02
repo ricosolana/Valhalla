@@ -48,8 +48,8 @@ void IScriptManager::load_userdata()
         // server members
         "version", sol::var(VConstants::GAME),
         "delta", sol::property(&IAvledet::delta),
-        "id", sol::property([](IAvledet &self) { return Int64Wrapper(self.ID()); }), // server id
-        "nanos", sol::property([](IAvledet &self) { return Int64Wrapper(self.Nanos().count()); }), // nanos
+        "id", sol::property(&IAvledet::ID), // server id
+        "nanos", sol::property([](IAvledet &self) { return self.Nanos().count(); }), // nanos
         "time", sol::property(&IAvledet::Time), // time
         "time_multiplier", &IAvledet::m_serverTimeMultiplier, // time_multiplier
         // world time functions
