@@ -1,0 +1,8 @@
+{
+    "cmake.configureArgs": [
+        "-DCMAKE_TOOLCHAIN_FILE=/home/admin/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "-DLUA_INCLUDE_DIR=/home/admin/vcpkg/installed/x64-linux-dynamic/include",
+        "-DLUA_LIBRARY=/home/admin/vcpkg/installed/x64-linux-dynamic/lib/liblua.so",
+        "-DSTEAMWORKS_SDK=/home/admin/.local/bin/steamsdk"
+    ]
+}

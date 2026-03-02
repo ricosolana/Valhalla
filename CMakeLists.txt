@@ -51,7 +51,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CXX_EXTENSIONS OFF)
 
-set(VCPKG_TARGET_TRIPLET x64-linux-dynamic)
+#set(VCPKG_TARGET_TRIPLET x64-linux-dynamic)
 
 # TODO change this file impl or how defines are 'defined'
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
@@ -89,23 +89,23 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 # TODO
 #   Allow USER to specify sdk path via args
 if(WIN32)
-    #message(FATAL_ERROR "NYI")
-    set(STEAMWORKS_SDK_LOCATION "C:/Users/$ENV{USERNAME}/steamsdk")
-    set(STEAMWORKS_SDK_SOURCE_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/public/steam")
-    set(STEAMWORKS_SDK_SHARED_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/redistributable_bin/win64/steam_api64.lib")
+    message(FATAL_ERROR "windows is dumb")
+    #set(STEAMWORKS_SDK_LOCATION "C:/Users/$ENV{USERNAME}/steamsdk")
+    #set(STEAMWORKS_SDK_SOURCE_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/public/steam")
+    #set(STEAMWORKS_SDK_SHARED_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/redistributable_bin/win64/steam_api64.lib")
 else()
-    set(STEAMWORKS_SDK_LOCATION "$ENV{HOME}/.local/bin/steamsdk")
-    set(STEAMWORKS_SDK_SOURCE_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/public/steam")
-    set(STEAMWORKS_SDK_SHARED_DIR "${STEAMWORKS_SDK_LOCATION}/sdk/redistributable_bin/linux64/libsteam_api.so")
+    #set(STEAMWORKS_SDK "$ENV{HOME}/.local/bin/steamsdk")
+    set(STEAMWORKS_SDK_SOURCE_DIR "${STEAMWORKS_SDK}/sdk/public/steam")
+    set(STEAMWORKS_SDK_SHARED_DIR "${STEAMWORKS_SDK}/sdk/redistributable_bin/linux64/libsteam_api.so")
 endif()
 
 if(NOT EXISTS "${STEAMWORKS_SDK_SHARED_DIR}")
-    message (FATAL_ERROR "Steamworks not found")
+    message (FATAL_ERROR "Unable to find Steamworks")
 else()
 
 endif()
 
-message("Steamworks: ${STEAMWORKS_SDK_LOCATION}")
+#message("Steamworks: ${STEAMWORKS_SDK}")
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/steam_appid.txt
     DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}

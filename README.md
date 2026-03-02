@@ -4,32 +4,6 @@ Valheim server written in modern C++.
 
 Includes Discord integration, Lua scripting, and potential Valheim modding support between clients (WIP).
 
-## TODO
-
-- I just found out that lua 5.3.~3 supports 64-bit integers. 
-  - This finally makes things a bit more streamline for Int64Wrapper.
-  - I assumed that ALL lua numbers were 64-bit floating point (double), but appears I was wrong for some time.
-
-- You must define the below cmake arguments:
-
-  ![cmake configure args reference](./docs/cmake-args.png)
-  - CMAKE_TOOLCHAIN_FILE
-  - LUA_INCLUDE_DIR
-  - LUA_LIBRARY
-- ./vcpkg install lua:x64-linux-dynamic
-  - this allows resolution of shared lua for the server and luasocket
-
-- The `-vcpkg.json` must be worked on
-  - everything is fine, except for requiring triplet specification for lua (dynamic-linux...)
-  - Windows support is assumed to no longer work because of the massive changes (windows is terrible anyhow)
-
-- fully rename project to avledet
-- remove discord integration
-- remove tracy profiler
-- fix worldgen
-- other stuff thats cool! like better lua...
-- prune tmp lua test case scripts
-
 ## Documentation
 
 - I realize the documentation is very lacking and outdated
@@ -37,45 +11,57 @@ Includes Discord integration, Lua scripting, and potential Valheim modding suppo
 
 ## Building
 
-### Dependencies
-The below is my `./vcpkg list`:
+### Linux
 
- | name                           | version    | description                                         |
- |--------------------------------|------------|-----------------------------------------------------|
- | abseil:x64-linux               | 20250814.1 | Abseil is an open-source collection of C++ libra... |
- | asio:x64-linux                 | 1.32.0     | Asio is a cross-platform C++ library for network... |
- | gtest:x64-linux                | 1.17.0#2   | Google Testing and Mocking Framework                |
- | gtl:x64-linux                  | 1.2.0      | Greg's Template Library of useful classes.          |
- | intrusive-shared-ptr:x64-linux | 1.9        | Intrusive reference counting smart pointer, high... |
- | lua:x64-linux                  | 5.5.0#1    | A powerful, fast, lightweight, embeddable script... |
- | magic-enum:x64-linux           | 0.9.7#1    | Header-only C++17 library provides static reflec... |
- | nlohmann-json:x64-linux        | 3.12.0#2   | JSON for Modern C++                                 |
- | openssl:x64-linux              | 3.6.1#2    | OpenSSL is an open source project that provides ... |
- | opus:x64-linux                 | 1.5.2#1    | Totally open, royalty-free, highly versatile aud... |
- | pthreads:x64-linux             | 3.0.0#14   | Meta-package that provides PThreads4W on Windows... |
- | quill:x64-linux                | 11.0.2     | Asynchronous Low Latency C++ Logging Library        |
- | range-v3:x64-linux             | 0.12.0#4   | Range library for C++14/17/20, basis for C++20's... |
- | sol2:x64-linux                 | 3.5.0#1    | Sol3 (sol2 v3.0) - a C++ <-> Lua API wrapper wit... |
- | tracy:x64-linux                | 0.13.1     | A real time, nanosecond resolution, remote telem... |
- | tracy[crash-handler]:x64-linux |            | Enable crash handler                                |
- | unordered-dense:x64-linux      | 4.8.1      | A fast & densely stored hashmap and hashset base... |
- | vcpkg-cmake-config:x64-linux   | 2024-05-23 |                                                     |
- | vcpkg-cmake-get-vars:x64-linux | 2025-05-29 |                                                     |
- | vcpkg-cmake:x64-linux          | 2024-04-23 |                                                     |
- | yaml-cpp:x64-linux             | 0.9.0      | yaml-cpp is a YAML parser and emitter in C++ mat... |
- | zlib:x64-linux                 | 1.3.1      | A compression library                               |
- | zstd:x64-linux                 | 1.5.7      | Zstandard - Fast real-time compression algorithm    |
+- IDE (VSCodium)
+  - Extensions
+    - `CMake Tools` - `ctrl + p` -> `ext install ms-vscode.cmake-tools`
+    - `C/C++`
+    - `clangd` - `ctrl + p` -> `ext install llvm-vs-code-extensions.vscode-clangd`
+    - `Clang-Format` (optional)
+    - `EmmyLua` (optional)
+- Libraries
+  - Steamworks SDK
+    - Sign in & Download @ https://partner.steamgames.com/downloads/list
+    - Extract somewhere (ie, `~/.local/bin/steamsdk/sdk`)
+  - vcpkg
+    - `git clone https://github.com/microsoft/vcpkg && cd vcpkg && ./bootstrap-vcpkg.sh -disableMetrics && realpath scripts/buildsystems/vcpkg.cmake`
+    - Take note of the vcpkg.cmake path
+  - Lua
+    - Yes, I wrote an entire section specially for lua, because this was 1000% more complicated than it ever needed to be.
+    - Classic Valhalla used a combination of static and mostly dynamic linking. This *worked*. When I switched to Linux, things switched
+      to mostly static libraries, probably because of vcpkg changes. I stopped the Lua script development for a while after that because of migration-hell between
+      Avledet <=> Valhalla, and overall lack of interest and other projects I had going on. Well, the lua library resolution I had no longer worked.
+      I spent an entire day talking to chatgpp, the useless chatbot that provides you with hallucinated garbage. I ended up somehow fixing things by requiring that Lua be dynamically linked to the project. The "easiest" way I found to get a dynamic copy of Lua5.5 is via a vcpkg triplet. This actually generates a shared library
+      that can be linked by Avledet. There is probably a better way, but for now, I am done.
+    - `./vcpkg install lua:x64-linux-dynamic`
+- Back to IDE 
+  - Clone from VCS `ricosolana/avledet`
+  - Prepare Kit
+    - `Ctrl + Shift + P` => `scan for kits` => `enter`
+    - `Ctrl + Shift + P` => `select a kit` => `enter`
+      - Select `GCC 12.x...` or `GCC 13.x...` (the latest one)
+  - CMake Arguments
+    - Switch to `User` or `Workspace` (your preference)
+    - `Ctrl + Shift + P` => `CMake: Open CMake Tools Extension Settings` => `Configure Args`
+      - It's time to configure path arguments. These vary based on where you installed things,
+        so edit them accordingly. The below is a realistic sample:
+        - `-DCMAKE_TOOLCHAIN_FILE=/your/user/here/vcpkg/scripts/buildsystems/vcpkg.cmake`
+        - `-DLUA_INCLUDE_DIR=/your/user/here/vcpkg/installed/x64-linux-dynamic/include`
+        - `-DLUA_LIBRARY=/your/user/here/vcpkg/installed/x64-linux-dynamic/lib/liblua.so`
+        - `-DSTEAMWORKS_SDK=/your/user/here/.local/bin/steamsdk`
 
-### Installation
 
-- Install your favorite **IDE** (VSC / MSVC)
-  - **VSCodium**
-    - Extensions
-      - `CMake Tools` - `ctrl + p` -> `ext install ms-vscode.cmake-tools`
-      - `C/C++` - unfortunately youll have to install manually
-      - `clangd` - `ctrl + p` -> `ext install llvm-vs-code-extensions.vscode-clangd`
-      - `Clang-Format` (optional; automatic C++ code formatting)
-      - `EmmyLua` (optional; Lua formatting + highlighting)
+    
+- CMake
+  - CMAKE_TOOLCHAIN_FILE
+  - LUA_INCLUDE_DIR
+  - LUA_LIBRARY
+
+
+... 
+
+
   - **MSVC**
     - Visual Studio Installer
       - Install C++ Desktop Environment

@@ -1,6 +1,29 @@
 TODO
-    dump all (modern) resources
-        currently 1/2+ year outdated
+
+## TODO
+
+- You must define the below cmake arguments:
+
+  ![cmake configure args reference](./docs/cmake-args.png)
+  - CMAKE_TOOLCHAIN_FILE
+  - LUA_INCLUDE_DIR
+  - LUA_LIBRARY
+- ./vcpkg install lua:x64-linux-dynamic
+  - this allows resolution of shared lua for the server and luasocket
+
+- The `-vcpkg.json` must be worked on
+  - everything is fine, except for requiring triplet specification for lua (dynamic-linux...)
+  - Windows support is assumed to no longer work because of the massive changes (windows is terrible anyhow)
+
+- fix project naming
+  - multiple pascal case vs snake case... MAKE UP YOUR MIND DAMNIT
+- remove tracy profiler
+- fix worldgen
+- other stuff thats cool! like better lua...
+- prune tmp lua test case scripts
+
+
+    
 
     dungeon generator
 
@@ -80,3 +103,5 @@ TODO
         use custom logger
         make loggers decentralized? instead of single global AVL_LOGGER
         
+
+    dump all (modern) resources    
