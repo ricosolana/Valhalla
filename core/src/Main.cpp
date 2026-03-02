@@ -22,22 +22,9 @@
 #include <tracy/Tracy.hpp>
 #include <vector>
 
-// this doesnt seem to do a thing
-//#undef TRACY_ENABLE
-
 #include "Avledet.h"
 #include "CompileSettings.h"
 #include "VUtils.h"
-
-//#include "Tests.h"
-
-/*
-* Example command line args:
-*   .\Valhalla.exe -vmodule=VUtilsResource=1
-*   .\Valhalla.exe --no-colors "-vmodule=Peer=2,PrefabManager=2"
-*   .\Valhalla.exe --no-log-backup --v=2
-*   .\Valhalla.exe -v
-*/
 
 int main(int argc, char **argv)
 {

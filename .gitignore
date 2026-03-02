@@ -104,3 +104,4 @@ ME_TEMP_WORLDS/modern/ClanWarsS01.fwl
 build/
 
 data/lua/_bin/*
+.vscode/settings.json
