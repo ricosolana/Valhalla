@@ -165,4 +165,7 @@ struct ServerSettings
     //bool            discordDeleteCommands;
 
     bool luaUnsafe;
+
+    bool TEST_replayEnabled;
+    
 };

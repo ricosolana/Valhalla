@@ -108,6 +108,8 @@ class IAvledet
     // Updated once per frame
     std::chrono::nanoseconds Elapsed() const;
 
+    // Constant in-between update calls
+    //  (calculated once per tick)
     std::chrono::nanoseconds Nanos() const;
 
     // Get the time in Ticks (C# DateTime.Ticks)

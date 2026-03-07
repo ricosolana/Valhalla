@@ -14,6 +14,8 @@
 #define AVL_LUA_C_PATH      "lua/bin"
 #define AVL_LUA_SCRIPT_PATH "lua/scripts"
 
+#define AVL_REPLAY_PATH     "replays"
+
 #define AVL_RAW_IS_ON(OP_SYMBOL)          ((3 OP_SYMBOL 3) != 0)
 #define AVL_RAW_IS_OFF(OP_SYMBOL)         ((3 OP_SYMBOL 3) == 0)
 #define AVL_RAW_IS_DEFAULT_ON(OP_SYMBOL)  ((3 OP_SYMBOL 3) > 3)
