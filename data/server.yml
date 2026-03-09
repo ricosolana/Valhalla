@@ -1,30 +1,33 @@
+general:
+  log-level: info
+  lua-unsafe: false
 server:
-  name: <color=#FF1111>VH dedicated</color>
-  password: secret
+  name: Avledet server
+  password: ""
   port: 2456
   public: false
   dedicated: true
+  bind-address: 0.0.0.0
 players:
-  whitelist: false
-  max: 10
-  offline: true
-  timeout: 0s
-  list-send-interval: 2s
-  list-force-visible: false
+  whitelist: true
+  max-online: 10
+  authenticate: true
+  timeout: 30s
+  smooth-updating: 2s
+  locations-always-on: false
 world:
   world: world
-  pregenerate: false
-  save-interval: 30Min
-  modern: true
-  features: false
+  seed: vnyw5NmWCe
+  save-interval: 30min
+  features: true
   vegetation: true
   creatures: true
+  heightmap-threading: 1
 zdos:
   send-interval: 50ms
   max-send-threshold: 10240
   min-send-threshold: 2048
   assign-interval: 2s
-  assign-algorithm: 0
 dungeons:
   enabled: true
   endcaps:
@@ -34,22 +37,17 @@ dungeons:
   rooms:
     flipped: true
     zone-bounded: true
-    inset-size: 0.100000001
+    inset-size: 0.1
     furnishing: true
-  regeneration:
-    interval: 3days
-    steps: 3
   seeded: true
 events:
-  chance: 0.200000003
-  interval: 46Min
+  chance: 0.2
+  interval: 46min
   activation-radius: 96
   require-keys: true
-packets:
-  mode: 0
-  file-size: 256000
-  capture-session: -1
-  playback-session: -1
-discord:
-  webhook: ""
-  token: ""
+experimental:
+  server-tcp: false
+  player-restrict: false
+  world-pregenerate: false
+  zdo-assign-algo: none
+  replays-enabled: true

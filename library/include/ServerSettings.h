@@ -96,7 +96,7 @@ struct ServerSettings
 {
     std::string serverName;
     std::uint16_t serverPort;
-    std::string serverPassword;
+    std::string m_server_password;
     bool serverPublic;
     bool serverDedicated;
     std::string serverBindAddress;
@@ -166,6 +166,6 @@ struct ServerSettings
 
     bool luaUnsafe;
 
-    bool TEST_replayEnabled;
+    bool replay_enabled;
     
 };

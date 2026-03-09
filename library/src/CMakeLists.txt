@@ -35,6 +35,7 @@ target_sources(avledet_library
         ${CMAKE_CURRENT_SOURCE_DIR}/RandomEventManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/RandomSpawn.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Reader.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ReplayManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/RouteManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Stream.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Types.cpp

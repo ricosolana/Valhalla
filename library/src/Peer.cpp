@@ -1,6 +1,7 @@
 #include "Peer.h"
 #include "Avledet.h"
 #include "NetManager.h"
+#include "ReplayManager.h"
 #include "RouteManager.h"
 #include "VUtilsResource.h"
 #include "ZDOManager.h"
@@ -97,7 +98,7 @@ Peer::Peer(ISocket::Ptr socket) :
         if (NetManager()->GetPeers().size() >= AVL_SETTINGS.playerMax)
             return rpc->close(ConnectionStatus::ErrorFull);
 
-        bool hasPassword = !AVL_SETTINGS.serverPassword.empty();
+        bool hasPassword = !AVL_SETTINGS.m_server_password.empty();
 
         rpc->Invoke(avledet::util::hashes::Rpc::S2C_Handshake, hasPassword,
                     std::string_view(NetManager()->m_passwordSalt));
@@ -145,6 +146,12 @@ void Peer::update()
             }
 
             InternalInvoke(hash, reader);
+        }
+
+        //m_replay_share.on_packet(std::move(bytes));
+
+        if (AVL_SETTINGS.replay_enabled) {
+            avledet::replay::ReplayManager()->on_packet(shared_from_this(), std::move(bytes));
         }
     }
 

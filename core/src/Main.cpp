@@ -88,8 +88,7 @@ int main(int argc, char **argv)
     } catch (std::exception const &e) {
         // technically, we handle the error here, but this is the outer-error catcher
         //  with no further recourse; we simply exit the program for issues beyond
-        LOG_ERROR(AVL_LOGGER, "Unhandled server crash");
-        LOG_ERROR(AVL_LOGGER, "{}", e.what());
+        LOG_ERROR(AVL_LOGGER, "Unhandled crash: {}", e.what());
         //return 1;
         exit(1);
     }

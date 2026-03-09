@@ -1,3 +1,4 @@
+#include "ReplayManager.h"
 #include <chrono>
 #include <mutex>
 #include <stdlib.h>
@@ -353,6 +354,8 @@ void IAvledet::LoadFiles(bool reloading)
             auto &&dungeons = node["dungeons"];
             auto &&events   = node["events"];
             auto &&discord  = node["discord"];
+            //auto &&replay  = node["replay"];
+            auto &&experimental = node["experimental"];
 
             /*
                 Server settings
@@ -360,13 +363,13 @@ void IAvledet::LoadFiles(bool reloading)
 
             a(m_settings.serverName, server, "name", "Avledet server",
               [](std::string const &val) { return val.empty() || val.length() < 3 || val.length() > 64; });
-            a(m_settings.serverPassword, server, "password", "",
+            a(m_settings.m_server_password, server, "password", "",
               [](std::string const &val) { return !val.empty() && (val.length() < 5 || val.length() > 11); });
             a(m_settings.serverPort, server, "port", 2456, nullptr, reloading);
             a(m_settings.serverPublic, server, "public", false, nullptr);
             a(m_settings.serverDedicated, server, "dedicated", true, nullptr, reloading);
             a(m_settings.serverBindAddress, server, "bind-address", "0.0.0.0", nullptr, reloading);
-            a(m_settings.TEST_serverTcp, server, "experimental-tcp", false, nullptr, reloading);
+            a(m_settings.TEST_serverTcp, experimental, "server-tcp", false, nullptr, reloading);
 
             /*
                 Player settings
@@ -381,7 +384,7 @@ void IAvledet::LoadFiles(bool reloading)
 #if AVL_IS_ON(AVL_PLAYER_SLEEP)
             a(m_settings.playerSleepSolo, players, "player-sleep-solo", false, nullptr);
 #endif
-            a(m_settings.TEST_playerRestrict, players, "experimental-restrict", false, nullptr, false);
+            a(m_settings.TEST_playerRestrict, experimental, "players-restrict", false, nullptr, false);
 
             {
                 auto &&player_list = players["playerlist"];
@@ -400,7 +403,7 @@ void IAvledet::LoadFiles(bool reloading)
             a(
                     m_settings.worldSeed, world, "seed", VUtils::Random::GenerateAlphaNum(10),
                     [](std::string const &val) { return val.empty(); }, reloading);
-            a(m_settings.TEST_worldPregenerate, world, "experimental-pregenerate", false, nullptr, reloading);
+            a(m_settings.TEST_worldPregenerate, experimental, "world-pregenerate", false, nullptr, reloading);
             a(m_settings.worldSaveInterval, world, "save-interval", 30min,
               [](std::chrono::seconds val) { return val < 0s; });
             a(m_settings.worldFeatures, world, "features", true, nullptr);
@@ -430,7 +433,7 @@ void IAvledet::LoadFiles(bool reloading)
               [](int val) { return val < 1000; });
             a(m_settings.zdoAssignInterval, zdo, "assign-interval", 2s,
               [](std::chrono::seconds val) { return val < 1s; });
-            a(m_settings.TEST_zdoAssignAlgorithm, zdo, "experimental-assign-algorithm", AssignAlgorithm::NONE,
+            a(m_settings.TEST_zdoAssignAlgorithm, experimental, "zdo-assign-algo", AssignAlgorithm::NONE,
               nullptr);
 
             /*
@@ -456,13 +459,14 @@ void IAvledet::LoadFiles(bool reloading)
                 a(m_settings.dungeonsRoomsFurnishing, rooms, "furnishing", true, nullptr);
             }
 
-            {
-                auto &&regeneration = dungeons["experimental-regeneration"];
-                a(m_settings.TEST_dungeonsRegenerationInterval, regeneration, "interval",
-                  std::chrono::days(3), [](std::chrono::minutes val) { return val < 5s; });
-                a(m_settings.TEST_dungeonsRegenerationMaxSteps, regeneration, "steps", 3,
-                  [](int val) { return val < 1; });
-            }
+            // TODO test out dungeon regeneration
+            //{
+            //    auto &&regeneration = dungeons["dungeons-regeneration"];
+            //    a(m_settings.TEST_dungeonsRegenerationInterval, regeneration, "interval",
+            //      std::chrono::days(3), [](std::chrono::minutes val) { return val < 5s; });
+            //    a(m_settings.TEST_dungeonsRegenerationMaxSteps, regeneration, "steps", 3,
+            //      [](int val) { return val < 1; });
+            //}
 
             a(m_settings.dungeonsSeeded, dungeons, "seeded", true, nullptr);
 
@@ -515,10 +519,15 @@ void IAvledet::LoadFiles(bool reloading)
                 }
             }
 
-            if (m_settings.serverPassword.empty()) {
+            if (m_settings.m_server_password.empty()) {
                 LOG_INFO(AVL_LOGGER, "Server does not have a password");
             } else {
-                LOG_NOTICE(AVL_LOGGER, "Server password is {}{}", COLOR_GOLD, m_settings.serverPassword);
+                LOG_NOTICE(AVL_LOGGER, "Server password is {}{}", COLOR_GOLD, m_settings.m_server_password);
+            }
+
+            // replay loads
+            {
+                a(m_settings.replay_enabled, experimental, "replays-enabled", false, nullptr);
             }
         }
 
@@ -801,6 +810,10 @@ void IAvledet::init()
 
     WorldManager()->PostInit();
     NetManager()->PostInit();
+
+    if (AVL_SETTINGS.replay_enabled) {
+        avledet::replay::ReplayManager()->init();
+    }
 
     AVL_SCRIPT_EVENT(IScriptManager::Events::Enable);
 

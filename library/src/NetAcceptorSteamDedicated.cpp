@@ -132,8 +132,9 @@ AcceptorSteam::AcceptorSteam(std::string bind_addr) :
         auto result = SteamGameServer_InitEx(nIP, nPort, nPort + 1, EServerMode::eServerModeNoAuthentication,
                                              "1.0.0.0", &outErr);
         if (result != k_ESteamAPIInitResult_OK) {
-            LOG_ERROR(AVL_LOGGER, "{}", outErr);
-            throw std::runtime_error("unable to init steam api");
+            //LOG_ERROR(AVL_LOGGER, "{}", outErr);
+            //throw std::runtime_error("unable to init steam api");
+            throw std::runtime_error(outErr);
         }
     }
 

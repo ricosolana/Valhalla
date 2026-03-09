@@ -16,6 +16,8 @@
 #include "NetAcceptor.h"
 #include "NetManager.h"
 #include "NetSocket.h"
+#include "Peer.h"
+#include "ReplayManager.h"
 #include "RouteManager.h"
 #include "Types.h"
 #include "VUtils.h"
@@ -367,9 +369,13 @@ void INetManager::PostInit()
     m_acceptor->start();
     m_acceptor->on_connect([this](ISocket::Ptr socket) {
         try {
-            auto &&ptr = std::make_unique<Peer>(std::move(socket));
-            if (AVL_SCRIPT_EVENT(IScriptManager::Events::Connect, ptr.get())) {
-                m_connectedPeers.insert(m_connectedPeers.end(), std::move(ptr));
+            auto peer = std::make_shared<Peer>(std::move(socket));
+            if (AVL_SCRIPT_EVENT(IScriptManager::Events::Connect, peer)) {
+                m_connectedPeers.insert(m_connectedPeers.end(), peer);
+
+                if (AVL_SETTINGS.replay_enabled) {
+                    avledet::replay::ReplayManager()->on_new_peer(peer);
+                }
             }
         } catch (std::exception const &e) {
             // (un)expected (more like unlikely), but, ... ERRORS ARE POSSIBLE! just look at literally any asio method...
@@ -497,7 +503,7 @@ void INetManager::OnConfigLoad(bool reloading)
 {
     (void) reloading;
 
-    bool hasPassword = !AVL_SETTINGS.serverPassword.empty();
+    bool hasPassword = !AVL_SETTINGS.m_server_password.empty();
 
     if (hasPassword) {
         m_passwordSalt = VUtils::Random::GenerateAlphaNum(16);
@@ -505,7 +511,7 @@ void INetManager::OnConfigLoad(bool reloading)
         // Hash a salted password
         //VUtils::md5(merge.c_str(), merge.size(), reinterpret_cast<std::uint8_t*>(m_passwordHash.data()));
 
-        auto s         = avledet::crypto::md5(AVL_SETTINGS.serverPassword + m_passwordSalt);
+        auto s         = avledet::crypto::md5(AVL_SETTINGS.m_server_password + m_passwordSalt);
         m_passwordHash = avledet::lexicon::CSU::ascii(std::string_view(s));
     } else {
         m_passwordSalt.clear();

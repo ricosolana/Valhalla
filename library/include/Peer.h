@@ -10,6 +10,7 @@
 #include "DataStream.h"
 #include "Hashes.h"
 #include "NetSocket.h"
+#include "Replay.h"
 #include "Rpc.h"
 #include "Types.h"
 #include "UserData.h"
@@ -17,6 +18,10 @@
 #include "VUtils.h"
 #include "VUtilsTraits.h"
 #include "ZDO.h"//TODO might not need this class...
+
+namespace avledet::replay {
+
+}
 
 enum class ChatMsgType : std::int32_t
 {
@@ -84,6 +89,8 @@ class Peer : public std::enable_shared_from_this<Peer>,
 
     avledet::util::Map<std::string, std::string, ankerl::unordered_dense::string_hash, std::equal_to<>>
             m_syncData;
+
+    avledet::replay::XShare::Ptr m_replay_share;
 
   private:
     void update();
