@@ -39,13 +39,13 @@ namespace avledet::replay {
       private:
         void emit_to_stream(XShare& share, XShare::SwapBuffer const& buf);
         void thread_job(std::stop_token);
+        void flush(XShare& share);
 
       public:
         void init();
         void on_new_peer(Peer::Ptr peer);
         void on_peer_quit(Peer::Ptr peer);
         void on_packet(Peer::Ptr peer, avledet::util::Bytes packet);
-        void flush(XShare& share);
     };
 
     IReplayManager *ReplayManager();

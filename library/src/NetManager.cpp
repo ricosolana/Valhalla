@@ -465,6 +465,7 @@ void INetManager::OnPeerQuit(Peer::Ptr peer)
     AVL_SCRIPT_EVENT(IScriptManager::Events::Quit, peer);
 
     ZDOManager()->OnPeerQuit(peer);
+    avledet::replay::ReplayManager()->on_peer_quit(peer);
 
     if (peer->IsAdmin()) {
         Avledet()->m_admin.insert(peer->m_socket->get_host_name());

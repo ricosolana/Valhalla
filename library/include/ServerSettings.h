@@ -168,4 +168,5 @@ struct ServerSettings
 
     bool replay_enabled;
     
+    //bool replay_kick_on_fail;
 };

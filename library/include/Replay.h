@@ -2,6 +2,7 @@
 
 #include "Avledet.h"
 #include "VUtils.h"
+#include <cassert>
 #include <filesystem>
 #include <memory>
 #include <stdexcept>
@@ -11,6 +12,8 @@ namespace avledet::replay {
     // https://facebook.github.io/zstd/doc/api_manual_latest.html
     // TODO move this class out of here
     //  placec into Utils...
+
+    // 576
     class ZstdStreamTo {
     public:
         ZstdStreamTo(std::string const& outfile_path) 
@@ -32,6 +35,7 @@ namespace avledet::replay {
                     std::size_t outBufferSize = ZSTD_CStreamOutSize())
         {
             if (this->cctx_) {
+                assert(false);
                 throw std::runtime_error("tried to init zstream twice");
             }
 
@@ -39,6 +43,7 @@ namespace avledet::replay {
 
             cctx_ = ZSTD_createCCtx();
             if (!cctx_) {
+                assert(false);
                 throw std::runtime_error("ZSTD_createCCtx failed");
             }
 
@@ -59,6 +64,7 @@ namespace avledet::replay {
             //this->filename = outputFile;
 
             if (!cctx_) {
+                assert(false);
                 throw std::runtime_error("must init zstream first");
             }
 
@@ -143,7 +149,7 @@ namespace avledet::replay {
             //return true;
         }
 
-        bool streaming_ready() {
+        bool streaming_ready() noexcept {
             return this->cctx_ != nullptr;
         }
 
@@ -163,10 +169,10 @@ namespace avledet::replay {
         std::ofstream out_;
         std::vector<char> outBuffer_;
         std::string filename;
-
-
     };
 
+    // 672 (base)
+    // 688 (w/ enable_shared)
     struct XShare : public std::enable_shared_from_this<XShare> {
         using PacketTS = std::pair<std::chrono::nanoseconds, avledet::util::Bytes>;
         using SwapBuffer = std::vector<PacketTS>;
@@ -199,7 +205,7 @@ namespace avledet::replay {
         //Job m_job {};
 
         std::atomic<bool> m_in_flight{false}; // <--- prevents unsafe swaps
-        
+        std::atomic<bool> m_closing{false}; // mark for cannibalize        
 
         XShare(std::filesystem::path path);
         ~XShare();

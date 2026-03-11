@@ -5,11 +5,13 @@
 #include "NetSocket.h"
 #include "Peer.h"
 #include "Replay.h"
+#include "Task.h"
 #include "Types.h"
 #include "VUtils.h"
 #include "VUtilsRandom.h"
 #include "WorldManager.h"
 #include <atomic>
+#include <cassert>
 #include <chrono>
 #include <emmintrin.h>
 #include <exception>
@@ -89,18 +91,13 @@ namespace avledet::replay {
     void IReplayManager::thread_job(std::stop_token token) {
         while (!token.stop_requested())
         {
-            XShare::Ptr plist =
+            XShare::Ptr next =
                 m_ready_head.exchange(nullptr, std::memory_order_acquire);
 
-            auto *list = plist.get();
+            auto *list = next.get();
 
             while (list)
             {
-                XShare::Ptr next = std::move(list->next);
-
-                //auto* share = list->owner;
-                //auto share = list;
-                //auto* buf   = list->buffer; // CONTENDED
                 auto* buf   = list->m_inactive;
 
                 try {
@@ -116,8 +113,19 @@ namespace avledet::replay {
 
                     buf->clear();
 
-                    // mark buffer as free
-                    list->m_in_flight.store(false, std::memory_order_release);
+                    // One-off, if peer is closing, write final data, then close stream/file
+                    if (list->m_closing.load(std::memory_order_acquire))
+                    {
+                        auto* active = list->m_active;
+
+                        emit_to_stream(*list, *active);
+                        active->clear();
+
+                        list->m_zstream.finish();
+                    } else {
+                        // mark buffer as free
+                        list->m_in_flight.store(false, std::memory_order_release);
+                    }
                 } catch (std::exception const& ex) {
                     // possible errors off the top of my head:
                     //  - zstd failure (cant create, cant param, cant dict)
@@ -132,8 +140,27 @@ namespace avledet::replay {
                     // TODO
                     //  this must be fixed
                     LOG_ERROR(AVL_LOGGER, "unhandled error: {}", ex.what());
+
+                    // TODO
+                    //  what do do during what error?
+                    //  should we disconnect peer?
+                    //  should we create a new stream?
+                    //      - require reset / realloc
+                    //  likely, a server setting to determine the fail action
+                    //  - options:
+                    //      - lock the stream permanently by panicking the single -per-stream
+                    //          - peer remains online
+                    //      - disconnect the peer
+                    //          - able to recover dead stream
+                    //          - however, proper handling must occur for the subsequent flush
+                    //              - this should be handled, because a "panic" keeps the
+                    //                  write flag active, preventing subsequent stream finish
+                    //      - attempt to retry a replay
+                    //          - most dangerous part
+                    //          - would be better to retry via forcing player disposal (kick)
                 }
 
+                next = std::move(list->next);
                 list = next.get();
             }
 
@@ -155,30 +182,35 @@ namespace avledet::replay {
             / "hosts"
             / host
             / (std::to_string(nanos.count()) + ".replay");
-//std::filesystem::di
+            
         peer->m_replay_share = std::make_shared<XShare>(path);
-
-
-
-        //assert(false);
-        // TODO must perform file actions later...
-        //  preferably in worker thread
-        //  however queing / pre-storage of file names is perfectly ok,
-        //  in fact, might be the most preferable option to store right now
-        //peer->m_replay_share->m_zstream.startStream(path);
-        //peer->m_replay_share->m_zstream.init(path);
-
-        //LOG(WARNING) << "Starting capture for " << peer->m_socket->GetHostName();
     }
 
-    void IReplayManager::on_peer_quit(Peer::Ptr peer) {        
-        flush(*peer->m_replay_share);
+    void IReplayManager::on_peer_quit(Peer::Ptr peer) {
+        assert(peer->m_replay_share);
+        // TODO: must dump ALL, while not interfering
+        auto &share = *peer->m_replay_share;
+
+        if (share.m_closing.exchange(true, std::memory_order_acq_rel)) {
+            return;
+        }
+
+        flush(share);
     }
 
     void IReplayManager::on_packet(Peer::Ptr peer, avledet::util::Bytes packet) {
         assert(peer->m_replay_share);
 
         auto& share = *peer->m_replay_share;
+        if (share.m_closing.load(std::memory_order_acquire)) {
+            // TODO: on_packet shouldnt be called while already closed
+            assert(false);
+            //LOG_WARNING(AVL_LOGGER, "Packet received when share closing");
+            // IMPORTANT
+            //  if closing, active buffer has been marked for async write
+            //  therefore, unsfe to write to while in MAIN
+            return;
+        }
 
         auto* buf = share.m_active; // CONTENDED
 
@@ -198,26 +230,6 @@ namespace avledet::replay {
 
     void IReplayManager::flush(XShare& share) {
         bool expected = false;
-
-        // only allow flush if there is no buffer currently in-flight
-        //  weak: 
-        //if (!share.m_in_flight.compare_exchange_weak(
-        //        expected, true,
-        //        std::memory_order_acq_rel))
-        //{
-        //    // previous buffer still being processed
-        //    //  OR spurious atomic failure (unknown)
-        //    return;
-        //}
-
-        //if (!share.m_in_flight.compare_exchange_strong(
-        //    expected, true,
-        //    std::memory_order_acq_rel,
-        //    std::memory_order_relaxed)) 
-        //{
-        //    return;
-        //}
-
         if (!share.m_in_flight.compare_exchange_strong(
                 expected, true,
                 std::memory_order_acq_rel))

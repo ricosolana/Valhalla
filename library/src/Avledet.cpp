@@ -527,7 +527,8 @@ void IAvledet::LoadFiles(bool reloading)
 
             // replay loads
             {
-                a(m_settings.replay_enabled, experimental, "replays-enabled", false, nullptr);
+                a(m_settings.replay_enabled, experimental, "replays-enabled", false, nullptr, reloading);
+                //a(m_settings.replay_kick_on_fail, experimental, "replays-kick-on-fail", false, nullptr, reloading);
             }
         }
 
