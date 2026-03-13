@@ -54,8 +54,63 @@ namespace avledet::util::mono {
             }
         }
 
-        struct parallel_tuple_order
+
+
+        // Entire tuple must be unique to another tuple
+        struct all_unique
         {
+            template<size_t I=0,class Tuple>
+            static bool unique(const Tuple& a,const Tuple& b)
+            {
+                if constexpr (I==std::tuple_size_v<Tuple>)
+                    return true;
+                else
+                {
+                    if (std::get<I>(a)==std::get<I>(b))
+                        return false;
+
+                    return unique<I+1>(a,b);
+                }
+            }
+        };
+
+        // at least 1 tuple element must differ from another tuple
+        struct one_unique
+        {
+            template<class Tuple>
+            static bool unique(const Tuple& a,const Tuple& b)
+            {
+                return !(a==b);
+            }
+        };
+
+        // Keys are free to fully clash
+        struct none_unique
+        {
+            template<class Tuple>
+            static bool unique(const Tuple& a, const Tuple& b)
+            {
+                // Always returns true: duplicates are allowed
+                return true;
+            }
+        };
+
+
+
+        template<class _Value, class _KeyTuple, class _Unique>
+        class parallel_vector_map
+        {
+        public:
+            using key_type = _KeyTuple;
+            using mapped_type = _Value;
+            using value_type = std::pair<key_type, mapped_type>;
+            using iterator = typename std::vector<value_type>::iterator;
+            using size_type = std::size_t;
+
+        private:
+            std::vector<value_type> data;
+
+        private:
             template<class Tuple>
             static bool less(const Tuple& a,const Tuple& b)
             {
@@ -98,74 +153,21 @@ namespace avledet::util::mono {
                 int d = direction(a,b);
                 return monotonic(a,b,d);
             }
-        };
-
-        struct strict_unique_policy
-        {
-            template<size_t I=0,class Tuple>
-            static bool unique_impl(const Tuple& a,const Tuple& b)
-            {
-                if constexpr (I==std::tuple_size_v<Tuple>)
-                    return true;
-                else
-                {
-                    if (std::get<I>(a)==std::get<I>(b))
-                        return false;
-
-                    return unique_impl<I+1>(a,b);
-                }
-            }
-
-            template<class Tuple>
-            static bool unique(const Tuple& a,const Tuple& b)
-            {
-                return unique_impl(a,b);
-            }
-        };
-
-        struct weak_unique_policy
-        {
-            template<class Tuple>
-            static bool unique(const Tuple& a,const Tuple& b)
-            {
-                return !(a==b);
-            }
-        };
-
-        struct allow_duplicates_policy
-        {
-            template<class Tuple>
-            static bool unique(const Tuple& a, const Tuple& b)
-            {
-                // Always returns true: duplicates are allowed
-                return true;
-            }
-        };
-
-        template<class Value, class KeyTuple, class OrderPolicy, class UniquePolicy>
-        class parallel_vector_map
-        {
-            using entry = std::pair<KeyTuple, Value>;
-            std::vector<entry> data;
 
         public:
-            using key_type = KeyTuple;
-            using iterator = typename std::vector<entry>::iterator;
-            using size_type = std::size_t;
-
             iterator lower_bound(const key_type& k)
             {
                 return std::lower_bound(
                     data.begin(),
                     data.end(),
                     k,
-                    [](const entry& e, const key_type& k)
+                    [](const value_type& e, const key_type& k)
                     {
-                        return OrderPolicy::less(e.first,k);
+                        return less(e.first,k);
                     });
             }
 
-            std::pair<iterator,bool> insert(const key_type& k, const Value& v)
+            std::pair<iterator,bool> insert(const key_type& k, mapped_type v)
             {
                 auto pos = lower_bound(k);
 
@@ -174,10 +176,10 @@ namespace avledet::util::mono {
                 {
                     auto& prev = std::prev(pos)->first;
 
-                    if (!OrderPolicy::valid(prev,k))
+                    if (!valid(prev,k))
                         throw std::logic_error("parallel key ordering violated");
 
-                    if (!UniquePolicy::unique(prev,k))
+                    if (!_Unique::unique(prev,k))
                         return {std::prev(pos),false};
                 }
 
@@ -186,10 +188,10 @@ namespace avledet::util::mono {
                 {
                     auto& next = pos->first;
 
-                    if (!OrderPolicy::valid(k,next))
+                    if (!valid(k,next))
                         throw std::logic_error("parallel key ordering violated");
 
-                    if (!UniquePolicy::unique(k,next))
+                    if (!_Unique::unique(k,next))
                         return {pos,false};
                 }
 
@@ -205,6 +207,84 @@ namespace avledet::util::mono {
                 return data.end();
             }
 
+            // TODO
+            mapped_type& operator[](const key_type& key)
+            {
+                auto it = get_monotonic(key);
+
+                if (it != data.end() && keys_equal(it->first, key))
+                    return it->second;
+
+                it = data.emplace(
+                    it,
+                    std::piecewise_construct,
+                    std::forward_as_tuple(key),
+                    std::forward_as_tuple()
+                );
+
+                return it->second;
+            }
+
+            /*
+            // TODO 
+            template<size_t I, typename K>
+            auto find(const K& key)
+            {
+                static_assert(I < std::tuple_size_v<key_type>,
+                    "monotonic_tree::find<I>: key index out of range");
+
+                auto it = std::lower_bound(
+                    data.begin(),
+                    data.end(),
+                    key,
+                    [](const value_type& v, const K& k)
+                    {
+                        auto cmp = comparator<I>();
+
+                        return cmp(std::get<I>(v.first), k);
+                    }
+                );
+
+                if (it == data.end())
+                    return it;
+
+                const auto& val = std::get<I>(it->first);
+
+                auto cmp = comparator<I>();
+                if (!cmp(val,key) && !cmp(key,val))
+                    return it;
+
+                return data.end();
+            }
+
+            // TODO
+            template<size_t I, typename K>
+            bool erase(const K& key)
+            {
+                static_assert(I < std::tuple_size_v<key_type>,
+                    "monotonic_tree::erase<I, K>: key index out of range");
+
+                auto it = find<I>(key);
+                if (it == end())
+                    return false;
+
+                data.erase(it);
+                return true;
+            }*/
+
+            // could be renamed
+            //  erase_tuple
+            //  erase_tied
+            bool erase(const key_type& key)
+            {
+                auto it = find(key);
+                if (it == end())
+                    return false;
+
+                data.erase(it);
+                return true;
+            }
+
             iterator begin(){ return data.begin(); }
             iterator end(){ return data.end(); }
             iterator begin() const { return data.begin(); }
@@ -216,30 +296,27 @@ namespace avledet::util::mono {
 
     }
 
-    template<class Value,class... Keys>
+    template<class _Value,class... Keys>
     using parallel_strict_map =
         priv::parallel_vector_map<
-            Value,
+            _Value,
             std::tuple<Keys...>,
-            priv::parallel_tuple_order,
-            priv::strict_unique_policy
+            priv::all_unique
         >;
 
-    template<class Value,class... Keys>
+    template<class _Value,class... Keys>
     using parallel_weak_map =
         priv::parallel_vector_map<
-            Value,
+            _Value,
             std::tuple<Keys...>,
-            priv::parallel_tuple_order,
-            priv::weak_unique_policy
+            priv::one_unique
         >;
 
-    template<class Value,class... Keys>
+    template<class _Value,class... Keys>
     using parallel_multi_map =
         priv::parallel_vector_map<
-            Value,
+            _Value,
             std::tuple<Keys...>,
-            priv::parallel_tuple_order,
-            priv::allow_duplicates_policy
+            priv::none_unique
         >;
 }
