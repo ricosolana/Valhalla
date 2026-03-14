@@ -2,6 +2,7 @@
 
 
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 #include <algorithm>
 #include <stdexcept>
@@ -167,8 +168,18 @@ namespace avledet::util::mono {
                     });
             }
 
-            std::pair<iterator,bool> insert(const key_type& k, mapped_type v)
+            //std::pair<iterator, bool> insert(const key_type& k, mapped_type&& v)
+            std::pair<iterator, bool> insert(value_type&& v)
             {
+                //std::unordered_map<int, int>().insert()
+
+                //std::unordered_map<int, int>()[0];
+                
+                //.insert( { 0, 1 });
+
+                return try_emplace(v.first, std::forward<decltype(v.second)>(v.second));
+
+                /*
                 auto pos = lower_bound(k);
 
                 // ---- check previous neighbor ----
@@ -195,8 +206,49 @@ namespace avledet::util::mono {
                         return {pos,false};
                 }
 
-                pos = data.insert(pos,{k,v});
-                return {pos,true};
+                pos = data.insert(pos, { k, std::move(v) });
+                return {pos,true};*/
+            }
+
+            template<typename... Args>
+            std::pair<iterator, bool>
+            try_emplace(const key_type& key, Args&&... args)
+            {
+                auto pos = lower_bound(key);
+
+                // ---- check previous neighbor ----
+                if (pos != data.begin())
+                {
+                    auto& prev = std::prev(pos)->first;
+
+                    if (!valid(prev, key))
+                        throw std::logic_error("parallel key ordering violated");
+
+                    if (!_Unique::unique(prev, key))
+                        return {std::prev(pos),false};
+                }
+
+                // ---- check next neighbor ----
+                if (pos != data.end())
+                {
+                    auto& next = pos->first;
+
+                    if (!valid(key, next))
+                        throw std::logic_error("parallel key ordering violated");
+
+                    if (!_Unique::unique(key, next))
+                        return {pos,false};
+                }
+
+                //pos = data.insert(pos, { k, std::move(v) });
+                pos = data.emplace(
+                    pos,
+                    std::piecewise_construct,
+                    std::forward_as_tuple(key),
+                    std::forward_as_tuple(std::forward<Args>(args)...)
+                );
+
+                return { pos, true };
             }
 
             iterator find(const key_type& k)
@@ -210,19 +262,22 @@ namespace avledet::util::mono {
             // TODO
             mapped_type& operator[](const key_type& key)
             {
-                auto it = get_monotonic(key);
+                //return *try_emplace(key);
+                return try_emplace(key).first->second;
 
-                if (it != data.end() && keys_equal(it->first, key))
-                    return it->second;
-
-                it = data.emplace(
-                    it,
-                    std::piecewise_construct,
-                    std::forward_as_tuple(key),
-                    std::forward_as_tuple()
-                );
-
-                return it->second;
+                //auto it = get_monotonic(key);
+//
+                //if (it != data.end() && keys_equal(it->first, key))
+                //    return it->second;
+//
+                //it = data.emplace(
+                //    it,
+                //    std::piecewise_construct,
+                //    std::forward_as_tuple(key),
+                //    std::forward_as_tuple()
+                //);
+//
+                //return it->second;
             }
 
             /*

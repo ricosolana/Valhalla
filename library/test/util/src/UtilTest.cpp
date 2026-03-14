@@ -38,12 +38,14 @@ TEST(AvledetUtil, MonotonicStrict)
         int, // value
         int, int> m;
 
-    ASSERT_TRUE(m.insert({ 3, 5 },10).second);   // A
-    ASSERT_FALSE(m.insert({ 2, 5 }, 20).second);   // clash -> returns {itr,false}
-
-    ASSERT_TRUE(m.insert({ 0, 2 }, 30).second);   // C inserted at front
-
-    ASSERT_THROW(m.insert({ 1, 6 },40), std::logic_error);   // THROW (ordering rule impossible)
+    ASSERT_TRUE(m.insert({{ 3, 5 }, 10}).second);   // A
+    ASSERT_FALSE(m.insert({{ 2, 5 }, 20 }).second);   // clash -> returns {itr,false}
+    ASSERT_TRUE(m.insert({{ 0, 2 }, 30 }).second);   // C inserted at front
+    ASSERT_THROW(m.insert({{ 1, 6 }, 40 }), std::logic_error);   // THROW (ordering rule impossible)
+    ASSERT_EQ((m[{ 3, 5 }]), 10);
+    ASSERT_EQ(m.find({ 3, 1 }), m.end());
+    ASSERT_THROW((m[{ 3, 1 }]), std::logic_error);
+    ASSERT_TRUE(m.find({ 3, 1 })->second);
 }
 
 TEST(AvledetUtil, MonotonicWeak)
@@ -52,34 +54,57 @@ TEST(AvledetUtil, MonotonicWeak)
         int, // value
         int, int> m;
 
-    ASSERT_TRUE(m.insert({ 3, 5 },10).second);   // A
-    ASSERT_TRUE(m.insert({ 2, 5 }, 20).second);   // good, no collides
-
-    ASSERT_TRUE(m.insert({ 0, 2 }, 30).second);   // C inserted at front
-
-    ASSERT_THROW(m.insert({ 1, 6 },40), std::logic_error);   // THROW (ordering rule impossible)
-
-    ASSERT_FALSE(m.insert({ 3, 5 },10).second); // collision with A
+    ASSERT_TRUE(m.insert({{ 3, 5 }, 10 }).second);   // A
+    ASSERT_TRUE(m.insert({{ 2, 5 }, 20 }).second);   // good, no collides
+    ASSERT_TRUE(m.insert({{ 0, 2 }, 30 }).second);   // C inserted at front
+    ASSERT_THROW(m.insert({{ 1, 6 }, 40 }), std::logic_error);   // THROW (ordering rule impossible)
+    ASSERT_FALSE(m.insert({{ 3, 5 }, 10 }).second); // collision with A
+    ASSERT_EQ((m[{ 3, 5 }]), 10);
+    ASSERT_EQ(m.find({ 3, 1 }), m.end());
+    ASSERT_THROW((m[{ 3, 1 }]), std::logic_error);
+    ASSERT_TRUE(m.find({ 3, 1 })->second);
 }
 
 TEST(AvledetUtil, MonotonicMulti)
 {
+    // This is the weirdest container
+    //  - duplicate keys are allowed
+    //  - where should insert place keys?
+
+    // behavior
+    //  container manipulations will ALWAYS insert a new object (or throw if illegal order)
+    //  container reads, however, will return the object nearest to the beginning
+    // *NOTE
+    //  - index operator[] functions as an insert then return the value-ref
+    //      so, index[] will actually always create a new object, rendering it 
+    //      semi-useless.
+    //  - index[] op retrievals return Object default ctor (0),
+    //  - while index[] assignment will always insert a new object
+    // kinda interesting isnt it..? anyone?
+
+    // this behavior is well defined,
+    //  however very confusing and unexpected in usage.
+    
+
     avledet::util::mono::parallel_multi_map<
         int, // value
         int, int> m;
 
-    ASSERT_TRUE(m.insert({ 3, 5 },10).second);   // A
-    ASSERT_TRUE(m.insert({ 2, 5 }, 20).second);   // good, no collides
-
-    ASSERT_TRUE(m.insert({ 0, 2 }, 30).second);   // C inserted at front
-
-    ASSERT_THROW(m.insert({ 1, 6 },40), std::logic_error);   // THROW (ordering rule impossible)
-
-    ASSERT_TRUE(m.insert({ 3, 5 },10).second); // good
-    ASSERT_TRUE(m.insert({ 3, 5 },10).second); // good
-    ASSERT_TRUE(m.insert({ 3, 5 },10).second); // good
-
-    ASSERT_TRUE(m.insert({ 0, 2 },10).second); // good
-
-    ASSERT_THROW(m.insert({ 2, 10 },40), std::logic_error);   // THROW (ordering rule impossible)
+    ASSERT_TRUE(m.insert({{ 3, 5 }, 10 }).second);   // A
+    ASSERT_TRUE(m.insert({{ 2, 5 }, 20 }).second);   // good, no collides
+    ASSERT_TRUE(m.insert({{ 0, 2 }, 30 }).second);   // C inserted at front
+    ASSERT_THROW(m.insert({{ 1, 6 }, 40 }), std::logic_error);   // THROW (ordering rule impossible)
+    ASSERT_TRUE(m.insert({{ 3, 5 }, 50 }).second); // good
+    ASSERT_TRUE(m.insert({{ 3, 5 }, 60 }).second); // good
+    ASSERT_TRUE(m.insert({{ 3, 5 }, 70 }).second); // good
+    ASSERT_TRUE(m.insert({{ 0, 2 }, 80 }).second); // good
+    ASSERT_THROW(m.insert({{ 2, 10 }, 90 }), std::logic_error);   // THROW (ordering rule impossible)
+    
+    //
+    ASSERT_EQ((m[{ 0, 2 }]), 0);
+    m[{ 0, 2 }] = 10; // adds a new 0,2, because this is a duplicating map
+    ASSERT_EQ((m[{ 0, 2 }]), 0); // idx[] operator
+    ASSERT_TRUE(m.insert({{ 0, 2 }, 110 }).second);
+    ASSERT_TRUE(m.insert({{ 0, 2 }, 120 }).second);
+    ASSERT_EQ(m.find({ 0 , 2 })->second, 120);
 }
