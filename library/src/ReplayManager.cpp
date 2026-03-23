@@ -5,6 +5,7 @@
 #include "NetSocket.h"
 #include "Peer.h"
 #include "Replay.h"
+#include "ServerSettings.h"
 #include "Task.h"
 #include "Types.h"
 #include "VUtils.h"
@@ -20,6 +21,7 @@
 #include <mutex>
 #include <quill/LogMacros.h>
 #include <shared_mutex>
+#include <stop_token>
 #include <string>
 #include <utility>
 #include <vector>
@@ -69,11 +71,43 @@ namespace avledet::replay {
 
         std::filesystem::create_directories(this->m_this_world_session_path);
 
+        // TODO load paths, NOT sessions YET
+        //  storing session paths is very cheap
+        //auto hosts_dir_itr = std::vector(std::filesystem::directory_iterator{this->m_this_world_session_path / "hosts"}, std::filesystem::directory_iterator{});
+        //for (auto host_itr : hosts_dir_itr) {
+        //    //host_itr.path()
+        //    auto hostname = host_itr.path().stem().string();
+        //    
+        //    m_peer_playback_sessions[hostname].push_back()
+        //}
+
         m_thread = std::jthread([&](std::stop_token token) {
-            this->thread_job(token);
+            if (AVL_SETTINGS.m_replay_mode == ReplayMode::CAPTURE) {
+                this->thread_capture_job(token);
+            } else if (AVL_SETTINGS.m_replay_mode == ReplayMode::PLAYER) {
+                // player
+                this->thread_player_job(token);
+            } else {
+                assert(false); // unknown mode
+            }
         });
 
         LOG_NOTICE(AVL_LOGGER, "Experimental packet replay mode enabled");
+    }
+
+    void IReplayManager::uninit() {
+        // TODO: stop the thread
+        //  finish all peers
+        m_thread.request_stop();
+        m_thread.join();
+
+        // write 
+        //  well.. we used a directory iterator on later read
+        //  
+    }
+
+    void IReplayManager::update() {
+        // have queued sessions ready
     }
 
     void IReplayManager::emit_to_stream(XShare& share, XShare::SwapBuffer const& buf) {
@@ -88,9 +122,19 @@ namespace avledet::replay {
         share.m_zstream.compressChunk(writer_buf.data(), writer_buf.size());
     }
 
-    void IReplayManager::thread_job(std::stop_token token) {
-        while (!token.stop_requested())
+    void IReplayManager::thread_capture_job(std::stop_token token) {
+        bool run_one_more = false;
+        //while (!token.stop_requested())
+        for (;;)
         {
+            if (run_one_more) {
+                break;
+            }
+
+            if (token.stop_requested()) {
+                run_one_more = true;
+            }
+
             XShare::Ptr next =
                 m_ready_head.exchange(nullptr, std::memory_order_acquire);
 
@@ -166,10 +210,43 @@ namespace avledet::replay {
 
             //_mm_pause();
 
-            if (m_ready_head.load(std::memory_order_acquire) == nullptr) {
-                m_ready_head.wait(nullptr, std::memory_order_relaxed);
-            }
+            //bool expected = m_wakeup.load(std::memory_order_acquire);
+            bool expected = false;
+            m_wakeup.wait(expected, std::memory_order_relaxed); // blocks while false
+
+            //if (m_ready_head.load(std::memory_order_acquire) == nullptr) {
+            //    m_ready_head.wait(nullptr, std::memory_order_relaxed);
+            //}
         }
+    }
+
+    void IReplayManager::thread_player_job(std::stop_token token) {
+        //while (!token.stop_requested()) {
+        //    // this loads the saved replays async
+//
+        //    // fd iterator
+        //    //  how to store references?
+        //    //  as paths
+        //    
+//
+//
+//
+        //    if (!m_sortedSessions.empty()) {
+        //        auto&& front = m_sortedSessions.front();
+        //        if (Valhalla()->Nanos() >= front.second.first) {
+        //            auto&& peer = std::make_unique<Peer>(
+        //                std::make_shared<ReplaySocket>(front.first, m_sessionIndexes[front.first]++, front.second.second));
+//
+        //            m_connectedPeers.push_back(std::move(peer));
+        //            m_sortedSessions.pop_front();
+        //        }
+        //        else {
+        //            PERIODIC_NOW(30s, {
+        //                LOG(INFO) << "Replay peer joining in " << duration_cast<seconds>(front.second.first - Valhalla()->Nanos());
+        //            });
+        //        }
+        //    }
+        //}
     }
 
     void IReplayManager::on_new_peer(Peer::Ptr peer) {
@@ -222,7 +299,7 @@ namespace avledet::replay {
         }
 
         // 1'000'000 = 8 MB
-        if (share.m_size_bytes < 1000000)
+        if (share.m_size_bytes < 2000000)
             return;
 
         this->flush(share);
@@ -285,7 +362,10 @@ namespace avledet::replay {
             std::memory_order_release,
             std::memory_order_relaxed));
 
-        m_ready_head.notify_one();
+        //m_ready_head.notify_one();
+
+        m_wakeup.store(true, std::memory_order_release);
+        m_wakeup.notify_one();   // or notify_all()
     }
 
 }

@@ -2,6 +2,7 @@
 #include "VUtilsRandom.h"
 #include <filesystem>
 #include <luaconf.h>
+#include <quill/LogMacros.h>
 #include <sol/call.hpp>
 #include <sol/load_result.hpp>
 #include <sol/protected_function_result.hpp>
@@ -223,8 +224,9 @@ void IScriptManager::load_userdata()
         m_state["package"] = package; // package.loaded ...
 
         // Sandbox-safe require
-        m_state["require"] = [&](std::string_view module_name, sol::this_environment tenv) -> sol::object {
+        m_state["require"] = [package, loaded](std::string_view module_name, sol::this_environment tenv) mutable -> sol::object {
             sol::environment &env = tenv;
+            sol::state_view state(env.lua_state());
             
             // Check cache
             sol::object cached = loaded[module_name];
@@ -258,9 +260,10 @@ void IScriptManager::load_userdata()
             }
 
 
-            sol::load_result load = m_state.load_file(cano_test.string(), sol::load_mode::text);
+            sol::load_result load = state.load_file(cano_test.string(), sol::load_mode::text);
             
             if (!load.valid()) {
+                //LOG_WARNING(AVL_LOGGER, "did you mean to enable unsafe mode?")
                 sol::error err = load;
                 throw std::runtime_error(err.what());
             }
@@ -279,7 +282,7 @@ void IScriptManager::load_userdata()
             sol::object lmodule;
 
             if (result.return_count() == 0 || result.get_type() == sol::type::nil) {
-                lmodule = m_state.create_table(); // Lua default behavior
+                lmodule = state.create_table(); // Lua default behavior
             } else {
                 lmodule = result.get<sol::object>();
             }
@@ -305,7 +308,7 @@ static std::vector<std::string_view> const safe_functions {// Global objects
                                                            "type", "unpack", "_VERSION", "xpcall",
 
                                                            // Custom require
-
+                                                           "require",
 
                                                            // Full packages
                                                            "coroutine.*", "string.*", "table.*", "math.*",
@@ -451,6 +454,15 @@ sol::environment IScriptManager::create_sandbox()
             env[sol::create_if_nil][entry] = m_state[entry].get<sol::object>();
         }
 
+        //assert(false);
+        // TODO register all usertypes as env accessible tables
+        for (const auto& name : m_custom_globals) {
+            env[sol::create_if_nil][name] = m_state[name].get<sol::object>();
+        }
+
+        //env[sol::create_if_nil]["require"] = [](sol::variadic_args) {
+        //    throw std::runtime_error("cannot use 'require' while in safe mode");
+        //};
     }
 
     return env;

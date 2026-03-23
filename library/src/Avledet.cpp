@@ -527,7 +527,7 @@ void IAvledet::LoadFiles(bool reloading)
 
             // replay loads
             {
-                a(m_settings.replay_enabled, experimental, "replays-enabled", false, nullptr, reloading);
+                a(m_settings.m_replay_mode, experimental, "replays-mode", ReplayMode::NONE, nullptr, reloading);
                 //a(m_settings.replay_kick_on_fail, experimental, "replays-kick-on-fail", false, nullptr, reloading);
             }
         }
@@ -812,7 +812,7 @@ void IAvledet::init()
     WorldManager()->PostInit();
     NetManager()->PostInit();
 
-    if (AVL_SETTINGS.replay_enabled) {
+    if (AVL_SETTINGS.m_replay_mode != ReplayMode::NONE) {
         avledet::replay::ReplayManager()->init();
     }
 

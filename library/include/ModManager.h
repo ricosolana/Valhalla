@@ -9,6 +9,7 @@
 #include <sol/variadic_args.hpp>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <variant>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -59,6 +60,10 @@ namespace sol {
             return ptr.get();
         }
     };
+
+	//template <typename K, typename V>
+	//struct is_container<avledet::util::Map<K, V>> : std::true_type { };
+
 }// namespace sol
 
 class IScriptManager
@@ -283,6 +288,7 @@ class IScriptManager
     //gtl::btree_map<avledet::util::Hash, std::vector<std::pair<int, sol::function>>> m_callbacks;
     //avledet::util::Set<ScriptInfo *> m_tmp_reload_mods;                           //64 bytes
     sol::state m_state;//48 bytes
+    std::vector<std::string> m_custom_globals; // per-env
     bool m_tmp_unsubscribe {};
 
   private:
@@ -303,6 +309,9 @@ class IScriptManager
 
     void reload_script(decltype(m_scripts)::iterator &script_itr);
 
+    // TODO
+    //int fail_on_newindex
+
   public:
     void load_userdata();
 
@@ -311,14 +320,26 @@ class IScriptManager
 
     // my immutable usertype
     template<typename Class, typename... Args>
-    sol::usertype<Class> new_usertype(Args &&...args)
+    sol::usertype<Class> new_usertype(std::string_view key, Args&&...args)
     {
-        return m_state.new_usertype<Class>(std::forward<Args>(args)..., sol::meta_method::static_new_index,
+        m_custom_globals.push_back(std::string(key));
+        return m_state.new_usertype<Class>(key, std::forward<Args>(args)..., sol::meta_method::static_new_index,
                                            [](sol::variadic_args) -> sol::object {
                                                throw std::runtime_error(
                                                        "cant index userdata, sandboxing is enabled!");
                                            });
     }
+
+    template<typename... Args>
+    sol::state_view& new_enum(std::string_view key, Args&&...args)
+    {
+        m_custom_globals.push_back(std::string(key));
+        return m_state.new_enum(key, std::forward<Args>(args)...);
+    }
+
+    //table x
+	//			     = create_with(meta_function::new_index, detail::fail_on_newindex, meta_function::index, target, meta_function::pairs, stack::stack_detail::readonly_pairs);
+	//			table shim = create_named(name, metatable_key, x);
 
   public:
     ~IScriptManager();

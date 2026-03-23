@@ -19,6 +19,7 @@
 #include "Peer.h"
 #include "ReplayManager.h"
 #include "RouteManager.h"
+#include "ServerSettings.h"
 #include "Types.h"
 #include "VUtils.h"
 #include "VUtilsRandom.h"
@@ -373,7 +374,9 @@ void INetManager::PostInit()
             if (AVL_SCRIPT_EVENT(IScriptManager::Events::Connect, peer)) {
                 m_connectedPeers.insert(m_connectedPeers.end(), peer);
 
-                if (AVL_SETTINGS.replay_enabled) {
+                if (AVL_SETTINGS.m_replay_mode == ReplayMode::CAPTURE) {
+                    // TODO implement the replay mode
+                    assert(false);
                     avledet::replay::ReplayManager()->on_new_peer(peer);
                 }
             }
@@ -465,7 +468,12 @@ void INetManager::OnPeerQuit(Peer::Ptr peer)
     AVL_SCRIPT_EVENT(IScriptManager::Events::Quit, peer);
 
     ZDOManager()->OnPeerQuit(peer);
-    avledet::replay::ReplayManager()->on_peer_quit(peer);
+
+    if (AVL_SETTINGS.m_replay_mode == ReplayMode::CAPTURE) {
+        // TODO
+        assert(false);
+        avledet::replay::ReplayManager()->on_peer_quit(peer);
+    }
 
     if (peer->IsAdmin()) {
         Avledet()->m_admin.insert(peer->m_socket->get_host_name());

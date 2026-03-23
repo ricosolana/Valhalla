@@ -31,7 +31,8 @@ namespace VUtils::Physics {
 
     bool BoxBoxOverlap(
         Vector3f pos1, Vector3f size1, Quaternion rot1,
-        Vector3f pos2, Vector3f size2, Quaternion rot2);
+        Vector3f pos2, Vector3f size2, Quaternion rot2,
+        std::string* desmos_dbg = nullptr);
 
     std::pair<Vector3f, Quaternion> LocalToGlobal(Vector3f const &childLocalPos,
                                                   Quaternion const &childLocalRot, Vector3f const &parentPos,

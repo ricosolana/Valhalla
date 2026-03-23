@@ -8,6 +8,7 @@
 
 #include <range/v3/all.hpp>
 #include <utility>
+#include <vector>
 
 #include "Avledet.h"
 #include "DataStream.h"
@@ -131,6 +132,10 @@ void IZDOManager::Update()
     }
 
     if (VUtils::run_periodic<struct periodic_send_zdos>(AVL_SETTINGS.zdoSendInterval)) {
+        // TODO
+        //  new send mechanism instead avoids long-blocking server thread
+        //  sends ZDOs out in 0.05 interval, round-robin fashion for one peer for every Update loop
+        //  (then waits for 0.05 to be over)
         for (auto &&peer : peers) {
             SendZDOs(peer, false);
         }
@@ -952,7 +957,11 @@ void IZDOManager::OnNewPeer(Peer::Ptr peer)
         if (peer->IsGated())
             return;
 
-        //assert(false); //TODO
+        // TODO
+        //  - I think sector invalidate is an overlooked remnant
+        //      sector invalidation is easy for the server to track between states
+        //      without the need for explicit notification from the client
+        //  - The server can simply compare the last ZDO sector with the newly received sector
         reader.read([this](ZDOID zdoid) {
             if (auto zdo = find_zdo(zdoid)) {
                 _InvalidateZDOZone(zdo);

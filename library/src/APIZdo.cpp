@@ -19,7 +19,7 @@ void IScriptManager::load_userdata_zdo()
 
     // clang-format off
 
-    m_state.new_enum("ConnectorType", 
+    this->new_enum("ConnectorType", 
         "NONE", ZDOConnector::Type::None, 
         "PORTAL", ZDOConnector::Type::Portal,
         "SYNC_TRANSFORM", ZDOConnector::Type::SyncTransform, 

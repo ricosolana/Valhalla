@@ -24,7 +24,7 @@ void IScriptManager::load_userdata_types()
 
     // clang-format off
 
-    m_state.new_enum("Type", 
+    this->new_enum("Type", 
         "BOOL", StreamType::BOOL,
 
         "STRING", StreamType::STRING, "str", StreamType::STRING,
@@ -169,7 +169,7 @@ void IScriptManager::load_userdata_types()
         }
     );
 
-    m_state.new_enum("TimeOfDay", 
+    this->new_enum("TimeOfDay", 
         "MORNING", TIME_MORNING, 
         "DAY", TIME_DAY, 
         "AFTERNOON", TIME_AFTERNOON,

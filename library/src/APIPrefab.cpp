@@ -14,7 +14,7 @@ void IScriptManager::load_userdata_prefab()
 
     LOG_DEBUG(AVL_LOGGER, "Initializing API types - prefab");
 
-    m_state.new_enum("Flag", 
+    this->new_enum("Flag", 
         "NONE", Prefab::Flag::NONE,
         "SCALE", Prefab::Flag::SYNC_INITIAL_SCALE, 
         "DISTANT", Prefab::Flag::DISTANT,

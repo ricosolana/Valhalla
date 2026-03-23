@@ -34,7 +34,7 @@
 
 TEST(AvledetUtil, MonotonicStrict)
 {
-    avledet::util::mono::parallel_strict_map<
+    avledet::util::mono::strict_btree_map<
         int, // value
         int, int> m;
 
@@ -50,7 +50,7 @@ TEST(AvledetUtil, MonotonicStrict)
 
 TEST(AvledetUtil, MonotonicWeak)
 {
-    avledet::util::mono::parallel_weak_map<
+    avledet::util::mono::weak_btree_map<
         int, // value
         int, int> m;
 
@@ -84,9 +84,9 @@ TEST(AvledetUtil, MonotonicMulti)
 
     // this behavior is well defined,
     //  however very confusing and unexpected in usage.
-    
 
-    avledet::util::mono::parallel_multi_map<
+
+    avledet::util::mono::multi_btree_map<
         int, // value
         int, int> m;
 

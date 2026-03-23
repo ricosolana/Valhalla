@@ -10,6 +10,12 @@
     #include <dpp/snowflake.h>
 #endif
 
+enum class ReplayMode {
+    NONE,
+    CAPTURE,
+    PLAYER,
+};
+
 //TODO this is finicky at best, dangerous at worst,
 //  consider majorly reworking, or removing it entirely...
 enum class AssignAlgorithm
@@ -166,7 +172,9 @@ struct ServerSettings
 
     bool luaUnsafe;
 
-    bool replay_enabled;
+    //bool replay_enabled;
+
+    ReplayMode m_replay_mode;
     
     //bool replay_kick_on_fail;
 };

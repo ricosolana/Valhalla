@@ -18,7 +18,7 @@ void IScriptManager::load_userdata_network()
 
     LOG_DEBUG(AVL_LOGGER, "Initializing API types - network");
 
-    m_state.new_enum("NetStatus", 
+    this->new_enum("NetStatus", 
         "CONNECTING", Status::Connecting, 
         "CONNECTED", Status::Connected,
         "LINGERING", Status::Lingering, 

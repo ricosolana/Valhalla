@@ -98,8 +98,26 @@ namespace avledet::util::mono {
 
 
 
+        // Definitions:
+        // - Entry: A / B / C ...
+        // - Corresponding keys : A[0], B[0], C[0] ... 
+        // - Member keys : A[0], B[1], C[2] ...
+        //how to interpret this container
+        //- remember, regardless of strategy, keys must ALWAYS still be greater or equal than its preceding element because
+        //    of sorted binary tree requirements
+        //- the below refers to key resolution and clashes, not regarding exact LHS/RHS ordering, solely equality and mapping
+        //    - one-to-one unique?
+        //        - strict one-to-one 
+        //        - keys in between are all unique
+        //        - ie, individual keys (like a normal map) maintain identity
+        //        - strict: (a1 != a2 && b1 != b2 && c1 != c2 ...)
+        //            - key checks (arbitrary scenarios):
+        //                - ILLEGAL: { 1, 2, 3 }, { 1, 2, 4 } // first and second keys are not unique
+        //                - LEGAL: { 1, 2, 3 }, {2, 1, 4}
+        //                - ILLEGAL: { 2, 2, 2 }, { 2, 3, 4 } // first key isnt unique
+        //                - LEGAL: { 2, 2, 2 }, { 3, 3, 3 }
         template<class _Value, class _KeyTuple, class _Unique>
-        class parallel_vector_map
+        class mono_btree_container
         {
         public:
             using key_type = _KeyTuple;
@@ -351,25 +369,28 @@ namespace avledet::util::mono {
 
     }
 
+    // Corresponding keys must not intersect
     template<class _Value,class... Keys>
-    using parallel_strict_map =
-        priv::parallel_vector_map<
+    using strict_btree_map =
+        priv::mono_btree_container<
             _Value,
             std::tuple<Keys...>,
             priv::all_unique
         >;
 
+    // The union between Corresponding and Member keys must not intersect
     template<class _Value,class... Keys>
-    using parallel_weak_map =
-        priv::parallel_vector_map<
+    using weak_btree_map =
+        priv::mono_btree_container<
             _Value,
             std::tuple<Keys...>,
             priv::one_unique
         >;
 
+    // Any key overlaps are allowed (intersections between Corresponding and Member keys)
     template<class _Value,class... Keys>
-    using parallel_multi_map =
-        priv::parallel_vector_map<
+    using multi_btree_map =
+        priv::mono_btree_container<
             _Value,
             std::tuple<Keys...>,
             priv::none_unique

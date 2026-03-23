@@ -7,14 +7,17 @@
 // ELPP log file name
 #define AVL_LOG_PATH "logs/log.txt"
 
-//#define AVL_LUA_LIBS
-//#define AVL_LUA_C_PATH
+//#define AVL_LUA_ROOT        "lua/"
+//#define AVL_LUA_LIBS_PATH   AVL_LUA_ROOT "libs/"
+//#define AVL_LUA_C_PATH      AVL_LUA_ROOT "bin/"
+//#define AVL_LUA_SCRIPT_PATH AVL_LUA_ROOT "scripts/"
+
 #define AVL_LUA_ROOT        "lua"
 #define AVL_LUA_LIBS_PATH   "lua/libs"
 #define AVL_LUA_C_PATH      "lua/bin"
 #define AVL_LUA_SCRIPT_PATH "lua/scripts"
 
-#define AVL_REPLAY_PATH     "replays"
+#define AVL_REPLAY_PATH     "replays/"
 
 #define AVL_RAW_IS_ON(OP_SYMBOL)          ((3 OP_SYMBOL 3) != 0)
 #define AVL_RAW_IS_OFF(OP_SYMBOL)         ((3 OP_SYMBOL 3) == 0)

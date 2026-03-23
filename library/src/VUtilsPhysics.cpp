@@ -305,7 +305,8 @@ namespace VUtils::Physics {
 
     bool BoxBoxOverlap(
         Vector3f pos1, Vector3f size1, Quaternion rot1,
-        Vector3f pos2, Vector3f size2, Quaternion rot2)
+        Vector3f pos2, Vector3f size2, Quaternion rot2,
+        std::string* desmos_dbg)
     {
         // Ensure normalized rotations (important for correctness)
         rot1 = rot1.normalized();

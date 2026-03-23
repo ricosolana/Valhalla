@@ -16,7 +16,7 @@ void IScriptManager::load_userdata_peer()
 
     LOG_DEBUG(AVL_LOGGER, "Initializing API types - peer");
 
-    m_state.new_enum("ChatMsgType", 
+    this->new_enum("ChatMsgType", 
         "WHISPER", ChatMsgType::Whisper, 
         "NORMAL", ChatMsgType::Normal, 
         "SHOUT", ChatMsgType::Shout, 

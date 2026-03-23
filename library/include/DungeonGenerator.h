@@ -31,6 +31,9 @@ class DungeonGenerator
     // Instanced
     std::vector<std::reference_wrapper<RoomConnectionInstance const>> m_door_connections;
 
+    //std::stringstream desmos_dbg_ss;
+    //std::stringstream math3d_dbg_ss;
+
   public:
     static constexpr Vector3f const m_zone_size = Vector3f(64, 64, 64);
 

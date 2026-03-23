@@ -1,8 +1,10 @@
 #include "DungeonGenerator.h"
+#include "Avledet.h"
 #include "Quaternion.h"
 #include "Vector.h"
 #include <cstddef>
 #include <limits>
+#include <quill/LogMacros.h>
 
 #if AVL_IS_ON(AVL_DUNGEON_GENERATION)
     #include "GeoManager.h"
@@ -90,11 +92,151 @@ void DungeonGenerator::GenerateDungeon(VUtils::Random::State &state)
     this->PlaceStartRoom(state);
     this->PlaceRooms(state);
 
+
+
+
+
+
+
     if (AVL_SETTINGS.dungeonsEndcapsEnabled)
         this->PlaceEndCaps(state);
 
     if (AVL_SETTINGS.dungeonsDoors)
         this->PlaceDoors(state);
+
+    //LOG_INFO(AVL_LOGGER, "Desmos: {}", desmos_dbg_ss.str());
+
+
+
+    auto&& snap = [](float v, float eps = 0.001)
+    {
+        float r = std::round(v);
+        if (std::fabs(v - r) < eps)
+            return r;
+        return v;
+    };
+
+    auto&& formatFloat1 = [&](float v, int precision = 5) {
+        std::ostringstream ss;
+        ss << std::fixed; // << std::setprecision(precision);
+        ss << snap(v);
+        return ss.str();
+    };
+
+    auto&& formatFloat = [&](float v) {
+        // "{:g}" automatically handles removing trailing zeros 
+        // and choosing the shortest representation, but to be 100% 
+        // safe from 'e', we can use "{:.3f}" and trim.
+        std::string s = std::format("{:.3f}", snap(v));
+        s.erase(s.find_last_not_of('0') + 1, std::string::npos);
+        if (s.back() == '.') s.pop_back();
+        return s;
+    };
+
+    std::ostringstream math3d_ss, desmos_ss, desmos3d_ss;
+    math3d_ss << "["; // Start the master list
+    //desmos_ss << "B = ["; // Start the master list
+    desmos3d_ss << "B = ["; // Start the master list
+    bool first_face = true;
+
+    for (const auto& room : m_placed_rooms) { // Assuming a collection of box objects
+        // 1. Calculate the 8 corners for THIS box
+        const auto& size = room->m_room.get().m_size;
+        Vector3f v[8] = {
+            room->m_pos + room->m_rot * Vector3f(-size.x*0.5f, -size.y*0.5f, -size.z*0.5f),
+            room->m_pos + room->m_rot * Vector3f( size.x*0.5f, -size.y*0.5f, -size.z*0.5f),
+            room->m_pos + room->m_rot * Vector3f( size.x*0.5f,  size.y*0.5f, -size.z*0.5f),//br
+            room->m_pos + room->m_rot * Vector3f(-size.x*0.5f,  size.y*0.5f, -size.z*0.5f),//bl
+            room->m_pos + room->m_rot * Vector3f(-size.x*0.5f, -size.y*0.5f,  size.z*0.5f),
+            room->m_pos + room->m_rot * Vector3f( size.x*0.5f, -size.y*0.5f,  size.z*0.5f),
+            room->m_pos + room->m_rot * Vector3f( size.x*0.5f,  size.y*0.5f,  size.z*0.5f),//ur
+            room->m_pos + room->m_rot * Vector3f(-size.x*0.5f,  size.y*0.5f,  size.z*0.5f) //ul
+        };
+
+        ////Vector3f v3_a_br = pos + rot * Vector3f(size.x*0.5f, pos.y, -size.z*0.5f);
+        ////Vector3f v3_a_bl = pos + rot * Vector3f(-size.x*0.5f, pos.y, -size.z*0.5f);
+        ////Vector3f v3_a_ur = pos + rot * Vector3f(size.x*0.5f, pos.y, size.z*0.5f);
+        ////Vector3f v3_a_ul = pos + rot * Vector3f(-size.x*0.5f, pos.y, size.z*0.5f);
+        //desmos_dbg_ss << "polygon((" << v3_a_br.x << "," << v3_a_br.z << "),(" << v3_a_ur.x << "," << v3_a_ur.z << "),("
+        //    << v3_a_ul.x << "," << v3_a_ul.z << "),(" << v3_a_bl.x << "," << v3_a_bl.z << ")),";
+        ///desmos_dbg_ss << "polygon((" 
+        ///    << snap(v3_a_br.x) << "," << snap(v3_a_br.z) << "),("
+        ///    << snap(v3_a_ur.x) << "," << snap(v3_a_ur.z) << "),("
+        ///    << snap(v3_a_ul.x) << "," << snap(v3_a_ul.z) << "),("
+        ///    << snap(v3_a_bl.x) << "," << snap(v3_a_bl.z) << ")),"; 
+        desmos_ss << "polygon(("
+            << formatFloat(v[2].x) << "," << formatFloat(v[2].z) << "),("
+            << formatFloat(v[6].x) << "," << formatFloat(v[6].z) << "),("
+            << formatFloat(v[7].x) << "," << formatFloat(v[7].z) << "),("
+            << formatFloat(v[3].x) << "," << formatFloat(v[3].z) << ")),";
+
+        // 2. Define the 6 faces (indices into v)
+        //int faces[6][4] = {
+        //    {0, 3, 2, 1}, {4, 5, 6, 7}, // Bottom, Top
+        //    {0, 1, 5, 4}, {2, 3, 7, 6}, // Sides
+        //    {0, 4, 7, 3}, {1, 2, 6, 5}
+        //};
+
+        //for (int i = 0; i < 6; ++i) {
+        //    if (!first_face) math3d_ss << ",";
+        //    
+        //    math3d_ss << "["; // Start of ONE face (list of points)
+        //    for (int j = 0; j < 4; ++j) {
+        //        Vector3f p = v[faces[i][j]];
+        //        math3d_ss << "[" << formatFloat(p.x) << "," << formatFloat(p.y) << "," << formatFloat(p.z) << "]";
+        //        if (j < 3) math3d_ss << ",";
+        //    }
+        //    math3d_ss << "]"; // End of face
+        //    first_face = false;
+        //}
+
+        //for (int i = 0; i < 6; ++i) {
+        //    if (!first_face) desmos_ss << ",";
+        //    
+        //    desmos_ss << "polygon(";
+        //    for (int j = 0; j < 4; ++j) {
+        //        Vector3f p = v[faces[i][j]];
+        //        // Note: Desmos 3D uses (x, y, z) parentheses
+        //        desmos_ss << "(" << formatFloat(p.x) << "," << formatFloat(p.y) << "," << formatFloat(p.z) << ")";
+        //        if (j < 3) desmos_ss << ",";
+        //    }
+        //    desmos_ss << ")";
+        //    first_face = false;
+        //}
+
+        // 2. Define 12 triangles (2 per face)
+        // Desmos triangle syntax: triangle((x,y,z), (x,y,z), (x,y,z))
+        int tri_indices[12][3] = {
+            {0,1,2}, {0,2,3}, // Bottom
+            {4,5,6}, {4,6,7}, // Top
+            {0,1,5}, {0,5,4}, // Front
+            {2,3,7}, {2,7,6}, // Back
+            {0,3,7}, {0,7,4}, // Left
+            {1,2,6}, {1,6,5}  // Right
+        };
+
+        for (int i = 0; i < 12; ++i) {
+            if (!first_face) desmos3d_ss << ",";
+            
+            desmos3d_ss << "triangle(";
+            for (int j = 0; j < 3; ++j) {
+                Vector3f p = v[tri_indices[i][j]];
+                desmos3d_ss << "(" << formatFloat(p.x) << "," << formatFloat(p.y) << "," << formatFloat(p.z) << ")";
+                if (j < 2) desmos3d_ss << ",";
+            }
+            desmos3d_ss << ")";
+            first_face = false;
+        }
+    }
+
+    math3d_ss << "]"; // End the master list
+    desmos3d_ss << "]";
+
+    //LOG_INFO(AVL_LOGGER, "https://math3d.org: {}", math3d_ss.str());
+    LOG_INFO(AVL_LOGGER, "desmos: {}", desmos_ss.str());
+    LOG_INFO(AVL_LOGGER, "desmos3d: {}", desmos3d_ss.str());
+
+
 }
 
 void DungeonGenerator::GenerateCampGrid(VUtils::Random::State &state)
@@ -515,9 +657,61 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State &state, decltype(m_open_c
     //pos += {0, 0, 1};
     //rot = Quaternion::IDENTITY;
 
-    if (room.m_size.x != 0 && room.m_size.z != 0 && this->TestCollision(room, pos, rot)) {
+    const auto& size = room.m_size;
+
+    if (size.x != 0 && size.z != 0 && this->TestCollision(room, pos, rot)) {
         return false;
     }
+
+    //auto&& snap = [](float v, float eps = 0.001)
+    //{
+    //    float r = std::round(v);
+    //    if (std::fabs(v - r) < eps)
+    //        return r;
+    //    return v;
+    //};
+//
+    //auto&& formatFloat1 = [&](float v, int precision = 5) {
+    //    std::ostringstream ss;
+    //    ss << std::fixed; // << std::setprecision(precision);
+    //    ss << snap(v);
+    //    return ss.str();
+    //};
+//
+    //auto&& formatFloat = [&](float v) {
+    //    // "{:g}" automatically handles removing trailing zeros 
+    //    // and choosing the shortest representation, but to be 100% 
+    //    // safe from 'e', we can use "{:.3f}" and trim.
+    //    std::string s = std::format("{:.3f}", snap(v));
+    //    s.erase(s.find_last_not_of('0') + 1, std::string::npos);
+    //    if (s.back() == '.') s.pop_back();
+    //    return s;
+    //};
+
+    //// show room boundaries
+    ////std::string* desmos_dbg
+    //Vector3f v3_a_br = pos + rot * Vector3f(size.x*0.5f, pos.y, -size.z*0.5f);
+    //Vector3f v3_a_bl = pos + rot * Vector3f(-size.x*0.5f, pos.y, -size.z*0.5f);
+    //Vector3f v3_a_ur = pos + rot * Vector3f(size.x*0.5f, pos.y, size.z*0.5f);
+    //Vector3f v3_a_ul = pos + rot * Vector3f(-size.x*0.5f, pos.y, size.z*0.5f);
+    ////desmos_dbg_ss << "polygon((" << v3_a_br.x << "," << v3_a_br.z << "),(" << v3_a_ur.x << "," << v3_a_ur.z << "),("
+    ////    << v3_a_ul.x << "," << v3_a_ul.z << "),(" << v3_a_bl.x << "," << v3_a_bl.z << ")),";
+    /////desmos_dbg_ss << "polygon((" 
+    /////    << snap(v3_a_br.x) << "," << snap(v3_a_br.z) << "),("
+    /////    << snap(v3_a_ur.x) << "," << snap(v3_a_ur.z) << "),("
+    /////    << snap(v3_a_ul.x) << "," << snap(v3_a_ul.z) << "),("
+    /////    << snap(v3_a_bl.x) << "," << snap(v3_a_bl.z) << ")),"; 
+    //desmos_dbg_ss << "polygon(("
+    //    << formatFloat(v3_a_br.x) << "," << formatFloat(v3_a_br.z) << "),("
+    //    << formatFloat(v3_a_ur.x) << "," << formatFloat(v3_a_ur.z) << "),("
+    //    << formatFloat(v3_a_ul.x) << "," << formatFloat(v3_a_ul.z) << "),("
+    //    << formatFloat(v3_a_bl.x) << "," << formatFloat(v3_a_bl.z) << ")),";
+    ////LOG_INFO(AVL_LOGGER, "{}", ss.str());
+
+
+
+
+
 
     this->PlaceRoom(room, pos, rot, connection);
     if (!room.m_endCap) {
@@ -548,6 +742,10 @@ void DungeonGenerator::PlaceRoom(Room const &room, Vector3f pos, Quaternion rot)
         Vector3f pos1   = pos + rot * view.m_pos;
         Quaternion rot1 = rot * view.m_rot;
 
+        // TODO
+        //  see the below PlaceRoom(room, pos, rot, CONN)
+        //  why does that one convert to global coords? ie, LocalToGlobal used,
+        //  but this one does not?!?
         auto &&zdo = ZDOManager()->Instantiate(view.m_prefabHash, pos1);
         zdo->set_rotation(rot1);
     }
@@ -660,7 +858,7 @@ bool DungeonGenerator::IsInsideZone(Room const &room, Vector3f pos, Quaternion r
     //	room.m_size, pos, rot);
 }
 
-[[deprecated("axis aligned only")]]
+//[[deprecated("axis aligned only")]]
 //tatic bool RectOverlapRect(Vector3f size1, Vector3f pos1, Vector3f size2, Vector3f pos2)
 //
 //   assert(size1.x >= 0 && size1.y >= 0 && size1.z >= 0 && size2.x >= 0 && size2.y >= 0 && size2.z >= 0);

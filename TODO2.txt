@@ -1,0 +1,194 @@
+- Avl Intrinsics TODO
+	- add cancel button to "connecting" screen ZNet
+		- loads forever if timeout set to forever
+
+	- Prevent forced mouse focus in "Connecting" Screen
+
+- Lua api
+	- lua usage / naming schemas
+		- 'get_' vs 'find_'
+		- when to return container, vs
+			use 'foreach_'
+
+	- need quick method to spawn dungeon via command (/location not working)
+
+	- some straggler bindings making use of old Mod API:
+		- mainly namings
+			- VUtils.create_bytes, assign, swap, String, Resource...
+		- the above could be immutable...
+
+	- better unify peer ZDO within LUA
+		determine *exact ZDO state behaviour on peer events:
+		(primarily nullability, since seems kinda odd
+			for peer ZDO to be dead, during Peer DEATH / login...)
+
+		ZDO existence during:
+			- login
+			- Death
+			- because 'CharacterID' Rpc update
+				signals the creation of a new ZDO for a new peer
+
+- heightmap poll generation
+	main polling for 0,-158
+
+	when height map threads are = 1
+
+	and worldgen is taking place, the heightmap thread is the bottleneck
+	very huge bottleneck
+
+	where is basically seems like the code is frozen / deadlocked during a world pregenerate
+
+	but actually, the heightmap block polling freezes the calling thread until
+	the builder becomes less congested, and able to process the desired heightmap
+
+	an alternative would be to create a priority queue for heightmaps,
+
+	where the more they are requested, the more priority they will have
+
+	but, this is unnecessary
+
+	---
+
+	the system should try to be mindful of all neighbor zones when placing foliage
+
+	ie, its possible that a foliage will need height data from a neighboring zone to place a 'foliage cluster'
+
+	and, in cases where that neighbor heightmap is not generated yet, the code just freezes
+
+	so in essence, a priority queue is kind of necessary, because a thread is frozen while waiting for the
+	builder to get around to generating the neighbor heightmap
+
+
+
+	at the core of it, frozen main thread = bad
+	so we really want to get output to the user,
+	and this actually would speed up generation
+	because:
+		either way, the builder will always be building, 
+		it will just be building nodes which are needed *almost* immediately
+		and, I say, "almost" immediately, because this is thread-thread communication.
+		there are no direct calls, only expedited transfer via a priority queue
+
+- replay system / XShare issues
+
+	- playback features:
+		- easy
+			- forward playback
+			- slowed playback
+			- paused playback
+
+		- difficult
+			- quite difficult to reverse live playback
+			without weird state divergence
+
+			- several perspectives to think about live playback
+				- raw packet logging
+				- state change versioning
+					- ZDO members can be tracked
+						- most difficult 
+					- only mark whats relevant
+						member flow chart containing modifications
+						for every packet:
+							- because synchronization
+							is still needed for admin peers
+							paying viewship to the replay
+
+							- so, almost like a sim NAT
+							conversion needed
+
+							ephemeral IDs
+
+							- remember:
+								IDs are one-time, and time based
+
+								every modification consumes
+								an available ID
+
+							- so epheemral tracking is required
+
+							tracking data between states, with O(1)
+								retrieval for each member at a given timestamp
+
+	- create destroy routine
+		- on server stop
+		- on throw inside writer
+
+	- create playback mechanism
+
+	- timing / size threshold for write:
+		- what are requirements?
+			- every minute (based off timeliness; routine flushes)
+			- every 8MB (based on large awaiting buffer)
+
+		- idea for flush-optimization algorithm:
+			- waste...
+
+
+	- create test unit for zstdstream class
+
+	- create test cases
+
+	on peer quit:
+		- situations:
+			- currently flushing, intrusive list, atomic swapped
+				- bad state, extra logic must be implemented
+			- not flushing, full swap routine is possible
+				- good, simply merge all packets to other buf
+				for a "fell swoop" dump
+
+		idea:
+			if XShare is intrusively listed:
+				- mark it for cannibilizing
+			otherwise, perform simp..
+
+			---------
+
+			or, just go ahead and mark it regardless,
+			then flush() it.
+
+			the builder thread will look at the share llist:
+				- if marked, cannibilize everything (both lists,
+					without regard for safety,),
+				- however, safety should still be followed where
+					possible / necessary
+
+
+--------------------------------------------
+
+fixed:
+
+	- ownership is within peer (unique)
+
+	- if there is a "chain" of XShare's
+		share1 -> share2 -> share3
+					A
+		and peer is in the link,
+
+		share2 memory gets deallocated before it gets written
+
+		causing after-free leak
+
+		so, a shared structure is necessary
+
+	OR
+
+		simply store the peer::ptr as the intrusive link
+
+		- issues with the above:
+			- peer::ptr (A)
+				- stores a unique XShare (B)
+					- stores a peer::ptr (A)
+
+			A stores B, which stores A
+
+			this is a circular counted reference
+
+			which enables peer to stay alive for forever,
+
+			this is very bad
+
+			the solution would be to closely manage the lifetime
+			of XShare within peer::ptr
+
+			IE,
+

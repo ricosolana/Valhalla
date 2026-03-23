@@ -2,7 +2,50 @@
     Command mod
 --]]
 
-require("mobdebug").listen()
+--require("mobdebug").listen()
+require("mobdebug").start()
+
+-- will be essentials minecraft color coded
+
+--local temp = { ['tomlTypeConverters'] = tomlTypeConverters }
+local color_codes = {
+    -- todo
+    --  2 converters
+    --  one for peer, another for console
+    -- peer:console_message("<color=#FF5555>" .. s .. "</color>")
+    --#define COLOR_RESET  "\033[0m"
+    --#define COLOR_BLACK  "\033[30m"
+    --#define COLOR_RED    "\033[31m"
+    --#define COLOR_GREEN  "\033[32m"
+    --#define COLOR_GOLD   "\033[33m"
+    --#define COLOR_BLUE   "\033[34m"
+    --#define COLOR_PURPLE "\033[35m"
+    --#define COLOR_CYAN   "\033[36m"
+    --#define COLOR_WHITE  "\033[37m"
+    --#define COLOR_GRAY   "\033[90m"
+    ['&4'] = { hex24 = 'be0000', rtf = { tag = 'color', value = 'be0000' }, ansi16 = { value = '\033[31m' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&c'] = { hex24 = 'fe3f3f', rtf = { tag = 'color', value = 'fe3f3f' }, ansi16 = { value = '\033[91m' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&6'] = { hex24 = '09a334', rtf = { tag = 'color', value = '09a334' }, ansi16 = { value = '\033[33m' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&e'] = { hex24 = 'fefe3f', rtf = { tag = 'color', value = 'fefe3f' }, ansi16 = { value = '\033[93m' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&2'] = { hex24 = '00be00', rtf = { tag = 'color', value = '00be00' }, ansi16 = { value = '\033[32m' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&a'] = { hex24 = '3ff33f', rtf = { tag = 'color', value = '3ff33f' }, ansi16 = { value = '\033[102m' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&b'] = { hex24 = '3ffefe', rtf = { tag = 'color', value = '3ffefe' }, ansi16 = { value = '\033[36m' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&1'] = { hex24 = '00bebe', rtf = { tag = 'color', value = '00bebe' }, ansi16 = { value = '\033[34m' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&9'] = { hex24 = '3f3ffe', rtf = { tag = 'color', value = '3f3ffe' }, ansi16 = { value = '' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&d'] = { hex24 = 'fe3ffe', rtf = { tag = 'color', value = 'fe3ffe' }, ansi16 = { value = '' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&5'] = { hex24 = 'be00be', rtf = { tag = 'color', value = 'be00be' }, ansi16 = { value = '' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&f'] = { hex24 = 'ffffff', rtf = { tag = 'color', value = 'ffffff' }, ansi16 = { value = '\033[37m' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&7'] = { hex24 = 'bebebe', rtf = { tag = 'color', value = 'bebebe' }, ansi16 = { value = '' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&8'] = { hex24 = '3f3f3f', rtf = { tag = 'color', value = '3f3f3f' }, ansi16 = { value = '' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    ['&0'] = { hex24 = '000000', rtf = { tag = 'color', value = '000000' }, ansi16 = { value = '\033[90m' }, ansi256 = { value = '' }, ansi888 = { value = '' } },
+    -- format
+    ['&l'] = { 'be0000' },
+    ['&n'] = { 'be0000' },
+    ['&o'] = { 'be0000' },
+    ['&k'] = { 'be0000' },
+    ['&m'] = { 'be0000' }
+    --['&r'] = { 'be0000' },
+}
 
 local commands = {
     --[[
@@ -31,7 +74,7 @@ local commands = {
         usage = "[time]",
         desc = "gets or sets the absolute world time"
     },
-    timeofday = {
+    tod = {
         func = function(peer, cmd, args)
             if #args == 0 then
                 peer:console_message("Time of day: " .. Avledet.time_of_day)
@@ -114,10 +157,13 @@ local commands = {
 
             if not dungeon then
                 peer:console_message('valid dungeons:')
-                for _, dg in pairs(DungeonManager.dungeons) do
-                    peer:console_message('-' .. dg.name)
+                --for _, dg in pairs(DungeonManager.dungeons) do
+                local dungeons = DungeonManager.dungeons
+                --for i in 1, #dungeons do
+                for i = 1, #dungeons do
+                    local dungeon = dungeons[i]
+                    peer:console_message(' - ' .. dungeon.name)
                 end
-
             else
                 local pos =
                     #args >= 4 and Vector3f.new(tonumber(args[2]), tonumber(args[3]), tonumber(args[4])) or peer.zdo.pos
@@ -127,7 +173,7 @@ local commands = {
                 peer:console_message("generated dungeon at " .. tostring(pos))
             end
         end,
-        usage = "<dungeon>",
+        usage = "<dungeon> [x] [y] [z]",
         desc = "generates a dungeon by name"
     },
     regenzone = {
@@ -281,6 +327,58 @@ local commands = {
     }
 }
 
+local invoke = function(peer, rargs)
+    local label = rargs[2]
+    if not label then 
+        peer:console_message("Avledet " .. Avledet.version .. ", time: " .. tostring(Avledet.world_time))
+        return
+    end
+    
+    local skip_first = function(v, x)
+        local result = {}
+        for i = x + 1, #v do
+            result[#result + 1] = v[i]
+        end
+        return result
+    end
+
+    --local args = table.remove(rargs, 1)
+    local args = skip_first(rargs, 2)
+
+    local command = commands[string.lower(label)]
+
+    if command then
+        -- the function must be handled because this is an Rpc call,
+        --  and exceptions occurring during commands should not kick the player
+
+        local success, err = pcall(command.func, peer, label, args)
+        if not success then
+            for s in err:gmatch("[^\n]+") do
+                peer:console_message("<color=#FF5555>" .. s .. "</color>")
+            end
+
+            if command.usage then
+                peer:console_message(
+                    "<color=#FFAA00>Usage: " .. label .. " " .. (command.usage or "") .. "</color>"
+                )
+            end
+        end
+    else
+        peer:console_message("<color=#FF5555>unknown .vs command</color>")
+        for k, command in pairs(commands) do
+            peer:console_message(
+                " <color=#555555>-</color> " ..
+                    "<color=#AAAAAA>" ..
+                        k ..
+                            " " ..
+                                (command.usage or label) ..
+                                    " </color><color=#FFAA00>" ..
+                                        (command.desc or "a command") .. "</color>"
+            )
+        end
+    end
+end
+
 Avledet:subscribe(
     "Join",
     function(peer)
@@ -289,49 +387,13 @@ Avledet:subscribe(
         peer:register(
             MethodSig.new("_AvlCommand", Type.INT, Type.STRINGS),
             function(peer, _, rargs)
+                -- rargs is a userdata container
+                -- "sol.std::vector<std::__cxx11::basic_string<char> >: 0x555557429b78"
+
                 if not peer.admin then
                     peer:console_message("must be an admin")
                 else
-                    local label = rargs[1]
-                    if not label then 
-                        peer:console_message("Avledet " .. Avledet.version .. ", time: " .. tostring(Avledet.world_time))
-                        return
-                    end
-
-                    local args = table.remove(rargs, 1)
-
-                    local command = commands[string.lower(label)]
-
-                    if command then
-                        -- the function must be handled because this is an Rpc call,
-                        --  and exceptions occurring during commands should not kick the player
-
-                        local success, err = pcall(command.func, peer, label, args)
-                        if not success then
-                            for s in err:gmatch("[^\n]+") do
-                                peer:console_message("<color=#FF5555>" .. s .. "</color>")
-                            end
-
-                            if command.usage then
-                                peer:console_message(
-                                    "<color=#FFAA00>Usage: " .. label .. " " .. (command.usage or "") .. "</color>"
-                                )
-                            end
-                        end
-                    else
-                        peer:console_message("<color=#FF5555>unknown .vs command</color>")
-                        for k, command in pairs(commands) do
-                            peer:console_message(
-                                " <color=#555555>-</color> " ..
-                                    "<color=#AAAAAA>" ..
-                                        k ..
-                                            " " ..
-                                                (command.usage or label) ..
-                                                    " </color><color=#FFAA00>" ..
-                                                        (command.desc or "a command") .. "</color>"
-                            )
-                        end
-                    end
+                    invoke(peer, rargs)
                 end
             end
         )
@@ -339,3 +401,37 @@ Avledet:subscribe(
         print("Registered command avl")
     end
 )
+
+local do_test = function()
+    local dummy_proxy_peer = {
+        console_message = function(self, msg)
+            -- TODO
+            print(msg)
+        end,
+        chat_message = function(self)
+            --peer:chat_message(args[1], ChatMsgType.SHOUT, instance.pos, "", "")
+        end,
+        zdo = {
+            zone = Vec2s.new(0, 0),
+            pos = Vec3f.new(0, 0, 0)
+        }
+    }
+
+    local test_suite = {
+        --{ 'avl', 'worldtime' },
+        --{ 'avl', 'worldtime', '10000' },
+        --{ 'avl', 'tod' },
+        --{ 'avl', 'tod', 'night' },
+        --{ 'avl', 'gendungeon' },
+        --{ 'avl', 'gendungeon', 'a' },
+        { 'avl', 'gendungeon', 'DG_ForestCrypt'}
+    }
+
+    for i = 1, #test_suite do
+        local rargs = test_suite[i]
+        invoke(dummy_proxy_peer, rargs)
+    end
+end
+
+-- we perform test after all managers are loaded
+Avledet:subscribe("Enable", do_test)

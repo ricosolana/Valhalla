@@ -3,6 +3,7 @@
 #include "NetManager.h"
 #include "ReplayManager.h"
 #include "RouteManager.h"
+#include "ServerSettings.h"
 #include "VUtilsResource.h"
 #include "ZDOManager.h"
 
@@ -147,10 +148,9 @@ void Peer::update()
 
             InternalInvoke(hash, reader);
         }
-
-        //m_replay_share.on_packet(std::move(bytes));
-
-        if (AVL_SETTINGS.replay_enabled) {
+        
+        if (AVL_SETTINGS.m_replay_mode == ReplayMode::CAPTURE) {
+            assert(false); // TODO
             avledet::replay::ReplayManager()->on_packet(shared_from_this(), std::move(bytes));
         }
     }
