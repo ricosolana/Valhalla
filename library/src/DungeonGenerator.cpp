@@ -1,10 +1,12 @@
 #include "DungeonGenerator.h"
 #include "Avledet.h"
+#include "DataStream.h"
 #include "Quaternion.h"
 #include "Vector.h"
 #include <cstddef>
 #include <limits>
 #include <quill/LogMacros.h>
+#include <quill/Utility.h>
 
 #if AVL_IS_ON(AVL_DUNGEON_GENERATION)
     #include "GeoManager.h"
@@ -116,12 +118,12 @@ void DungeonGenerator::GenerateDungeon(VUtils::Random::State &state)
         return v;
     };
 
-    auto&& formatFloat1 = [&](float v, int precision = 5) {
-        std::ostringstream ss;
-        ss << std::fixed; // << std::setprecision(precision);
-        ss << snap(v);
-        return ss.str();
-    };
+    //auto&& formatFloat1 = [&](float v, int precision = 5) {
+    //    std::ostringstream ss;
+    //    ss << std::fixed; // << std::setprecision(precision);
+    //    ss << snap(v);
+    //    return ss.str();
+    //};
 
     auto&& formatFloat = [&](float v) {
         // "{:g}" automatically handles removing trailing zeros 
@@ -351,6 +353,39 @@ void DungeonGenerator::PlaceWall(VUtils::Random::State &state, float radius, int
     }
 }
 
+void TEST_Load(DungeonGenerator const& gen) {
+    //ZLog.Log("Test loading dungeon");
+    //ZDO zdo = this.m_nview.GetZDO();
+    const auto& zdo = gen.m_zdo;
+    
+    auto&& bytes = zdo->find_bytes(avledet::util::hashes::ZDO::DungeonGenerator::ROOM_DATA);
+    if (bytes) {
+        DataReader binaryReader(*bytes);
+
+        auto num2 = binaryReader.read<std::int32_t>();
+        //this.m_loadedRooms = new DungeonGenerator.RoomPlacementData[num2];
+        for (int i = 0; i < num2; i++)
+        {
+            int num3 = binaryReader.read<std::int32_t>();
+            auto vector = binaryReader.read<Vector3f>();
+            auto quaternion = Quaternion::euler(binaryReader.read<Vector3f>());
+
+            (void) vector;
+            (void) quaternion;
+            
+            //gen.m_dungeon.ro
+
+            if (num3 == 0) {
+                LOG_ERROR(AVL_LOGGER, "dungeon room hash not valid: {} (fix your fucking code)", num3);
+            }
+        }
+        //ZLog.Log(string.Format("Dungeon loaded with {0} rooms in {1} ms.", num2, (DateTime.Now - now).TotalMilliseconds));
+    }
+    else {
+        LOG_ERROR(AVL_LOGGER, "failed load dungeon test");
+    }
+}
+
 void DungeonGenerator::Save()
 {
     //bytes.reserve(sizeof(std::int32_t) +
@@ -358,23 +393,33 @@ void DungeonGenerator::Save()
     DataWriter writer;
 
     writer.write((std::uint32_t) m_placed_rooms.size());
-    for (std::size_t i = 0; i < m_placed_rooms.size(); i++) {
-        auto &&instance = m_placed_rooms[i];
-        auto &&room     = instance->m_room.get();
+    for (const auto& instance : m_placed_rooms) {
+        const auto &room     = instance->m_room.get();
 
         Vector3f pos   = instance->m_pos;
         Quaternion rot = instance->m_rot;
 
-        if (m_dungeon.m_algorithm == Dungeon::Algorithm::Dungeon)
+        if (m_dungeon.m_algorithm == Dungeon::Algorithm::Dungeon) {
             std::tie(pos, rot) = VUtils::Physics::LocalToGlobal(instance->m_pos, instance->m_rot, this->m_pos,
                                                                 this->m_rot);
+        }
 
-        writer.write(room.GetHash());
+        auto hash = room.GetHash();
+        //LOG_INFO(AVL_LOGGER, "hash: {}", hash);
+
+        writer.write(hash);
         writer.write(pos);
-        writer.write(rot);
+        writer.write(rot.euler_angles());
     }
 
+    // write to console
+    //writer.get_buf()
+    //auto buf = writer.get_buf();
+    //LOG_INFO(AVL_LOGGER, "roomData: {},", quill::utility::to_hex(buf.data(), buf.size()));
+
     m_zdo->set(avledet::util::hashes::ZDO::DungeonGenerator::ROOM_DATA, writer.release());
+
+    //TEST_Load(*this);
 }
 
 Dungeon::DoorDef const *DungeonGenerator::FindDoorType(VUtils::Random::State &state, std::string_view type)

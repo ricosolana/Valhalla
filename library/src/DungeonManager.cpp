@@ -140,6 +140,9 @@ void IDungeonManager::post_prefab_init()
 
             room->m_name          = pkg.read<std::string>();
             room->m_hash          = avledet::util::get_stable_hash(room->m_name);
+            if (room->m_name.empty() || room->m_hash == 0) {
+                throw std::runtime_error("room name or hash is empty");
+            }
             room->m_divider       = pkg.read<bool>();
             room->m_endCap        = pkg.read<bool>();
             room->m_endCapPrio    = pkg.read<std::int32_t>();

@@ -3,7 +3,7 @@
 --]]
 
 --require("mobdebug").listen()
-require("mobdebug").start()
+--require("mobdebug").start()
 
 -- will be essentials minecraft color coded
 
@@ -166,7 +166,7 @@ local commands = {
                 end
             else
                 local pos =
-                    #args >= 4 and Vector3f.new(tonumber(args[2]), tonumber(args[3]), tonumber(args[4])) or peer.zdo.pos
+                    #args >= 4 and Vec3f.new(tonumber(args[2]), tonumber(args[3]), tonumber(args[4])) or peer.zdo.pos
 
                 DungeonManager:generate(dungeon, pos, Quaternion.IDENTITY)
 
@@ -328,7 +328,7 @@ local commands = {
 }
 
 local invoke = function(peer, rargs)
-    local label = rargs[2]
+    local label = rargs[1]
     if not label then 
         peer:console_message("Avledet " .. Avledet.version .. ", time: " .. tostring(Avledet.world_time))
         return
@@ -343,7 +343,7 @@ local invoke = function(peer, rargs)
     end
 
     --local args = table.remove(rargs, 1)
-    local args = skip_first(rargs, 2)
+    local args = skip_first(rargs, 1)
 
     local command = commands[string.lower(label)]
 
@@ -424,7 +424,7 @@ local do_test = function()
         --{ 'avl', 'tod', 'night' },
         --{ 'avl', 'gendungeon' },
         --{ 'avl', 'gendungeon', 'a' },
-        { 'avl', 'gendungeon', 'DG_ForestCrypt'}
+        { 'gendungeon', 'DG_ForestCrypt' }
     }
 
     for i = 1, #test_suite do
@@ -434,4 +434,22 @@ local do_test = function()
 end
 
 -- we perform test after all managers are loaded
-Avledet:subscribe("Enable", do_test)
+--Avledet:subscribe("Enable", do_test)
+
+
+--Avledet:subscribe("Join", function(peer)
+--    -- run test after peer joins
+--    local secs = 0
+--    Avledet:subscribe("Periodic", function()
+--        local zdo = peer.zdo
+--        if zdo then
+--            secs = secs + 1
+--            if secs == 3 then
+--                local pos = zdo.pos + Vec3f.new(0, 30, 0)
+--                invoke(peer, { 'gendungeon', 'DG_ForestCrypt', tostring(pos.x), tostring(pos.y), tostring(pos.z) })
+--                --invoke(dummy_proxy_peer, { 'gendungeon', 'DG_ForestCrypt' })
+--                print('placed dungeon')
+--            end
+--        end
+--    end)
+--end)
