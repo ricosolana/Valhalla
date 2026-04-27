@@ -91,6 +91,11 @@ target_link_libraries(avledet_library
         isptr::isptr
 )
 
+# Tracy on-demand: only record profiling events when a Tracy GUI client is connected.
+# Without this, Tracy's in-memory event buffer grows unbounded (~25 MB/min while a
+# peer is connected, ~15 MB/min idle), which OOM-kills a long-running server.
+target_compile_definitions(avledet_library PUBLIC TRACY_ON_DEMAND)
+
 message("Lua libraries: ${LUA_LIBRARIES}")
 
 add_custom_command(TARGET avledet_library POST_BUILD
