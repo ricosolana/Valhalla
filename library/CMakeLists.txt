@@ -22,6 +22,10 @@ else()
             -Wno-deprecated-declarations #hmm change detected?
             -Wno-unused-value
             -Wno-unused-parameter
+            -Wno-stringop-overflow # GCC 13 false positives in std::copy/memmove with -O3
+            -Wno-array-bounds      # GCC 13 false positives paired with stringop-overflow
+            -Wno-restrict          # GCC 13 false positives in templated code with -O3
+            -Wno-dangling-reference # GCC 13 false positives in range-v3 / sol2
     )
 endif()
 
