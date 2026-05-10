@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bit>
 #include <cmath>
 #include <cstdint>
 
@@ -551,9 +552,9 @@ struct ankerl::unordered_dense::hash<avledet::util::CSU::Vector3f>
         //return ankerl::unordered_dense::detail::wyhash::hash(&value, sizeof(value));
 
         using namespace ankerl::unordered_dense::detail::wyhash;
-        std::uint64_t x = *reinterpret_cast<std::uint32_t const *>(&value.x);
-        std::uint64_t y = *reinterpret_cast<std::uint32_t const *>(&value.y);
-        std::uint64_t z = *reinterpret_cast<std::uint32_t const *>(&value.z);
+        std::uint64_t x = std::bit_cast<std::uint32_t>(value.x);
+        std::uint64_t y = std::bit_cast<std::uint32_t>(value.y);
+        std::uint64_t z = std::bit_cast<std::uint32_t>(value.z);
         return mix((x << 32) | y, z);
     }
 };
