@@ -94,6 +94,7 @@ Look in the Releases of Github. Or build it yourself.
     - `Ctrl + Shift + P` => `scan for kits` => `enter`
     - `Ctrl + Shift + P` => `select a kit` => `enter`
       - Select `GCC 12.x...` or `GCC 13.x...` (the latest one)
+      - Install CMake with `sudo apt update && sudo apt install build-essential gdb cmake -y`
   - CMake Arguments
     - Switch to `User` or `Workspace` (your preference)
     - `Ctrl + Shift + P` => `CMake: Open CMake Tools Extension Settings` => `Configure Args`

@@ -45,6 +45,10 @@ target_include_directories(avledet_library
 add_subdirectory("src")
 
 if (NOT DEFINED AVL_ENABLE_SCRIPTING OR AVL_ENABLE_SCRIPTING)
+    if(NOT EXISTS "${LUA_LIBRARY}")
+        message (FATAL_ERROR "Unable to find Lua\n" "missing: ${LUA_LIBRARY}\n" "see readme")
+    endif()
+
     target_link_libraries(avledet_library
         PUBLIC 
             #lua sol2
@@ -91,7 +95,7 @@ target_link_libraries(avledet_library
         isptr::isptr
 )
 
-message("Lua libraries: ${LUA_LIBRARIES}")
+message("Lua library: ${LUA_LIBRARY}")
 
 add_custom_command(TARGET avledet_library POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy

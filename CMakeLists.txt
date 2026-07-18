@@ -100,7 +100,7 @@ else()
 endif()
 
 if(NOT EXISTS "${STEAMWORKS_SDK_SHARED_DIR}")
-    message (FATAL_ERROR "Unable to find Steamworks")
+    message (FATAL_ERROR "Unable to find Steamworks\n" "missing: ${STEAMWORKS_SDK_SHARED_DIR}\n" "install from https://partner.steamgames.com/downloads/list")
 else()
 
 endif()
