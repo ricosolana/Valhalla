@@ -376,7 +376,7 @@ void INetManager::PostInit()
 
                 if (AVL_SETTINGS.m_replay_mode == ReplayMode::CAPTURE) {
                     // TODO implement the replay mode
-                    assert(false);
+                    //assert(false);
                     avledet::replay::ReplayManager()->on_new_peer(peer);
                 }
             }
@@ -471,7 +471,7 @@ void INetManager::OnPeerQuit(Peer::Ptr peer)
 
     if (AVL_SETTINGS.m_replay_mode == ReplayMode::CAPTURE) {
         // TODO
-        assert(false);
+        //assert(false);
         avledet::replay::ReplayManager()->on_peer_quit(peer);
     }
 
