@@ -203,7 +203,8 @@ void IZoneManager::PostPrefabInit()
 
     RouteManager()->Register(avledet::util::hashes::Routed::C2S_RequestIcon,
                              [this](Peer::Ptr peer, std::string_view locationName, Vector3f point,
-                                    std::string_view pinName, int pinType, bool showMap) {
+                                    std::string_view pinName, int pinType, bool showMap, bool discoverAll) {
+                                    // TODO discoverAll used by certain vesvigirs (which ones?)
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
                                  if (auto &&instance = find_nearest_feature(locationName, point)) {
                                      LOG_INFO(AVL_LOGGER, "Found location: '{}'", locationName);
