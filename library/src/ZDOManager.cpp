@@ -123,7 +123,7 @@ void IZDOManager::Update()
 
     auto &&peers = NetManager()->GetPeers();
 
-    if (VUtils::run_periodic<struct zdos_release_assign>(AVL_SETTINGS.zdoAssignInterval)) {
+    if (VUtils::run_periodic<struct zdos_release_assign>(AVL_SETTINGS.m_zdo_assign_interval)) {
         for (auto &&peer : peers) {
             if (!peer->IsGated()) {
                 AssignOrReleaseZDOs(peer);
@@ -131,7 +131,7 @@ void IZDOManager::Update()
         }
     }
 
-    if (VUtils::run_periodic<struct periodic_send_zdos>(AVL_SETTINGS.zdoSendInterval)) {
+    if (VUtils::run_periodic<struct periodic_send_zdos>(AVL_SETTINGS.m_zdo_send_interval)) {
         // TODO
         //  new send mechanism instead avoids long-blocking server thread
         //  sends ZDOs out in 0.05 interval, round-robin fashion for one peer for every Update loop
@@ -511,7 +511,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer::Ptr peer)
 
     */
 
-    if (AVL_SETTINGS.TEST_zdoAssignAlgorithm == AssignAlgorithm::RADIUS_LATENCY) {
+    if (AVL_SETTINGS.m_zdo_owner_algo == AssignAlgorithm::RADIUS_LATENCY) {
         // If many players around, use fastest player
         assert(false);
         (void) nullptr;
@@ -527,7 +527,7 @@ void IZDOManager::AssignOrReleaseZDOs(Peer::Ptr peer)
         //for (auto &&otherPeer : peers) {
         //    //otherPeer->m_socket->Q
         //}
-    } else if (AVL_SETTINGS.TEST_zdoAssignAlgorithm == AssignAlgorithm::DYNAMIC_RADIUS) {
+    } else if (AVL_SETTINGS.m_zdo_owner_algo == AssignAlgorithm::DYNAMIC_RADIUS) {
 
         static constexpr auto DIST_SMART = 12.0f;
 
@@ -874,13 +874,13 @@ bool IZDOManager::SendZDOs(Peer::Ptr peer, bool flush)
     auto sendQueueSize = (std::uint32_t) peer->m_socket->get_send_queue_size();
 
     // flushing forces a packet send
-    auto const threshold = AVL_SETTINGS.zdoMaxCongestion;
+    auto const threshold = AVL_SETTINGS.m_zdo_max_congestion;
     if (!flush && sendQueueSize > threshold)
         return false;
 
     // if very little space remaining, skip
     auto availableSpace = threshold - sendQueueSize;
-    if (availableSpace < AVL_SETTINGS.zdoMinCongestion)
+    if (availableSpace < AVL_SETTINGS.m_zdo_min_congestion)
         return false;
 
     auto syncList = CreateSyncList(peer);

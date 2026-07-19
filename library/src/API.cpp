@@ -217,7 +217,7 @@ void IScriptManager::load_userdata()
     };
 
     // then load my safe, limited searcher
-    if (!AVL_SETTINGS.luaUnsafe) {
+    if (!AVL_SETTINGS.m_lua_unsafe) {
         sol::table package = m_state.create_table();
         sol::table loaded = m_state.create_table();
         package["loaded"] = loaded;
@@ -395,7 +395,7 @@ sol::environment IScriptManager::create_sandbox()
 
     env["_G"] = env;// otherwise, will point to our state global table; defeating sandboxing...
 
-    if (AVL_SETTINGS.luaUnsafe) {
+    if (AVL_SETTINGS.m_lua_unsafe) {
         env[sol::create_if_nil][sol::metatable_key]["__index"] = m_state.globals();
     } else {
         /*

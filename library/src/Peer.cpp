@@ -57,7 +57,7 @@ Peer::Peer(ISocket::Ptr socket) :
 #endif
             auto password = reader.read<std::string_view>();
 
-            if (AVL_SETTINGS.playerOnline) {
+            if (AVL_SETTINGS.m_player_auth) {
                 auto ticket = reader.read<avledet::util::ByteView>();
 
                 if (auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)) {
@@ -90,13 +90,13 @@ Peer::Peer(ISocket::Ptr socket) :
             return rpc->close(ConnectionStatus::ErrorAlreadyConnected);
 
         // if whitelist enabled
-        if (AVL_SETTINGS.playerWhitelist
+        if (AVL_SETTINGS.m_player_whitelist_on
             && !Avledet()->m_whitelist.contains(rpc->m_socket->get_host_name())) {
             return rpc->close(ConnectionStatus::ErrorFull);
         }
 
         // if too many players online
-        if (NetManager()->GetPeers().size() >= AVL_SETTINGS.playerMax)
+        if (NetManager()->GetPeers().size() >= AVL_SETTINGS.m_player_limit)
             return rpc->close(ConnectionStatus::ErrorFull);
 
         bool hasPassword = !AVL_SETTINGS.m_server_password.empty();
@@ -155,7 +155,7 @@ void Peer::update()
         }
     }
 
-    if (AVL_SETTINGS.playerTimeout > 0s && now - m_lastPing > AVL_SETTINGS.playerTimeout) [[unlikely]] {
+    if (AVL_SETTINGS.m_player_timeout > 0s && now - m_lastPing > AVL_SETTINGS.m_player_timeout) [[unlikely]] {
         LOG_INFO(AVL_LOGGER, "{} has timed out", this->m_socket->get_host_name());
         Disconnect();
     }

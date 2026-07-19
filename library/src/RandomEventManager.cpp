@@ -74,7 +74,7 @@ void IRandomEventManager::Update()
     if (m_activeEvent) {
         // Update the timer of the current event
         if (!m_activeEvent->m_pauseIfNoPlayerInArea
-            || ZDOManager()->AnyZDO(this->m_activeEventPos, AVL_SETTINGS.eventsRadius,
+            || ZDOManager()->AnyZDO(this->m_activeEventPos, AVL_SETTINGS.m_raids_radius,
                                     avledet::util::hashes::Object::Player, Prefab::Flag::NONE,
                                     Prefab::Flag::NONE))
             //m_activeEventTimer += Avledet()->Delta();
@@ -87,13 +87,13 @@ void IRandomEventManager::Update()
             m_activeEvent    = nullptr;
             m_activeEventPos = Vector3f::ZERO;
         }
-    } else if (AVL_SETTINGS.eventsInterval > 0s) {
+    } else if (AVL_SETTINGS.m_raids_interval > 0s) {
         m_eventIntervalTimer += Avledet()->delta();
 
         // try to set a new current event
-        if (m_eventIntervalTimer > AVL_SETTINGS.eventsInterval.count()) {
+        if (m_eventIntervalTimer > AVL_SETTINGS.m_raids_interval.count()) {
             m_eventIntervalTimer = 0;
-            if (VUtils::Random::State().next_float() <= AVL_SETTINGS.eventsChance) {
+            if (VUtils::Random::State().next_float() <= AVL_SETTINGS.m_raids_chance) {
 
                 if (auto opt = GetPossibleRandomEvent()) {
                     auto &&e   = opt.value().first;
@@ -181,7 +181,7 @@ IRandomEventManager::GetPossibleRandomEvent()
 
 bool IRandomEventManager::CheckGlobalKeys(Event const &e)
 {
-    if (AVL_SETTINGS.eventsRequireKeys) {
+    if (AVL_SETTINGS.m_raids_require_keys) {
         for (auto &&key : e.m_presentGlobalKeys) {
             if (!ZoneManager()->has_global_key(key))
                 return false;

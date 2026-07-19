@@ -277,7 +277,7 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
             }
         }
 
-        if (!AVL_SETTINGS.playerWhitelist)
+        if (!AVL_SETTINGS.m_player_whitelist_on)
             peer->ConsoleMessage("Whitelist is disabled");
         else {
             if (Avledet()->m_whitelist.empty())
@@ -309,7 +309,7 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
 #endif
 
     // TODO remove this for debug only
-    peer->SetGated(AVL_SETTINGS.TEST_playerRestrict);
+    peer->SetGated(AVL_SETTINGS.m_discord_player_restrict);
 
     m_onlinePeers.push_back(peer);
 }
@@ -359,12 +359,12 @@ void INetManager::PostInit()
 
     //m_acceptor = std::make_unique<AcceptorSteam>();
     //m_acceptor->Listen();
-    if (AVL_SETTINGS.TEST_serverTcp) {
+    if (AVL_SETTINGS.m_server_tcp) {
         m_acceptor
-                = IAcceptor::tcp_dedicated(AVL_SETTINGS.serverBindAddress + ":" + std::to_string(AVL_SETTINGS.serverPort));// m_acceptor
+                = IAcceptor::tcp_dedicated(AVL_SETTINGS.m_server_address + ":" + std::to_string(AVL_SETTINGS.m_server_port));// m_acceptor
     } else {
-        m_acceptor = IAcceptor::steam_dedicated(AVL_SETTINGS.serverBindAddress + ":"
-                                                + std::to_string(AVL_SETTINGS.serverPort));      // m_acceptor
+        m_acceptor = IAcceptor::steam_dedicated(AVL_SETTINGS.m_server_address + ":"
+                                                + std::to_string(AVL_SETTINGS.m_server_port));      // m_acceptor
     }
 
     m_acceptor->start();

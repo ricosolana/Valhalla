@@ -54,56 +54,56 @@ private:
     bool m_first_load = true;
 
 public:
-    std::string serverName {};
-    std::uint16_t serverPort {};
+    std::string m_server_name {};
+    std::uint16_t m_server_port {};
     std::string m_server_password {};
-    bool serverPublic {};
-    bool serverDedicated {};
-    std::string serverBindAddress {};
-    bool TEST_serverTcp {};
+    bool m_server_public {};
+    bool m_server_dedicated {};
+    std::string m_server_address {};
+    bool m_server_tcp {};
 
-    bool playerWhitelist {};
-    std::uint32_t playerMax {};
-    bool playerOnline {};
-    std::chrono::seconds playerTimeout {};
+    bool m_player_whitelist_on {};
+    std::uint32_t m_player_limit {};
+    bool m_player_auth {};
+    std::chrono::seconds m_player_timeout {};
     std::chrono::milliseconds playerListSmoothUpdating {};
     bool playerListForceVisible {};
 #if AVL_IS_ON(AVL_PLAYER_SLEEP)
     bool playerSleepSolo {};
 #endif
-    bool TEST_playerRestrict {};
+    bool m_discord_player_restrict {};
 
-    std::string worldName {};
-    std::string worldSeed {};
-    bool TEST_worldPregenerate;
-    std::chrono::seconds worldSaveInterval {};// set to 0 to disable
-    bool worldFeatures {};
-    bool worldVegetation {};
-    bool worldCreatures {};
-    std::uint32_t worldHeightmapThreads {};
+    std::string m_world_name {};
+    std::string m_world_seed {};
+    bool m_world_pregenerate;
+    std::chrono::seconds m_world_save_interval {};// set to 0 to disable
+    bool m_world_gen_features {};
+    bool m_world_gen_vegetation {};
+    bool m_world_gen_creatures {};
+    std::uint32_t m_world_heightmap_threads {};
 
-    std::uint32_t zdoMaxCongestion {};// congestion rate
-    std::uint32_t zdoMinCongestion {};// congestion rate
-    std::chrono::milliseconds zdoSendInterval {};
-    std::chrono::seconds zdoAssignInterval {};
-    AssignAlgorithm TEST_zdoAssignAlgorithm {};
+    std::uint32_t m_zdo_max_congestion {};// congestion rate
+    std::uint32_t m_zdo_min_congestion {};// congestion rate
+    std::chrono::milliseconds m_zdo_send_interval {};
+    std::chrono::seconds m_zdo_assign_interval {};
+    AssignAlgorithm m_zdo_owner_algo {};
 
-    bool dungeonsEnabled {};
-    bool dungeonsEndcapsEnabled {};
-    float dungeonsEndcapsInsetFrac {};
-    bool dungeonsDoors {};
-    bool dungeonsRoomsFlipped {};
-    bool dungeonsRoomsZoneBounded {};
-    float dungeonsRoomsInsetSize {};
-    bool dungeonsRoomsFurnishing {};
+    bool m_dng_enabled {};
+    bool m_dng_endcaps_enabled {};
+    float m_dng_endcaps_inset_ratio {};
+    bool m_dng_doors_enabled {};
+    bool m_dng_rooms_flipped {};
+    bool m_dng_rooms_zone_bounded {};
+    float m_dng_rooms_inset {};
+    bool m_dng_rooms_decorated {};
     std::chrono::seconds TEST_dungeonsRegenerationInterval {};
     std::uint32_t TEST_dungeonsRegenerationMaxSteps {};
-    bool dungeonsSeeded {};
+    bool m_dng_seeded {};
 
-    float eventsChance {};
-    std::chrono::seconds eventsInterval {};
-    float eventsRadius {};
-    bool eventsRequireKeys {};
+    float m_raids_chance {};
+    std::chrono::seconds m_raids_interval {};
+    float m_raids_radius {};
+    bool m_raids_require_keys {};
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
     bool discordEnabled {};
@@ -122,7 +122,7 @@ public:
     //avledet::util::Set<dpp::snowflake> discordDevAccount;
     //bool            discordDeleteCommands;
 
-    bool luaUnsafe {};
+    bool m_lua_unsafe {};
 
     //bool replay_enabled;
 

@@ -68,6 +68,8 @@ void r(T &set, YAML::Node mutableNode, std::string const &key, D const &default_
         set = T(default_value);
 };
 
+// c = const loading
+//  for values to be loaded once during server init
 template<class... Args>
 void c(Args &&... args)
 {
@@ -119,31 +121,31 @@ void Config::load()
                 Server settings
             */
 
-            r(serverName, server, "name", "Avledet server",
+            r(m_server_name, server, "name", "Avledet server",
               [](std::string const &val) { return val.empty() || val.length() < 3 || val.length() > 64; });
             r(m_server_password, server, "password", "",
               [](std::string const &val) { return !val.empty() && (val.length() < 5 || val.length() > 11); });
-            c(serverPort, server, "port", 2456, nullptr);
-            r(serverPublic, server, "public", false, nullptr);
-            c(serverDedicated, server, "dedicated", true, nullptr);
-            c(serverBindAddress, server, "bind-address", "0.0.0.0", nullptr);
-            c(TEST_serverTcp, experimental, "server-tcp", false, nullptr);
+            c(m_server_port, server, "port", 2456, nullptr);
+            r(m_server_public, server, "public", false, nullptr);
+            c(m_server_dedicated, server, "dedicated", true, nullptr);
+            c(m_server_address, server, "bind-address", "0.0.0.0", nullptr);
+            c(m_server_tcp, experimental, "server-tcp", false, nullptr);
 
             /*
                 Player settings
             */
 
-            r(playerWhitelist, players, "whitelist", true, nullptr);
-            r(playerMax, players, "max-online", 10, [](int val) { return val < 1; });
-            r(playerOnline, players, "authenticate", true, nullptr);
+            r(m_player_whitelist_on, players, "whitelist", true, nullptr);
+            r(m_player_limit, players, "max-online", 10, [](int val) { return val < 1; });
+            r(m_player_auth, players, "authenticate", true, nullptr);
             // If timeout is 0, will never timeout
-            r(playerTimeout, players, "timeout", 30s,
+            r(m_player_timeout, players, "timeout", 30s,
               [](std::chrono::seconds val) { return val < 0s; });
 #if AVL_IS_ON(AVL_PLAYER_SLEEP)
             a(playerSleepSolo, players, "player-sleep-solo", false, nullptr);
 #endif
             // TODO put under discord option
-            c(TEST_playerRestrict, experimental, "players-restrict", false, nullptr);
+            c(m_discord_player_restrict, experimental, "players-restrict", false, nullptr);
 
             {
                 auto &&player_list = players["playerlist"];
@@ -157,65 +159,65 @@ void Config::load()
             */
 
             c(
-                    worldName, world, "world", "world",
+                    m_world_name, world, "world", "world",
                     [](std::string const &val) { return val.empty() || val.length() < 3; });
             c(
-                    worldSeed, world, "seed", VUtils::Random::GenerateAlphaNum(10),
+                    m_world_seed, world, "seed", VUtils::Random::GenerateAlphaNum(10),
                     [](std::string const &val) { return val.empty(); });
-            c(TEST_worldPregenerate, experimental, "world-pregenerate", false, nullptr);
-            r(worldSaveInterval, world, "save-interval", 30min,
+            c(m_world_pregenerate, experimental, "world-pregenerate", false, nullptr);
+            r(m_world_save_interval, world, "save-interval", 30min,
               [](std::chrono::seconds val) { return val < 0s; });
-            r(worldFeatures, world, "features", true, nullptr);
-            r(worldVegetation, world, "vegetation", true, nullptr);
-            r(worldCreatures, world, "creatures", true, nullptr);
-            c(worldHeightmapThreads, world, "heightmap-threading", 1, nullptr);
+            r(m_world_gen_features, world, "features", true, nullptr);
+            r(m_world_gen_vegetation, world, "vegetation", true, nullptr);
+            r(m_world_gen_creatures, world, "creatures", true, nullptr);
+            c(m_world_heightmap_threads, world, "heightmap-threading", 1, nullptr);
 
             // limit to physically available threads
-            if (worldHeightmapThreads == 0
-                || worldHeightmapThreads > std::jthread::hardware_concurrency())
-                worldHeightmapThreads = std::jthread::hardware_concurrency();
+            if (m_world_heightmap_threads == 0
+                || m_world_heightmap_threads > std::jthread::hardware_concurrency())
+                m_world_heightmap_threads = std::jthread::hardware_concurrency();
 
             // If desired threads is set to max threads, decrement by 1 (because main thread exists duh)
             if (std::jthread::hardware_concurrency() > 1
-                && worldHeightmapThreads >= std::jthread::hardware_concurrency())
-                worldHeightmapThreads = std::jthread::hardware_concurrency() - 1;
+                && m_world_heightmap_threads >= std::jthread::hardware_concurrency())
+                m_world_heightmap_threads = std::jthread::hardware_concurrency() - 1;
 
             /*
                 ZDO traffic settings
             */
 
-            r(zdoSendInterval, zdo, "send-interval", 50ms,
+            r(m_zdo_send_interval, zdo, "send-interval", 50ms,
               [](std::chrono::seconds val) { return val <= 0s; });
-            r(zdoMaxCongestion, zdo, "max-send-threshold", 10240,
+            r(m_zdo_max_congestion, zdo, "max-send-threshold", 10240,
               [](int val) { return val < 1000; });
-            r(zdoMinCongestion, zdo, "min-send-threshold", 2048,
+            r(m_zdo_min_congestion, zdo, "min-send-threshold", 2048,
               [](int val) { return val < 1000; });
-            r(zdoAssignInterval, zdo, "assign-interval", 2s,
+            r(m_zdo_assign_interval, zdo, "assign-interval", 2s,
               [](std::chrono::seconds val) { return val < 1s; });
-            r(TEST_zdoAssignAlgorithm, experimental, "zdo-assign-algo", AssignAlgorithm::NONE,
+            r(m_zdo_owner_algo, experimental, "zdo-assign-algo", AssignAlgorithm::NONE,
               nullptr);
 
             /*
                 Dungeon generation settings
             */
 
-            r(dungeonsEnabled, dungeons, "enabled", true, nullptr);
+            r(m_dng_enabled, dungeons, "enabled", true, nullptr);
             {
                 auto &&endcaps = dungeons["endcaps"];
-                r(dungeonsEndcapsEnabled, endcaps, "enabled", true, nullptr);
-                r(dungeonsEndcapsInsetFrac, endcaps, "inset-ratio", .5f,
+                r(m_dng_endcaps_enabled, endcaps, "enabled", true, nullptr);
+                r(m_dng_endcaps_inset_ratio, endcaps, "inset-ratio", .5f,
                   [](float val) { return val < 0.f || val > 1.f; });
             }
 
-            r(dungeonsDoors, dungeons, "doors", true, nullptr);
+            r(m_dng_doors_enabled, dungeons, "doors", true, nullptr);
 
             {
                 auto &&rooms = dungeons["rooms"];
-                r(dungeonsRoomsFlipped, rooms, "flipped", true, nullptr);
-                r(dungeonsRoomsZoneBounded, rooms, "zone-bounded", true, nullptr);
-                r(dungeonsRoomsInsetSize, rooms, "inset-size", .1f,
+                r(m_dng_rooms_flipped, rooms, "flipped", true, nullptr);
+                r(m_dng_rooms_zone_bounded, rooms, "zone-bounded", true, nullptr);
+                r(m_dng_rooms_inset, rooms, "inset-size", .1f,
                   [](float val) { return val < 0; });
-                r(dungeonsRoomsFurnishing, rooms, "furnishing", true, nullptr);
+                r(m_dng_rooms_decorated, rooms, "furnishing", true, nullptr);
             }
 
             // TODO test out dungeon regeneration
@@ -227,18 +229,18 @@ void Config::load()
             //      [](int val) { return val < 1; });
             //}
 
-            r(dungeonsSeeded, dungeons, "seeded", true, nullptr);
+            r(m_dng_seeded, dungeons, "seeded", true, nullptr);
 
             /*
                 Random event / raid settings
             */
 
-            r(eventsChance, events, "chance", .2f, [](float val) { return val < 0 || val > 1; });
-            r(eventsInterval, events, "interval", 46min,
+            r(m_raids_chance, events, "chance", .2f, [](float val) { return val < 0 || val > 1; });
+            r(m_raids_interval, events, "interval", 46min,
               [](std::chrono::seconds val) { return val < 0s; });
-            r(eventsRadius, events, "activation-radius", 96,
+            r(m_raids_radius, events, "activation-radius", 96,
               [](float val) { return val < 1 || val > 96 * 4; });
-            r(eventsRequireKeys, events, "require-keys", true, nullptr);
+            r(m_raids_require_keys, events, "require-keys", true, nullptr);
 
             /*
                 Discord settings
@@ -271,10 +273,11 @@ void Config::load()
             }
 
             {
-                c(luaUnsafe, general, "lua-unsafe", false, nullptr);
+                c(m_lua_unsafe, general, "lua-unsafe", false, nullptr);
 
-                if (luaUnsafe) {
+                if (m_lua_unsafe) {
                     LOG_WARNING(AVL_LOGGER, "Unsafe Lua is enabled! This allows potentially unsafe code to run!");
+                    LOG_WARNING(AVL_LOGGER, "Make sure you are running trusted scripts! Otherwise bad things could happen...");
                 }
             }
 
@@ -350,7 +353,7 @@ void Config::load()
 
             // TODO add a 'previously gated' bit
             //  so discord integration doesnt get messed up
-            peer->SetGated(TEST_playerRestrict);
+            peer->SetGated(m_discord_player_restrict);
         }
     }
 

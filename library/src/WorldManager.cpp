@@ -254,7 +254,7 @@ std::filesystem::path IWorldManager::GetWorldDBPath(const std::string& name) con
 bool IWorldManager::LoadWorldMeta(std::filesystem::path const &root)
 {
     if (auto opt
-        = VUtils::Resource::ReadFile<avledet::util::Bytes>(root / (AVL_SETTINGS.worldName + ".fwl"))) {
+        = VUtils::Resource::ReadFile<avledet::util::Bytes>(root / (AVL_SETTINGS.m_world_name + ".fwl"))) {
         try {
             this->m_world = std::make_unique<World>(DataReader(*opt));
         } catch (std::runtime_error const &e) {
@@ -372,7 +372,7 @@ void IWorldManager::PostZoneInit()
 {
     LOG_NOTICE(AVL_LOGGER, "Initializing WorldManager");
 
-    m_world = RetrieveWorld(AVL_SETTINGS.worldName, AVL_SETTINGS.worldSeed);
+    m_world = RetrieveWorld(AVL_SETTINGS.m_world_name, AVL_SETTINGS.m_world_seed);
 
 #ifdef AVL_OPTION_ENABLE_CAPTURE
     if (AVL_SETTINGS.packetMode == PacketMode::PLAYBACK) {

@@ -94,7 +94,7 @@ void IAvledet::LoadFiles(bool reloading)
 
             // TODO add a 'previously gated' bit
             //  so discord integration doesnt get messed up
-            peer->SetGated(AVL_SETTINGS.TEST_playerRestrict);
+            peer->SetGated(AVL_SETTINGS.m_discord_player_restrict);
         }
     }
 
@@ -541,16 +541,16 @@ void IAvledet::PeriodUpdate()
         LOG_INFO(AVL_LOGGER, "Config was reloaded");
     }
 
-    if (AVL_SETTINGS.worldSaveInterval > 0s) {
+    if (AVL_SETTINGS.m_world_save_interval > 0s) {
         // save warming message
-        if (VUtils::run_periodic_later<struct periodic_save_message>(AVL_SETTINGS.worldSaveInterval,
-                                                                     AVL_SETTINGS.worldSaveInterval)) {
+        if (VUtils::run_periodic_later<struct periodic_save_message>(AVL_SETTINGS.m_world_save_interval,
+                                                                     AVL_SETTINGS.m_world_save_interval)) {
             LOG_INFO(AVL_LOGGER, "World saving in 30s");
             Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
         }
 
-        if (VUtils::run_periodic_later<struct periodic_save>(AVL_SETTINGS.worldSaveInterval,
-                                                             AVL_SETTINGS.worldSaveInterval + 30s)) {
+        if (VUtils::run_periodic_later<struct periodic_save>(AVL_SETTINGS.m_world_save_interval,
+                                                             AVL_SETTINGS.m_world_save_interval + 30s)) {
             WorldManager()->GetWorld()->WriteFiles();
         }
     }

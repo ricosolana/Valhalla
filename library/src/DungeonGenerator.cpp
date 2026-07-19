@@ -36,7 +36,7 @@ DungeonGenerator::DungeonGenerator(Dungeon const &dungeon, ZDO::reference zdo) :
 // TODO generate seed during start
 avledet::util::Hash DungeonGenerator::GetSeed()
 {
-    if (AVL_SETTINGS.dungeonsSeeded) {
+    if (AVL_SETTINGS.m_dng_seeded) {
         auto seed = GeoManager()->GetSeed();
         //auto zone = IZoneManager::WorldToZonePos(m_pos);
         return seed + (int) m_pos.x * -4271 + (int) m_pos.y * 9187 + (int) m_pos.z * -2134;
@@ -100,10 +100,10 @@ void DungeonGenerator::GenerateDungeon(VUtils::Random::State &state)
 
 
 
-    if (AVL_SETTINGS.dungeonsEndcapsEnabled)
+    if (AVL_SETTINGS.m_dng_endcaps_enabled)
         this->PlaceEndCaps(state);
 
-    if (AVL_SETTINGS.dungeonsDoors)
+    if (AVL_SETTINGS.m_dng_doors_enabled)
         this->PlaceDoors(state);
 
     //LOG_INFO(AVL_LOGGER, "Desmos: {}", desmos_dbg_ss.str());
@@ -689,7 +689,7 @@ bool DungeonGenerator::PlaceRoom(VUtils::Random::State &state, decltype(m_open_c
     Quaternion rot;
     this->CalculateRoomPosRot(connection2, connection.m_pos,
                               connection.m_rot
-                                      * (AVL_SETTINGS.dungeonsRoomsFlipped ? Quaternion::euler(0, 180, 0)
+                                      * (AVL_SETTINGS.m_dng_rooms_flipped ? Quaternion::euler(0, 180, 0)
                                                                            : Quaternion::IDENTITY),
                               pos, rot);
 
@@ -823,7 +823,7 @@ void DungeonGenerator::PlaceRoom(Room const &room, Vector3f pos, Quaternion rot,
     //for (auto&& randomSpawn : room.m_randomSpawns)
     //	randomSpawn.Randomize();
 
-    if (AVL_SETTINGS.dungeonsRoomsFurnishing) {
+    if (AVL_SETTINGS.m_dng_rooms_decorated) {
         for (auto &&view : room.m_netViews) {
             Vector3f pos1   = pos + rot * view.m_pos;
             Quaternion rot1 = rot * view.m_rot;
@@ -860,13 +860,13 @@ void DungeonGenerator::AddOpenConnections(RoomInstance &newRoom, RoomConnectionI
 //	this just makes sure that a rotated rectangle is within the zone
 bool DungeonGenerator::IsInsideZone(Room const &room, Vector3f pos, Quaternion rot)
 {
-    if (!AVL_SETTINGS.dungeonsRoomsZoneBounded)
+    if (!AVL_SETTINGS.m_dng_rooms_zone_bounded)
         return true;
 
     Vector3f semiSize = room.m_size * .5f;
 
     if (room.m_endCap)
-        semiSize *= AVL_SETTINGS.dungeonsEndcapsInsetFrac;
+        semiSize *= AVL_SETTINGS.m_dng_endcaps_inset_ratio;
 
     if (pos.y + semiSize.y < m_zone_center.y - m_zone_size.y * .5f
         || pos.y - semiSize.y > m_zone_center.y + m_zone_size.y * .5f)
@@ -934,7 +934,7 @@ bool DungeonGenerator::TestCollision(Room const &room, Vector3f pos, Quaternion 
             return true;
     }
 
-    auto size1 = room.m_size - Vector3f::ONE * AVL_SETTINGS.dungeonsRoomsInsetSize;
+    auto size1 = room.m_size - Vector3f::ONE * AVL_SETTINGS.m_dng_rooms_inset;
 
     for (auto const& other : m_placed_rooms) {
         if (VUtils::Physics::BoxBoxOverlap(

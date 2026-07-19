@@ -32,7 +32,7 @@ void IHeightmapBuilder::PostGeoInit()
 
     LOG_NOTICE(AVL_LOGGER, "Initializing HeightmapBuilder");
 
-    for (unsigned int i = 0; i < AVL_SETTINGS.worldHeightmapThreads; i++) {
+    for (unsigned int i = 0; i < AVL_SETTINGS.m_world_heightmap_threads; i++) {
         auto &&insert = m_builders.insert(std::end(m_builders), std::make_unique<Shared>());
 
         Shared *shared = insert->get();

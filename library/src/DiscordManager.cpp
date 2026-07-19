@@ -253,12 +253,12 @@ void IDiscordManager::init()
                     auto flag_variant = event.get_parameter("flag");
                     auto &&flag       = std::get_if<bool>(&flag_variant);
                     if (flag) {
-                        AVL_SETTINGS.playerWhitelist = *flag;
+                        AVL_SETTINGS.m_player_whitelist_on = *flag;
                         event.reply(std::string("Whitelist is now ")
-                                    + (AVL_SETTINGS.playerWhitelist ? "enabled" : "disabled"));
+                                    + (AVL_SETTINGS.m_player_whitelist_on ? "enabled" : "disabled"));
                     } else {
                         event.reply(std::string("The whitelist is ")
-                                    + (AVL_SETTINGS.playerWhitelist ? "enabled" : "disabled"));
+                                    + (AVL_SETTINGS.m_player_whitelist_on ? "enabled" : "disabled"));
                     }
                 } else if (label == "avlwhois") {
                     auto &&identifier = std::get<std::string>(event.get_parameter("identifier"));

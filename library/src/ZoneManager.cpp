@@ -543,13 +543,13 @@ void IZoneManager::PopulateZone(Heightmap &heightmap)
     //#if AVL_IS_ON(AVL_ZONE_GENERATION)
     std::vector<ClearArea> m_tempClearAreas;
 
-    if (AVL_SETTINGS.worldFeatures)
+    if (AVL_SETTINGS.m_world_gen_features)
         m_tempClearAreas = TryGenerateFeature(heightmap.get_zone());
 
-    if (AVL_SETTINGS.worldVegetation)
+    if (AVL_SETTINGS.m_world_gen_vegetation)
         PopulateFoliage(heightmap, m_tempClearAreas);
 
-    if (AVL_SETTINGS.worldCreatures) {
+    if (AVL_SETTINGS.m_world_gen_creatures) {
         ZDOManager()->Instantiate(*ZONE_CTRL_PREFAB, ZoneToWorldPos(heightmap.get_zone()));
     }
     //#endif // AVL_OPTION_ENABLE_ZONE_GENERATION
@@ -809,7 +809,7 @@ void IZoneManager::PostGeoInit()
     if (!spawnLoc)
         throw std::runtime_error("World spawnpoint missing (StartTemple)");
 
-    if (!AVL_SETTINGS.worldFeatures) {
+    if (!AVL_SETTINGS.m_world_gen_features) {
         LOG_WARNING(AVL_LOGGER, "Location generation is disabled");
         PrepareFeatures(*spawnLoc);
     } else {
@@ -825,7 +825,7 @@ void IZoneManager::PostGeoInit()
                          .count());
     }
 
-    if (AVL_SETTINGS.TEST_worldPregenerate && m_generatedZones.empty()) {
+    if (AVL_SETTINGS.m_world_pregenerate && m_generatedZones.empty()) {
         auto now(std::chrono::steady_clock::now());
         int prevCount = 0;
 
@@ -1126,7 +1126,7 @@ void IZoneManager::GenerateFeature(Feature const &location, avledet::util::Hash 
         //      Interior (InteriorTransform)
         //          DG_(dungeon)
 
-        if (!(AVL_SETTINGS.dungeonsEnabled && piece.get_prefab().get().AllFlagsPresent(Prefab::Flag::DUNGEON))) {
+        if (!(AVL_SETTINGS.m_dng_enabled && piece.get_prefab().get().AllFlagsPresent(Prefab::Flag::DUNGEON))) {
             auto &&zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
             zdo->set_rotation(rot * piece.m_rot);
         } else {
