@@ -22,6 +22,10 @@ else()
             -Wno-deprecated-declarations #hmm change detected?
             -Wno-unused-value
             -Wno-unused-parameter
+            -Wno-stringop-overflow # GCC 13 false positives in std::copy/memmove with -O3
+            -Wno-array-bounds      # GCC 13 false positives paired with stringop-overflow
+            -Wno-restrict          # GCC 13 false positives in templated code with -O3
+            -Wno-dangling-reference # GCC 13 false positives in range-v3 / sol2
     )
 endif()
 
@@ -94,6 +98,11 @@ target_link_libraries(avledet_library
         range-v3::meta range-v3::concepts range-v3::range-v3
         isptr::isptr
 )
+
+# Tracy on-demand: only record profiling events when a Tracy GUI client is connected.
+# Without this, Tracy's in-memory event buffer grows unbounded (~25 MB/min while a
+# peer is connected, ~15 MB/min idle), which OOM-kills a long-running server.
+target_compile_definitions(avledet_library PUBLIC TRACY_ON_DEMAND)
 
 message("Lua library: ${LUA_LIBRARY}")
 
