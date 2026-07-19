@@ -10,6 +10,7 @@
 #include "Types.h"
 #include "VUtils.h"
 #include "VUtilsRandom.h"
+#include "VUtilsResource.h"
 #include "WorldManager.h"
 #include <atomic>
 #include <cassert>
@@ -46,9 +47,7 @@ namespace avledet::replay {
     }
 
     XShare::~XShare() {
-        if (true) {
-            volatile int x = 0;
-        }
+
     }
 
     //void XShare::on_packet(avledet::util::Bytes packet) {
@@ -63,28 +62,39 @@ namespace avledet::replay {
     void IReplayManager::init() {
         this->m_server_nanos = std::chrono::steady_clock::now().time_since_epoch();
 
+        auto snanos = AVL_SETTINGS.m_replay_mode == ReplayMode::PLAYBACK 
+            ? AVL_SETTINGS.m_replay_playback_path : std::to_string(m_server_nanos.count());
+
         this->m_this_world_session_path = std::filesystem::path(AVL_REPLAY_PATH) 
             / WorldManager()->GetWorld()->m_name 
             /// std::to_string(nanos.count()) // time stamp here, so what format?
             /// avledet::util::GenerateAlphaNum(6)
-            / std::to_string(m_server_nanos.count()); //TODO place a server-session identifier here
+            / snanos; //TODO place a server-session identifier here
 
         std::filesystem::create_directories(this->m_this_world_session_path);
 
         // TODO load paths, NOT sessions YET
         //  storing session paths is very cheap
-        //auto hosts_dir_itr = std::vector(std::filesystem::directory_iterator{this->m_this_world_session_path / "hosts"}, std::filesystem::directory_iterator{});
-        //for (auto host_itr : hosts_dir_itr) {
-        //    //host_itr.path()
-        //    auto hostname = host_itr.path().stem().string();
-        //    
-        //    m_peer_playback_sessions[hostname].push_back()
-        //}
+        if (AVL_SETTINGS.m_replay_mode == ReplayMode::PLAYBACK) {
+            auto hosts_dir_itr = std::vector(std::filesystem::directory_iterator{this->m_this_world_session_path / "hosts"}, std::filesystem::directory_iterator{});
+            for (auto host_itr : hosts_dir_itr) {
+                auto hostname = host_itr.path().stem().string();
+                auto& map = m_peer_playback_sessions[hostname];
+                
+                auto sessions_dir_itr = std::vector(std::filesystem::directory_iterator{host_itr}, std::filesystem::directory_iterator{});
+
+                for (auto sess_itr : sessions_dir_itr) {
+                    if (sess_itr.path().string().ends_with(".replay.zst")) {
+                        map.push_back(sess_itr);
+                    }
+                }
+            }
+        }
 
         m_thread = std::jthread([&](std::stop_token token) {
             if (AVL_SETTINGS.m_replay_mode == ReplayMode::CAPTURE) {
                 this->thread_capture_job(token);
-            } else if (AVL_SETTINGS.m_replay_mode == ReplayMode::PLAYER) {
+            } else if (AVL_SETTINGS.m_replay_mode == ReplayMode::PLAYBACK) { // TODO rename to playback
                 // player
                 this->thread_player_job(token);
             } else {
@@ -104,10 +114,6 @@ namespace avledet::replay {
         // write 
         //  well.. we used a directory iterator on later read
         //  
-    }
-
-    void IReplayManager::update() {
-        // have queued sessions ready
     }
 
     void IReplayManager::emit_to_stream(XShare& share, XShare::SwapBuffer const& buf) {
@@ -221,32 +227,33 @@ namespace avledet::replay {
     }
 
     void IReplayManager::thread_player_job(std::stop_token token) {
-        //while (!token.stop_requested()) {
-        //    // this loads the saved replays async
-//
-        //    // fd iterator
-        //    //  how to store references?
-        //    //  as paths
-        //    
-//
-//
-//
-        //    if (!m_sortedSessions.empty()) {
-        //        auto&& front = m_sortedSessions.front();
-        //        if (Valhalla()->Nanos() >= front.second.first) {
-        //            auto&& peer = std::make_unique<Peer>(
-        //                std::make_shared<ReplaySocket>(front.first, m_sessionIndexes[front.first]++, front.second.second));
-//
-        //            m_connectedPeers.push_back(std::move(peer));
-        //            m_sortedSessions.pop_front();
-        //        }
-        //        else {
-        //            PERIODIC_NOW(30s, {
-        //                LOG(INFO) << "Replay peer joining in " << duration_cast<seconds>(front.second.first - Valhalla()->Nanos());
-        //            });
-        //        }
-        //    }
-        //}
+        while (!token.stop_requested()) {
+            // load saved replays
+
+            // perform slow f/io operations here
+            //  then queue for later use by update()
+            //VUtils::Resource::ReadFile<std::string>("")
+            
+            //if (!m_sortedSessions.empty()) {
+            //    auto&& front = m_sortedSessions.front();
+            //    if (Valhalla()->Nanos() >= front.second.first) {
+            //        auto&& peer = std::make_unique<Peer>(
+            //            std::make_shared<ReplaySocket>(front.first, m_sessionIndexes[front.first]++, front.second.second));
+            //        m_connectedPeers.push_back(std::move(peer));
+            //        m_sortedSessions.pop_front();
+            //    }
+            //    else {
+            //        PERIODIC_NOW(30s, {
+            //            LOG(INFO) << "Replay peer joining in " << duration_cast<seconds>(front.second.first - Valhalla()->Nanos());
+            //        });
+            //    }
+            //}
+        }
+    }
+
+    void IReplayManager::update() {
+        // have queued sessions ready
+        //ZStdDecompressor()
     }
 
     void IReplayManager::on_new_peer(Peer::Ptr peer) {
@@ -258,7 +265,7 @@ namespace avledet::replay {
         const auto path = m_this_world_session_path
             / "hosts"
             / host
-            / (std::to_string(nanos.count()) + ".replay");
+            / (std::to_string(nanos.count()) + ".replay.zst");
             
         peer->m_replay_share = std::make_shared<XShare>(path);
     }
