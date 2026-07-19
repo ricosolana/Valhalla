@@ -6,14 +6,12 @@
 #include <filesystem>
 #include <list>
 #include <mutex>
-#include <thread>
 
-#include "ServerSettings.h"
 #include "Task.h"
 #include "VUtils.h"
+#include "Config.h"
 
 #define AVL_ID       (Avledet()->ID())
-#define AVL_SETTINGS (Avledet()->Settings())
 
 enum class UIMsgType : std::int32_t
 {
@@ -47,7 +45,6 @@ class IAvledet
     friend class World;
 
   private:
-    ServerSettings m_settings {};
     std::list<std::unique_ptr<Task>> m_tasks;
     std::recursive_mutex m_taskMutex;
     avledet::util::UserID m_serverID {};              // const
@@ -101,8 +98,6 @@ class IAvledet
     void Stop();
 
     avledet::util::UserID ID() const;
-
-    ServerSettings &Settings();
 
     // Get the time since the server started
     // Updated once per frame

@@ -13,6 +13,7 @@ target_sources(avledet_library
         ${CMAKE_CURRENT_SOURCE_DIR}/APIZdo.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/APIZone.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Avledet.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Config.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Crypto.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/DiscordManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/DungeonGenerator.cpp

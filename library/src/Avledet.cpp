@@ -1,3 +1,4 @@
+#include "Config.h"
 #include "ReplayManager.h"
 #include <chrono>
 #include <mutex>
@@ -27,7 +28,6 @@
 #include "NetManager.h"
 #include "RandomEventManager.h"
 #include "RouteManager.h"
-#include "ServerSettings.h"
 #include "VUtilsResource.h"
 #include "VUtilsString.h"
 #include "ZDOManager.h"
@@ -43,503 +43,9 @@ IAvledet *Avledet()
     return AVLEDET_INSTANCE.get();
 }
 
-template<class Enum>
-concept scoped_enum = requires { typename std::is_scoped_enum<Enum>; };
-
-namespace YAML {
-    template<scoped_enum Enum>
-    struct convert<Enum>
-    {
-        static Node encode(Enum const &rhs)
-        {
-            auto val = magic_enum::enum_name(rhs);
-            return Node(avledet::lexicon::to_lower(std::string(val)));
-        }
-
-        static bool decode(Node const &node, Enum &rhs)
-        {
-            if (!node.IsScalar())
-                return false;
-
-            if (auto opt
-                = magic_enum::enum_cast<Enum>(node.as<std::string>(), magic_enum::case_insensitive)) {
-                rhs = opt.value();
-                return true;
-            }
-
-            return false;
-        }
-    };
-
-    // TODO see
-    // ...\vcpkg\installed\x64-windows\include\yaml-cpp\binary.h
-    // some ideas for datareader/datawriter buffer ownership
-    //  basically use to have a single simple class for reading and another for writing, instead of 2 for ownership/observing
-    //  it will *really* simplify the flow
-    //  just use throws when doing an illegal operation?
-    //      i like performance though, not sure how much of a difference it makes
-    //
-
-    // also see
-    // ...\vcpkg\installed\x64-windows\include\yaml-cpp\convert.h
-    // some ideas for more specific generics within a known type
-    //  basically use to remove a bunch of std::chrono::duration template overloads below
-
-
-    template<typename T>
-    static bool parseDuration(std::string const &s, T &out)
-    {
-        std::int64_t dur  = 0;
-        std::size_t index = 0;
-        std::int64_t sign = 1;
-        for (; index < s.length(); index++) {
-            std::int64_t const ch = (std::int64_t) s[index];
-            if (ch == '-') {
-                sign = -1;
-            } else if (ch >= '0' && ch <= '9') {
-                dur *= 10;
-                dur += (ch - '0');
-            } else if (index > 0) {
-                for (; index < s.length() && s[index] == ' '; index++) {}// skip spaces
-
-                dur *= sign;
-                std::int64_t const ch2 = index < s.length() - 1 ? s[index + 1] : ' ';
-                switch (ch) {
-                case 'n': out = std::chrono::duration_cast<T>(std::chrono::nanoseconds(dur)); return true;
-                case 't': out = std::chrono::duration_cast<T>(avledet::util::Ticks(dur)); return true;
-                case 'u': out = std::chrono::duration_cast<T>(std::chrono::microseconds(dur)); return true;
-                case 'm': {
-                    switch (ch2) {
-                    case 's':
-                        out = std::chrono::duration_cast<T>(std::chrono::milliseconds(dur));
-                        return true;
-                    case 'i': out = std::chrono::duration_cast<T>(std::chrono::minutes(dur)); return true;
-                    case 'o': out = std::chrono::duration_cast<T>(std::chrono::months(dur)); return true;
-                    default: break;
-                    }
-                    break;
-                }
-                case 's': out = std::chrono::duration_cast<T>(std::chrono::seconds(dur)); return true;
-                case 'h': out = std::chrono::duration_cast<T>(std::chrono::hours(dur)); return true;
-                case 'd': out = std::chrono::duration_cast<T>(std::chrono::days(dur)); return true;
-                case 'w': out = std::chrono::duration_cast<T>(std::chrono::weeks(dur)); return true;
-                case 'y': out = std::chrono::duration_cast<T>(std::chrono::years(dur)); return true;
-                }
-                break;
-            }
-        }
-        out = T(dur);
-        return false;
-    };
-
-    template<typename Rep, typename Period>
-    struct convert<std::chrono::duration<Rep, Period>>
-    {
-        static Node encode(std::chrono::duration<Rep, Period> const &rhs)
-        {
-            //using D = std::remove_reference_t<std::remove_const_t<decltype(rhs)>>;
-            using D = std::remove_cvref_t<decltype(rhs)>;
-
-            if constexpr (std::is_same_v<D, std::chrono::nanoseconds>)
-                return Node(std::to_string(rhs.count()) + "ns");
-            else if constexpr (std::is_same_v<D, avledet::util::Ticks>)
-                return Node(std::to_string(rhs.count()) + " ticks");
-            else if constexpr (std::is_same_v<D, std::chrono::microseconds>)
-                return Node(std::to_string(rhs.count()) + "us");
-            else if constexpr (std::is_same_v<D, std::chrono::milliseconds>)
-                return Node(std::to_string(rhs.count()) + "ms");
-            else if constexpr (std::is_same_v<D, std::chrono::seconds>)
-                return Node(std::to_string(rhs.count()) + "s");
-            else if constexpr (std::is_same_v<D, std::chrono::minutes>)
-                return Node(std::to_string(rhs.count()) + "min");
-            else if constexpr (std::is_same_v<D, std::chrono::hours>)
-                return Node(std::to_string(rhs.count()) + " hours");
-            else if constexpr (std::is_same_v<D, std::chrono::days>)
-                return Node(std::to_string(rhs.count()) + " days");
-            else if constexpr (std::is_same_v<D, std::chrono::weeks>)
-                return Node(std::to_string(rhs.count()) + " weeks");
-            else if constexpr (std::is_same_v<D, std::chrono::months>)
-                return Node(std::to_string(rhs.count()) + " months");
-            else if constexpr (std::is_same_v<D, std::chrono::years>)
-                return Node(std::to_string(rhs.count()) + " years");
-
-            assert(false);
-            return Node(std::to_string(rhs.count()) + "?durationtype");
-            //else if constexpr (true)
-            //static_assert(false, "Unsupported type provided to convert");
-        }
-
-        static bool decode(Node const &node, std::chrono::duration<Rep, Period> &rhs)
-        {
-            if (!node.IsScalar())
-                return false;
-
-            auto &&s = node.Scalar();
-
-            return parseDuration(node.Scalar(), rhs);
-        }
-    };
-
-#if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
-    template<>
-    struct convert<dpp::snowflake>
-    {
-        static Node encode(dpp::snowflake const &rhs)
-        {
-            return Node(std::to_string((std::uint64_t) rhs));
-        }
-
-        static bool decode(Node const &node, dpp::snowflake &rhs)
-        {
-            if (!node.IsScalar())
-                return false;
-
-            rhs = node.as<std::int64_t>();
-            return true;
-        }
-    };
-#endif
-
-    template<typename K, typename V, typename Hash, typename Eq, typename Alloc,
-             typename Bucket>// = ankerl::unordered_dense::hash<K>>
-    struct convert<ankerl::unordered_dense::map<K, V, Hash, Eq, Alloc, Bucket>>
-    {
-        static Node encode(ankerl::unordered_dense::map<K, V, Hash, Eq, Alloc, Bucket> const &rhs)
-        {
-            Node node(NodeType::Map);
-            for (auto const &element : rhs) node.force_insert(element.first, element.second);
-            return node;
-        }
-
-        static bool decode(Node const &node, ankerl::unordered_dense::map<K, V, Hash, Eq, Alloc, Bucket> &rhs)
-        {
-            if (!node.IsMap())
-                return false;
-
-            rhs.clear();
-            for (auto const &element : node)
-#if defined(__GNUC__) && __GNUC__ < 4
-                // workaround for GCC 3:
-                rhs[element.first.template as<K>()] = element.second.template as<V>();
-#else
-                rhs[element.first.as<K>()] = element.second.as<V>();
-#endif
-            return true;
-        }
-    };
-
-    template<typename K, typename Hash, typename Eq, typename Alloc,
-             typename Bucket>// = ankerl::unordered_dense::hash<K>>
-    struct convert<ankerl::unordered_dense::set<K, Hash, Eq, Alloc, Bucket>>
-    {
-        static Node encode(ankerl::unordered_dense::set<K, Hash, Eq, Alloc, Bucket> const &rhs)
-        {
-            Node node(NodeType::Sequence);
-            for (auto const &element : rhs) node.push_back(element);
-            return node;
-        }
-
-        static bool decode(Node const &node, ankerl::unordered_dense::set<K, Hash, Eq, Alloc, Bucket> &rhs)
-        {
-            if (!node.IsSequence())
-                return false;
-
-            rhs.clear();
-            for (auto const &element : node)
-#if defined(__GNUC__) && __GNUC__ < 4
-                // workaround for GCC 3:
-
-                rhs.insert(element.template as<K>());
-#else
-                rhs.insert(element.as<K>());
-#endif
-            return true;
-        }
-    };
-
-}// namespace YAML
-
-template<class T>
-struct is_duration : std::false_type
-{};
-
-template<class Rep, class Period>
-struct is_duration<std::chrono::duration<Rep, Period>> : std::true_type
-{};
-
-// Retrieve a config value
-//  Returns the value or the default
-//  The key will be set in the config
-//  Accepts an optional predicate for whether to use the default value
-//template<typename T, typename Func = decltype([](const T&) -> bool {})>
-
-
-template<typename T, typename D, typename Func = std::nullptr_t>
-    requires(std::is_same_v<Func, std::nullptr_t>
-             || ((is_duration<typename std::tuple_element_t<
-                          0, typename VUtils::Traits::func_traits<Func>::args_type>>::value
-                  && is_duration<T>::value)
-                 == is_duration<D>::value))
-void a(T &set, YAML::Node mutableNode, std::string const &key, D const &default_value,
-       Func valueSanitizer = nullptr, bool skip = false)
-{
-    if (skip)
-        return;
-
-    auto &&mapping = mutableNode[key];
-
-    try {
-        auto &&val = mapping.as<T>();
-
-        if constexpr (!std::is_same_v<Func, std::nullptr_t>) {
-            using Param0 = std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>;
-
-            if constexpr (is_duration<T>::value) {
-                if (!valueSanitizer(std::chrono::duration_cast<Param0>(val))) {
-                    set = val;
-                    return;
-                }
-            } else {
-                if (!valueSanitizer(static_cast<Param0>(val))) {
-                    set = val;
-                    return;
-                }
-            }
-        } else {
-            set = val;
-            return;
-        }
-    } catch (const YAML::Exception &) {
-    }
-
-    mapping = default_value;
-
-    assert(mutableNode[key].IsDefined());
-
-    if constexpr (is_duration<T>::value) {
-        set = std::chrono::duration_cast<T>(default_value);
-    } else
-        set = T(default_value);
-};
-
 void IAvledet::LoadFiles(bool reloading)
 {
-    bool fileError = false;
-
-    {
-        YAML::Node node;
-        {
-            if (auto opt = VUtils::Resource::ReadFile<std::string>("server.yml")) {
-                try {
-                    node = YAML::Load(opt.value());
-                } catch (const YAML::ParserException &e) {
-                    LOG_INFO(AVL_LOGGER, "{}", e.what());
-                    fileError = true;
-                }
-            } else {
-                if (!reloading) {
-                    LOG_INFO(AVL_LOGGER, "Server config not found, creating...");
-                }
-                fileError = true;
-            }
-        }
-
-        // If the server has just started or theres no config error
-        if (!reloading || !fileError) {
-            auto &&general  = node["general"];
-            auto &&server   = node["server"];
-            auto &&players  = node["players"];
-            auto &&world    = node["world"];
-            auto &&zdo      = node["zdos"];
-            auto &&dungeons = node["dungeons"];
-            auto &&events   = node["events"];
-            auto &&discord  = node["discord"];
-            //auto &&replay  = node["replay"];
-            auto &&experimental = node["experimental"];
-
-            /*
-                Server settings
-            */
-
-            a(m_settings.serverName, server, "name", "Avledet server",
-              [](std::string const &val) { return val.empty() || val.length() < 3 || val.length() > 64; });
-            a(m_settings.m_server_password, server, "password", "",
-              [](std::string const &val) { return !val.empty() && (val.length() < 5 || val.length() > 11); });
-            a(m_settings.serverPort, server, "port", 2456, nullptr, reloading);
-            a(m_settings.serverPublic, server, "public", false, nullptr);
-            a(m_settings.serverDedicated, server, "dedicated", true, nullptr, reloading);
-            a(m_settings.serverBindAddress, server, "bind-address", "0.0.0.0", nullptr, reloading);
-            a(m_settings.TEST_serverTcp, experimental, "server-tcp", false, nullptr, reloading);
-
-            /*
-                Player settings
-            */
-
-            a(m_settings.playerWhitelist, players, "whitelist", true, nullptr);
-            a(m_settings.playerMax, players, "max-online", 10, [](int val) { return val < 1; });
-            a(m_settings.playerOnline, players, "authenticate", true, nullptr);
-            // If timeout is 0, will never timeout
-            a(m_settings.playerTimeout, players, "timeout", 30s,
-              [](std::chrono::seconds val) { return val < 0s; });
-#if AVL_IS_ON(AVL_PLAYER_SLEEP)
-            a(m_settings.playerSleepSolo, players, "player-sleep-solo", false, nullptr);
-#endif
-            a(m_settings.TEST_playerRestrict, experimental, "players-restrict", false, nullptr, false);
-
-            {
-                auto &&player_list = players["playerlist"];
-                a(m_settings.playerListSmoothUpdating, players, "smooth-updating", 2s,
-                  [](std::chrono::seconds val) { return val < 0s; });
-                a(m_settings.playerListForceVisible, players, "locations-always-on", false, nullptr);
-            }
-
-            /*
-                World generation settings
-            */
-
-            a(
-                    m_settings.worldName, world, "world", "world",
-                    [](std::string const &val) { return val.empty() || val.length() < 3; }, reloading);
-            a(
-                    m_settings.worldSeed, world, "seed", VUtils::Random::GenerateAlphaNum(10),
-                    [](std::string const &val) { return val.empty(); }, reloading);
-            a(m_settings.TEST_worldPregenerate, experimental, "world-pregenerate", false, nullptr, reloading);
-            a(m_settings.worldSaveInterval, world, "save-interval", 30min,
-              [](std::chrono::seconds val) { return val < 0s; });
-            a(m_settings.worldFeatures, world, "features", true, nullptr);
-            a(m_settings.worldVegetation, world, "vegetation", true, nullptr);
-            a(m_settings.worldCreatures, world, "creatures", true, nullptr);
-            a(m_settings.worldHeightmapThreads, world, "heightmap-threading", 1, nullptr, reloading);
-
-            // limit to physically available threads
-            if (m_settings.worldHeightmapThreads == 0
-                || m_settings.worldHeightmapThreads > std::jthread::hardware_concurrency())
-                m_settings.worldHeightmapThreads = std::jthread::hardware_concurrency();
-
-            // If desired threads is set to max threads, decrement by 1 (because main thread exists duh)
-            if (std::jthread::hardware_concurrency() > 1
-                && m_settings.worldHeightmapThreads >= std::jthread::hardware_concurrency())
-                m_settings.worldHeightmapThreads = std::jthread::hardware_concurrency() - 1;
-
-            /*
-                ZDO traffic settings
-            */
-
-            a(m_settings.zdoSendInterval, zdo, "send-interval", 50ms,
-              [](std::chrono::seconds val) { return val <= 0s; });
-            a(m_settings.zdoMaxCongestion, zdo, "max-send-threshold", 10240,
-              [](int val) { return val < 1000; });
-            a(m_settings.zdoMinCongestion, zdo, "min-send-threshold", 2048,
-              [](int val) { return val < 1000; });
-            a(m_settings.zdoAssignInterval, zdo, "assign-interval", 2s,
-              [](std::chrono::seconds val) { return val < 1s; });
-            a(m_settings.TEST_zdoAssignAlgorithm, experimental, "zdo-assign-algo", AssignAlgorithm::NONE,
-              nullptr);
-
-            /*
-                Dungeon generation settings
-            */
-
-            a(m_settings.dungeonsEnabled, dungeons, "enabled", true, nullptr);
-            {
-                auto &&endcaps = dungeons["endcaps"];
-                a(m_settings.dungeonsEndcapsEnabled, endcaps, "enabled", true, nullptr);
-                a(m_settings.dungeonsEndcapsInsetFrac, endcaps, "inset-ratio", .5f,
-                  [](float val) { return val < 0.f || val > 1.f; });
-            }
-
-            a(m_settings.dungeonsDoors, dungeons, "doors", true, nullptr);
-
-            {
-                auto &&rooms = dungeons["rooms"];
-                a(m_settings.dungeonsRoomsFlipped, rooms, "flipped", true, nullptr);
-                a(m_settings.dungeonsRoomsZoneBounded, rooms, "zone-bounded", true, nullptr);
-                a(m_settings.dungeonsRoomsInsetSize, rooms, "inset-size", .1f,
-                  [](float val) { return val < 0; });
-                a(m_settings.dungeonsRoomsFurnishing, rooms, "furnishing", true, nullptr);
-            }
-
-            // TODO test out dungeon regeneration
-            //{
-            //    auto &&regeneration = dungeons["dungeons-regeneration"];
-            //    a(m_settings.TEST_dungeonsRegenerationInterval, regeneration, "interval",
-            //      std::chrono::days(3), [](std::chrono::minutes val) { return val < 5s; });
-            //    a(m_settings.TEST_dungeonsRegenerationMaxSteps, regeneration, "steps", 3,
-            //      [](int val) { return val < 1; });
-            //}
-
-            a(m_settings.dungeonsSeeded, dungeons, "seeded", true, nullptr);
-
-            /*
-                Random event / raid settings
-            */
-
-            a(m_settings.eventsChance, events, "chance", .2f, [](float val) { return val < 0 || val > 1; });
-            a(m_settings.eventsInterval, events, "interval", 46min,
-              [](std::chrono::seconds val) { return val < 0s; });
-            a(m_settings.eventsRadius, events, "activation-radius", 96,
-              [](float val) { return val < 1 || val > 96 * 4; });
-            a(m_settings.eventsRequireKeys, events, "require-keys", true, nullptr);
-
-            /*
-                Discord settings
-            */
-
-#if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
-            a(m_settings.discordEnabled, discord, "enabled", false, nullptr, reloading);
-            a(m_settings.discordWebhook, discord, "webhook", "",
-              nullptr);  //TODO move this somewhere more secure
-            a(m_settings.discordToken, discord, "token", "", nullptr,
-              reloading);//TODO move this somewhere more secure!!!
-            a(m_settings.discordGuild, discord, "guild", 0, nullptr, reloading);
-            a(m_settings.TEST_discordAccountLinking, discord, "experimental-account-linking", false, nullptr,
-              reloading);
-            a(m_settings.TEST_discordSyncLeaves, discord, "experimental-sync-leaves", false, nullptr,
-              reloading);
-            //a(m_settings.discordDeleteCommands, discord, "delete-commands", false, nullptr, reloading);
-
-            //a(m_settings.discordDevAccount, discord, "dev-account", avledet::util::Set<std::string>());
-
-            //a(m_settings.discordEnableDevCommands, discord, "enable-dev-commands", true);
-
-#endif
-
-            // reload log level
-            {
-                quill::LogLevel level;
-                a(level, general, "log-level", quill::LogLevel::Info, nullptr);
-                AVL_LOGGER->set_log_level(level);
-            }
-
-            {
-                a(m_settings.luaUnsafe, general, "lua-unsafe", false, nullptr, reloading);
-
-                if (m_settings.luaUnsafe) {
-                    LOG_WARNING(AVL_LOGGER, "Unsafe Lua is enabled! This allows potentially unsafe code to run!");
-                }
-            }
-
-            if (m_settings.m_server_password.empty()) {
-                LOG_INFO(AVL_LOGGER, "Server does not have a password");
-            } else {
-                LOG_NOTICE(AVL_LOGGER, "Server password is {}{}", COLOR_GOLD, m_settings.m_server_password);
-            }
-
-            // replay loads
-            {
-                a(m_settings.m_replay_mode, experimental, "replays-mode", ReplayMode::NONE, nullptr, reloading);
-                //a(m_settings.replay_kick_on_fail, experimental, "replays-kick-on-fail", false, nullptr, reloading);
-            }
-        }
-
-        if (!reloading) {
-            YAML::Emitter out;
-            out.SetIndent(2);
-            out << node;
-
-            VUtils::Resource::WriteFile("server.yml", out.c_str());
-        }
-    }
+    Config::instance().load();
 
     if (auto &&opt = VUtils::Resource::ReadFile<std::string>("blacklist.yml")) {
         try {
@@ -569,7 +75,7 @@ void IAvledet::LoadFiles(bool reloading)
     }
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
-    if (m_settings.TEST_discordAccountLinking) {
+    if (AVL_SETTINGS.TEST_discordAccountLinking) {
         if (auto &&opt = VUtils::Resource::ReadFile<std::string>("discord-linked.yml")) {
             try {
                 auto node                           = YAML::Load(*opt);
@@ -588,7 +94,7 @@ void IAvledet::LoadFiles(bool reloading)
 
             // TODO add a 'previously gated' bit
             //  so discord integration doesnt get messed up
-            peer->SetGated(m_settings.TEST_playerRestrict);
+            peer->SetGated(AVL_SETTINGS.TEST_playerRestrict);
         }
     }
 
@@ -596,7 +102,7 @@ void IAvledet::LoadFiles(bool reloading)
 
 #ifdef _WIN32
     {
-        //std::string title = m_settings.serverName + " - " + VConstants::GAME;
+        //std::string title = AVL_SETTINGS.serverName + " - " + VConstants::GAME;
         std::string title
                 = "Avledet " + std::string(AVL_VERSION) + " - Valheim " + std::string(VConstants::GAME);
         SetConsoleTitle(title.c_str());
@@ -661,11 +167,6 @@ void IAvledet::SaveFiles()
 avledet::util::UserID IAvledet::ID() const
 {
     return m_serverID;
-}
-
-ServerSettings &IAvledet::Settings()
-{
-    return m_settings;
 }
 
 // Get the time since the server started
@@ -950,18 +451,18 @@ void IAvledet::PeriodUpdate()
 #endif
 
 #if AVL_IS_ON(AVL_DUNGEON_REGENERATION)
-    if (m_settings.dungeonsRegenerationInterval > 0s)
+    if (AVL_SETTINGS.dungeonsRegenerationInterval > 0s)
         DungeonManager()->TryRegenerateDungeons();
 #endif
 
 
 #if AVL_IS_ON(AVL_PLAYER_SLEEP)
-    //if (m_settings.playerSleep) {
+    //if (AVL_SETTINGS.playerSleep) {
     if (m_playerSleep) {
         if (m_worldTime > m_playerSleepUntil) {
             // Wake up players
 
-            if (m_settings.playerSleepSolo) {
+            if (AVL_SETTINGS.playerSleepSolo) {
                 // only awake sleeping players
                 for (auto &&peer : NetManager()->GetPeers()) {
                     auto &&zdo = peer->find_zdo();
@@ -988,18 +489,18 @@ void IAvledet::PeriodUpdate()
                 bool inBed = zdo && zdo->get_bool(avledet::util::hashes::ZDO::Player::IN_BED, false);
                 if (!inBed) {
                     allInBed = false;
-                    if (!m_settings.playerSleepSolo)// early break if special sleep mode is not enabled
+                    if (!AVL_SETTINGS.playerSleepSolo)// early break if special sleep mode is not enabled
                         break;
                 } else {
                     // Early break if the special sleep is enabled
-                    if (m_settings.playerSleepSolo) {
+                    if (AVL_SETTINGS.playerSleepSolo) {
                         anyInBed = true;
                         break;
                     }
                 }
             }
 
-            if ((allInBed || (anyInBed && m_settings.playerSleepSolo)) && !NetManager()->GetPeers().empty()) {
+            if ((allInBed || (anyInBed && AVL_SETTINGS.playerSleepSolo)) && !NetManager()->GetPeers().empty()) {
                 m_playerSleep = true;
 
                 // Skip to time
@@ -1008,7 +509,7 @@ void IAvledet::PeriodUpdate()
                 // Set skip interval
                 m_worldTimeMultiplier = (m_playerSleepUntil - m_worldTime) / 12.0;
 
-                if (m_settings.playerSleepSolo) {
+                if (AVL_SETTINGS.playerSleepSolo) {
                     // Players who are ALREADY in bed, go ahead and signal them to sleep
                     for (auto &&peer : NetManager()->GetPeers()) {
                         auto &&zdo = peer->find_zdo();
@@ -1033,23 +534,23 @@ void IAvledet::PeriodUpdate()
 
     std::error_code err;
     auto lastWriteTime = std::filesystem::last_write_time("server.yml", err);
-    if (lastWriteTime != this->m_settingsLastTime) {
+    if (lastWriteTime != m_settingsLastTime) {
         // reload the file
         LOG_INFO(AVL_LOGGER, "Config change detected!");
         LoadFiles(true);
         LOG_INFO(AVL_LOGGER, "Config was reloaded");
     }
 
-    if (m_settings.worldSaveInterval > 0s) {
+    if (AVL_SETTINGS.worldSaveInterval > 0s) {
         // save warming message
-        if (VUtils::run_periodic_later<struct periodic_save_message>(m_settings.worldSaveInterval,
-                                                                     m_settings.worldSaveInterval)) {
+        if (VUtils::run_periodic_later<struct periodic_save_message>(AVL_SETTINGS.worldSaveInterval,
+                                                                     AVL_SETTINGS.worldSaveInterval)) {
             LOG_INFO(AVL_LOGGER, "World saving in 30s");
             Broadcast(UIMsgType::Center, "$msg_worldsavewarning 30s");
         }
 
-        if (VUtils::run_periodic_later<struct periodic_save>(m_settings.worldSaveInterval,
-                                                             m_settings.worldSaveInterval + 30s)) {
+        if (VUtils::run_periodic_later<struct periodic_save>(AVL_SETTINGS.worldSaveInterval,
+                                                             AVL_SETTINGS.worldSaveInterval + 30s)) {
             WorldManager()->GetWorld()->WriteFiles();
         }
     }
