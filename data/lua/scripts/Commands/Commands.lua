@@ -268,14 +268,46 @@ local commands = {
     },
     tp = {
         func = function(peer, cmd, args)
-            local x = tonumber(args[1])
-            local y = tonumber(args[2])
-            local z = tonumber(args[3])
+            local pos = peer.pos -- Change this if your API uses another method
 
-            peer:teleport(Vector3f.new(x, y, z))
+            local function parseCoord(value, base)
+                if not value then
+                    return nil
+                end
+
+                -- Relative coordinate: ~, ~5, ~-2.5
+                if value:sub(1, 1) == "~" then
+                    local offset = value:sub(2)
+
+                    if offset == "" then
+                        offset = 0
+                    else
+                        offset = tonumber(offset)
+                        if not offset then
+                            return nil
+                        end
+                    end
+
+                    return base + offset
+                end
+
+                -- Absolute coordinate
+                return tonumber(value)
+            end
+
+            local x = parseCoord(args[1], pos.x)
+            local y = parseCoord(args[2], pos.y)
+            local z = parseCoord(args[3], pos.z)
+
+            if not x or not y or not z then
+                peer:sendMessage("Usage: /tp [x] [y] [z]")
+                return
+            end
+
+            peer:teleport(Vec3f.new(x, y, z))
         end,
-        usage = "[x] [y] [z]",
-        desc = "teleport yourself to coordinates in world"
+        usage = "[x|~offset] [y|~offset] [z|~offset]",
+        desc = "teleport yourself using absolute or relative coordinates"
     },
     --[[
     moveto = {

@@ -162,7 +162,7 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
     AVL_DISPATCH_WEBHOOK(peer->m_name + " has joined");
 
     // Important
-    peer->Register(avledet::util::hashes::Rpc::C2S_PlayerData, [](Peer::Ptr peer, avledet::util::Bytes pkg) {
+    peer->Register("ServerSyncedPlayerData", [](Peer::Ptr peer, avledet::util::Bytes pkg) {
         //DataReader reader(pkg);
         //auto reader = DataReader(std::vector<char>(pkg.begin(), pkg.end()));
         // TODO cannabilize package?
@@ -186,7 +186,7 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
 
     // isnt 'ban' a command?
     //  it should be part of RemoteCommand
-    peer->Register(avledet::util::hashes::Rpc::C2S_RemoteCommand,
+    peer->Register("RemoteCommand",
                    [](Peer::Ptr peer, std::string_view command) {
                        if (!peer->IsAdmin())
                            return peer->ConsoleMessage("You are not admin");
@@ -200,7 +200,7 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
                    });
 
     // Important
-    peer->Register(avledet::util::hashes::Rpc::C2S_UpdateID, [](Peer::Ptr peer, ZDOID characterID) {
+    peer->Register("CharacterID", [](Peer::Ptr peer, ZDOID characterID) {
         // Peer sends 0,0 on after death
 
         //TODO the player only sends this:
@@ -215,7 +215,7 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
         LOG_NOTICE(AVL_LOGGER, "Got CharacterID from {} ({})", peer->m_name, characterID);
     });
 
-    peer->Register(avledet::util::hashes::Rpc::C2S_RequestKick,
+    peer->Register("Kick",
                    [this](Peer::Ptr peer, std::string_view user) {
                        // TODO maybe permissions tree in future?
                        //  lua? ...
@@ -230,7 +230,7 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
                        }
                    });
 
-    peer->Register(avledet::util::hashes::Rpc::C2S_RequestBan, [this](Peer::Ptr peer, std::string_view user) {
+    peer->Register("Ban", [this](Peer::Ptr peer, std::string_view user) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
@@ -242,7 +242,7 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
         }
     });
 
-    peer->Register(avledet::util::hashes::Rpc::C2S_RequestUnban,
+    peer->Register("Unban",
                    [this](Peer::Ptr peer, std::string_view user) {
                        if (!peer->IsAdmin())
                            return peer->ConsoleMessage("You are not admin");
@@ -253,7 +253,7 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
                        peer->ConsoleMessage("Unbanning user " + std::string(user));
                    });
 
-    peer->Register(avledet::util::hashes::Rpc::C2S_RequestSave, [](Peer::Ptr peer) {
+    peer->Register("Save", [](Peer::Ptr peer) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
@@ -264,7 +264,7 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
         peer->ConsoleMessage("Saved the world");
     });
 
-    peer->Register(avledet::util::hashes::Rpc::C2S_RequestBanList, [](Peer::Ptr peer) {
+    peer->Register("PrintBanned", [](Peer::Ptr peer) {
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 

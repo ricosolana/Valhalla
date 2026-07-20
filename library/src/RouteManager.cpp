@@ -43,7 +43,7 @@ IRouteManager *RouteManager()
 
 void IRouteManager::OnNewPeer(Peer::Ptr peer)
 {
-    peer->Register(avledet::util::hashes::Rpc::RoutedRPC, [this](Peer::Ptr peer, DataReader reader) {
+    peer->Register("RoutedRPC", [this](Peer::Ptr peer, DataReader reader) {
         if (peer->IsGated())
             return;
 

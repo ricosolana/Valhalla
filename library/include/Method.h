@@ -2,12 +2,15 @@
 
 #include <memory>
 #include <quill/LogMacros.h>
+#include <sol/forward.hpp>
 #include <stdexcept>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 
 #include "Avledet.h"
 #include "DataStream.h"
+#include "Hashes.h"
 #include "ModManager.h"
 #include "Types.h"
 #include "VUtils.h"
@@ -27,10 +30,18 @@ class IMethod
 
   public:
     avledet::util::Hash const m_hash;
+    std::string const m_dbg_desc;
 
   public:
-    IMethod(avledet::util::Hash hash) :
-        m_hash(hash)
+    //[[deprecated("use IMethod<T>(name) instead for better debugging")]]
+    IMethod(avledet::util::Hash hash, std::string_view dbg_desc) :
+        m_hash(hash), m_dbg_desc(dbg_desc)
+    {
+        assert(m_hash);
+    }
+
+    IMethod(std::string_view name) :
+        m_hash(VUtils::get_stable_hash(name)), m_dbg_desc(name)
     {
         assert(m_hash);
     }
@@ -126,8 +137,16 @@ class MethodImpl : public IMethod<T>
     avledet::util::Hash const m_categoryHash {};
 
   public:
-    MethodImpl(avledet::util::Hash hash, avledet::util::Hash categoryHash, F func) :
-        IMethod<T>(hash),
+    //[[deprecated("use MethodImpl<T>(name) instead")]]
+    MethodImpl(avledet::util::Hash hash, std::string_view dbg_desc, avledet::util::Hash categoryHash, F func) :
+        IMethod<T>(hash, dbg_desc),
+        m_func(std::move(func)),
+        m_categoryHash(categoryHash)//will keep this as a member for dynamic lua usages...
+    {
+    }
+
+    MethodImpl(std::string_view name, avledet::util::Hash categoryHash, F func) :
+        IMethod<T>(name),
         m_func(std::move(func)),
         m_categoryHash(categoryHash)//will keep this as a member for dynamic lua usages...
     {
@@ -135,8 +154,15 @@ class MethodImpl : public IMethod<T>
 #endif
 
   public:
-    MethodImpl(avledet::util::Hash hash, F func) :
-        IMethod<T>(hash),
+    //[[deprecated("use name/dbg instead")]]
+    MethodImpl(avledet::util::Hash hash, std::string_view dbg_desc, F func) :
+        IMethod<T>(hash, dbg_desc),
+        m_func(std::move(func))
+    {
+    }
+
+    MethodImpl(std::string_view name, F func) :
+        IMethod<T>(name),
         m_func(std::move(func))
     {
     }
@@ -203,14 +229,31 @@ class MethodImplLua : public IMethod<T>
     friend class IScriptManager;
 
   private:
-    sol::protected_function m_func;
-    IScriptManager::StreamTypes m_types;
+    sol::protected_function const m_func;
+    sol::environment const m_env; //
+    IScriptManager::StreamTypes const m_types;
 
   public:
-    MethodImplLua(avledet::util::Hash hash, sol::protected_function const &func,
-                  IScriptManager::StreamTypes const &types) :
-        IMethod<T>(hash),
+    // TODO consider passing MethodSig directly, as it contains everything
+    MethodImplLua(  avledet::util::Hash hash, 
+                    std::string_view dbg_desc, 
+                    sol::protected_function const &func,
+                    sol::environment const& env,
+                    IScriptManager::StreamTypes const &types) :
+        IMethod<T>(hash, dbg_desc),
         m_func(func),
+        m_env(env),
+        m_types(types)
+    {
+    }
+
+    MethodImplLua(  std::string_view name, 
+                    sol::protected_function const &func,
+                    sol::environment const& env,
+                    IScriptManager::StreamTypes const &types) :
+        IMethod<T>(name),
+        m_func(func),
+        m_env(env),
         m_types(types)
     {
     }
@@ -250,7 +293,7 @@ class MethodImplLua : public IMethod<T>
     }
 };
 
-template<typename T>
-MethodImplLua(avledet::util::Hash, sol::function, IScriptManager::StreamTypes) -> MethodImplLua<T>;
+template<class T>
+MethodImplLua(std::string_view, sol::protected_function const &, IScriptManager::StreamTypes const &) -> MethodImplLua<T>;
 
 #endif// AVL_IS_ON(AVL_ENABLE_SCRIPTING)

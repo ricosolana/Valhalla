@@ -27,11 +27,11 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
 		* @param method ptr to a static function
 	*/
     template<typename F>
-    void Register(avledet::util::Hash hash, F func)
+    void Register(avledet::util::Hash hash, std::string_view dbg_desc, F func)
     {
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
         register_method(
-                std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, IScriptManager::Events::RouteIn, func));
+                std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, dbg_desc, IScriptManager::Events::RouteIn, func));
 
         //m_methods[hash]
         //        = std::make_unique<MethodImpl<Peer::Ptr, F>>(func, IScriptManager::Events::RouteIn, hash);
@@ -45,7 +45,7 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
     template<typename F>
     decltype(auto) Register(std::string_view name, F func)
     {
-        return Register(avledet::util::get_stable_hash(name), func);
+        return Register(avledet::util::get_stable_hash(name), name, func);
     }
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -54,7 +54,7 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
         //VLOG(1) << "RegisterLua, func: " << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
 
         //m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer::Ptr>>(func, sig.m_types);
-        register_method(std::make_unique<MethodImplLua<Peer::Ptr>>(sig.m_hash, func, sig.m_types));
+        register_method(std::make_unique<MethodImplLua<Peer::Ptr>>(sig.m_hash, sig.m_dbg_desc, func, sig.m_env, sig.m_types));
     }
 #endif
 

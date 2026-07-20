@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <sol/as_args.hpp>
+#include <sol/forward.hpp>
 #include <sol/variadic_args.hpp>
 #include <string_view>
 #include <tracy/Tracy.hpp>
@@ -139,7 +140,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
         * @param lambda
     */
     template<typename F>
-    void Register(avledet::util::Hash hash, F func)
+    void Register(avledet::util::Hash hash, std::string_view dbg_desc, F func)
     {
         static_assert(
                 std::is_same_v<std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>,
@@ -147,9 +148,9 @@ class Peer : public std::enable_shared_from_this<Peer>,
                 "Rpc must accept a shared_ptr<Peer> as first argument");
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
         register_method(
-                std::make_unique<MethodImpl<Ptr, F>>(hash, IScriptManager::Events::RpcIn, std::move(func)));
+                std::make_unique<MethodImpl<Ptr, F>>(hash, dbg_desc, IScriptManager::Events::RpcIn, std::move(func)));
 #else
-        register_method(hash, std::move(func));
+        register_method(hash, dbg_desc, std::move(func));
         //register_method(std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, std::move(func)));
 #endif
     }
@@ -157,14 +158,14 @@ class Peer : public std::enable_shared_from_this<Peer>,
     template<typename F>
     void Register(std::string_view name, F func)
     {
-        Register(avledet::util::get_stable_hash(name), func);
+        Register(avledet::util::get_stable_hash(name), name, func);
     }
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-    void RegisterLua(IScriptManager::MethodSig const &sig, sol::function const &func)
+    void RegisterLua(IScriptManager::MethodSig const &sig, sol::protected_function const &func)
     {
         //VLOG(1) << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
-        register_method(std::make_unique<MethodImplLua<Ptr>>(sig.m_hash, func, sig.m_types));
+        register_method(std::make_unique<MethodImplLua<Ptr>>(sig.m_hash, sig.m_dbg_desc, func, sig.m_env, sig.m_types));
 
         //m_methods[sig.m_hash] = std::make_unique<MethodImplLua<Peer::Ptr>>(func, sig.m_types);
     }
@@ -401,6 +402,7 @@ class Peer : public std::enable_shared_from_this<Peer>,
     }
 
     // Show a console message
+    //  AKA RemotePrint
     void ConsoleMessage(std::string_view msg)
     {
         return Invoke(avledet::util::hashes::Rpc::ConsoleMessage, msg);

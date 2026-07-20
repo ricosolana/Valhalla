@@ -214,7 +214,7 @@ void IAvledet::init()
 {
     assert(!m_run_state && "unexpected run state during init(), did you call init() twice?");
 
-    tracy::SetThreadName("game");
+    tracy::SetThreadName("avl");
 
     {
         quill::BackendOptions options;
@@ -353,7 +353,7 @@ void IAvledet::uninit()
 {
     AVL_DISPATCH_WEBHOOK("Server stopping");
 
-    LOG_INFO(AVL_LOGGER, "Terminating server");
+    LOG_INFO(AVL_LOGGER, "Stopping server");
 
     // Cleanup
     NetManager()->Uninit();
@@ -367,7 +367,7 @@ void IAvledet::uninit()
 
     this->SaveFiles();
 
-    LOG_INFO(AVL_LOGGER, "Server was gracefully terminated");
+    LOG_INFO(AVL_LOGGER, "Server gracefully stopped");
 
     // notify
     m_run_state = true;

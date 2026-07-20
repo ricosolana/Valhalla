@@ -389,24 +389,31 @@ void IScriptManager::unload_script(decltype(m_scripts)::iterator &script_itr, bo
             //map
             //auto &&method = dynamic_cast<MethodImplLua<Peer *> *>(method_itr->second.get());
 
-            auto &&method = dynamic_cast<MethodImplLua<Peer *> *>(method_itr->get());
+            auto method = dynamic_cast<MethodImplLua<Peer::Ptr> *>(method_itr->get());
 
             if (!method) {
                 ++method_itr;
                 continue;
             }
 
-            // This will fail sometimes (see above); unused _ENV
-            //  but for now, I am lazy
-            auto &&env = sol::get_environment(method->m_func);
-            assert(env.valid());
+            // This will sometimes fail:
+            //  If the Lua fn in the script does not use any global refs 
+            //  then _ENV will never be retrieved
+            //... the solution is to hard-store the env
+            //auto env = sol::get_environment(method->m_func);
+            //assert(env.valid());
+
+            // TODO declare the funcs belonging script/ENV earlier in this manager code, 
+            //  then try to steal / ref from it, instead of comparing possible nil ENVs
+
 
             //assert(env["this"].is<Mod *>());
             //auto on_mod = env["this"].get<Mod *>();
 
             //bool contains = m_tmp_reload_mods.contains(mod);
             //bool contains = &mod == on_mod;
-            bool contains = (script_info.m_env == env);
+            bool contains = script_info.m_env == method->m_env;
+            //bool contains = (script_info.m_env == env);
 
             if (contains) {
                 // kill it

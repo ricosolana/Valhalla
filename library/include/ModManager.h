@@ -2,13 +2,16 @@
 
 #include "CompileSettings.h"
 #include <filesystem>
+#include <quill/LogMacros.h>
 #include <sol/as_args.hpp>
 #include <sol/as_returns.hpp>
+#include <sol/environment.hpp>
 #include <sol/object.hpp>
 #include <sol/stack_reference.hpp>
 #include <sol/variadic_args.hpp>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <variant>
 
@@ -106,19 +109,36 @@ class IScriptManager
     class MethodSig
     {
       public:
-        StreamTypes m_types;
-        avledet::util::Hash m_hash;
+        sol::environment const m_env;
+        StreamTypes const m_types;
+        avledet::util::Hash const m_hash;
+        std::string const m_dbg_desc; // for human readable
 
-        MethodSig(StreamTypes types, avledet::util::Hash hash) :
+        //MethodSig(StreamTypes types, avledet::util::Hash hash) :
+        //    m_types(std::move(types)),
+        //    m_hash(hash)
+        //{
+        //}
+
+        MethodSig(StreamTypes types, avledet::util::Hash hash, std::string_view dbg_desc, sol::this_environment te) :
+            m_env(te),
             m_types(std::move(types)),
-            m_hash(hash)
+            m_hash(hash),
+            m_dbg_desc(dbg_desc)
         {
         }
 
-        MethodSig(std::string_view name, sol::variadic_args types) :
+        MethodSig(std::string_view name, sol::variadic_args types, sol::this_environment te) :
+            m_env(te),    
             m_types(types.begin(), types.end()),
-            m_hash(avledet::util::get_stable_hash(name))
+            m_hash(avledet::util::get_stable_hash(name)),
+            m_dbg_desc(name)
         {
+        }
+
+        friend std::ostream &operator<<(std::ostream &ost, MethodSig const &value)
+        {
+            return ost << "MethodSig { " << value.m_dbg_desc << " | " << value.m_hash << " }";
         }
     };
 

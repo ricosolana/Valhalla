@@ -22,13 +22,13 @@ Peer::Peer(ISocket::Ptr socket) :
     m_lastPing(std::chrono::steady_clock::now()),
     m_socket(std::move(socket))
 {
-    this->Register(avledet::util::hashes::Rpc::Disconnect, [](Peer::Ptr self) {
+    this->Register("Disconnect", [](Peer::Ptr self) {
         //LOG_INFO(AVL_LOGGER, "RPC_Disconnect");
         self->Disconnect();
     });
 
-    this->Register(avledet::util::hashes::Rpc::C2S_Handshake, [](Peer::Ptr rpc) {
-        rpc->Register(avledet::util::hashes::Rpc::PeerInfo, [](Peer::Ptr rpc, DataReader reader) {
+    this->Register("ServerHandshake", [](Peer::Ptr rpc) {
+        rpc->Register("PeerInfo", [](Peer::Ptr rpc, DataReader reader) {
             rpc->m_characterID.set_user_id(reader.read<std::int64_t>());
 #if AVL_IS_ON(AVL_DISALLOW_MALICIOUS_PLAYERS)
             if (!rpc->m_characterID)

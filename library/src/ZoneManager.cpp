@@ -184,7 +184,7 @@ void IZoneManager::PostPrefabInit()
         throw std::runtime_error("prefabs missing");
 #endif
 
-    RouteManager()->Register(avledet::util::hashes::Routed::C2S_SetGlobalKey,
+    RouteManager()->Register("SetGlobalKey",
                              [this](Peer::Ptr peer, std::string_view name) {
                                  (void) peer;
                                  // TODO limit keys based on peer and the creature killed
@@ -193,7 +193,7 @@ void IZoneManager::PostPrefabInit()
                                      SendGlobalKeys();// Notify clients
                              });
 
-    RouteManager()->Register(avledet::util::hashes::Routed::C2S_RemoveGlobalKey,
+    RouteManager()->Register("RemoveGlobalKey",
                              [this](Peer::Ptr peer, std::string_view name) {
                                  (void) peer;
                                  // TODO limit keys based on peer and the creature killed
@@ -201,7 +201,7 @@ void IZoneManager::PostPrefabInit()
                                      SendGlobalKeys();// Notify clients
                              });
 
-    RouteManager()->Register(avledet::util::hashes::Routed::C2S_RequestIcon,
+    RouteManager()->Register("RPC_DiscoverClosestLocation",
                              [this](Peer::Ptr peer, std::string_view locationName, Vector3f point,
                                     std::string_view pinName, int pinType, bool showMap, bool discoverAll) {
                                     // TODO discoverAll used by certain vesvigirs (which ones?)
@@ -232,7 +232,7 @@ void IZoneManager::PostPrefabInit()
 #endif
                              });
 
-    RouteManager()->Register(avledet::util::hashes::Routed::S2C_ResponsePing, [](Peer::Ptr peer, float time) {
+    RouteManager()->Register("Ping", [](Peer::Ptr peer, float time) {
         peer->Route(avledet::util::hashes::Routed::Pong, time);
     });
 }

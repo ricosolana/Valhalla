@@ -154,7 +154,7 @@ void IScriptManager::load_userdata()
 
 
     this->new_usertype<MethodSig>("MethodSig", 
-        sol::constructors<MethodSig(std::string_view, sol::variadic_args)>()
+        sol::constructors<MethodSig(std::string_view, sol::variadic_args, sol::this_environment)>()
     );
 
     //table.new_usertype<IRouteManager::Data>("RouteData",

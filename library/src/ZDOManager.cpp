@@ -35,7 +35,7 @@ void IZDOManager::Init()
 
     LOG_NOTICE(AVL_LOGGER, "Initializing ZDOManager");
 
-    RouteManager()->Register(avledet::util::hashes::Routed::DestroyZDO, [this](Peer::Ptr, DataReader reader) {
+    RouteManager()->Register("DestroyZDO", [this](Peer::Ptr, DataReader reader) {
         // TODO constraint check
         reader.read([this](ZDOID zdoid) { EraseZDO(zdoid); });
     });
@@ -43,7 +43,7 @@ void IZDOManager::Init()
     //auto&& insert = ZDOManager()->m_objectsByID.begin()->second->
     //m_members.insert({0, ZDO::Ord()});
     //insert.first->second.Get
-    RouteManager()->Register(avledet::util::hashes::Routed::C2S_RequestZDO,
+    RouteManager()->Register("RequestZDO",
                              [this](Peer::Ptr peer, ZDOID id) { peer->ForceSendZDO(id); });
 }
 
@@ -950,7 +950,7 @@ bool IZDOManager::SendZDOs(Peer::Ptr peer, bool flush)
 
 void IZDOManager::OnNewPeer(Peer::Ptr peer)
 {
-    peer->Register(avledet::util::hashes::Rpc::ZDOData, [this](Peer::Ptr peer, DataReader reader) {
+    peer->Register("ZDOData", [this](Peer::Ptr peer, DataReader reader) {
         ZoneScoped;
 
         // Only allow if normal mode
