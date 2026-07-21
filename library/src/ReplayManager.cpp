@@ -102,7 +102,9 @@ namespace avledet::replay {
             }
         });
 
-        LOG_NOTICE(AVL_LOGGER, "Experimental packet replay mode enabled");
+        LOG_WARNING(AVL_LOGGER, "Experimental replay mode enabled");
+        LOG_WARNING(AVL_LOGGER, "Again, this is experimental and likely to segfault randomly");
+        LOG_WARNING(AVL_LOGGER, "Im too lazy to manage my branches, so you've been warned otherwise...");
     }
 
     void IReplayManager::uninit() {

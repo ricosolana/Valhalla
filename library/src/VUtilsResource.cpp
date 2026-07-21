@@ -8,27 +8,48 @@ namespace VUtils::Resource {
 
     bool WriteFile(std::filesystem::path const &path, avledet::util::Byte const *buf, std::size_t size)
     {
-        //ScopedFile file = fopen(path.string().c_str(), "wb");
-        //
-        //if (!file) return false;
-        //
-        //auto sizeWritten = fwrite(buf, 1, size, file);
-        //if (sizeWritten != size) {
-        //    return false;
-        //}
-        //
-        //return true;
+        std::ofstream file;
 
-        std::ofstream file(path, std::ios::binary);
+        // Explicitly ensure ordinary stream errors become state flags,
+        // not exceptions.
+        file.exceptions(std::ios::goodbit);
+
+        file.open(path, std::ios::binary | std::ios::trunc);
+
+        if (!file.is_open() || file.fail())
+            return false;
+        
+        const auto* data = reinterpret_cast<char const *>(buf);
+        std::size_t remaining = size;
+
+        // std::ostream::write takes std::streamsize, so write in bounded chunks.
+        constexpr auto max_chunk =
+            static_cast<std::size_t>(
+                std::numeric_limits<std::streamsize>::max());
+
+        while (remaining != 0) {
+            const std::size_t chunk = std::min(remaining, max_chunk);
+
+            file.write(
+                data,
+                static_cast<std::streamsize>(chunk));
+
+            if (!file)
+                return false;
+
+            data += chunk;
+            remaining -= chunk;
+        }
+
+        file.flush();
 
         if (!file)
             return false;
 
-        //VLOG(1) << "Writing file " << path << " (" << size << " bytes)";
+        file.close();
 
-        file.write(reinterpret_cast<char const *>(buf), size);
-
-        return true;
+        // close() can discover errors that write()/flush() did not.
+        return !file.fail();
     }
 
     bool WriteFile(std::filesystem::path const &path, avledet::util::Bytes const &vec)

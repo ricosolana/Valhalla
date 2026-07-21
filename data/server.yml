@@ -9,7 +9,7 @@ server:
   dedicated: true
   bind-address: 0.0.0.0
 players:
-  whitelist: true
+  whitelist: false
   max-online: 10
   authenticate: true
   timeout: 30s
@@ -17,7 +17,7 @@ players:
   locations-always-on: false
 world:
   world: world
-  seed: vnyw5NmWCe
+  seed: HrrlYr05vV
   save-interval: 30min
   features: true
   vegetation: true
@@ -47,7 +47,8 @@ events:
   require-keys: true
 experimental:
   server-tcp: false
-  player-restrict: false
+  players-restrict: false
   world-pregenerate: false
   zdo-assign-algo: none
-  replays-enabled: true
+  replay-mode: none
+  playback-path: ""

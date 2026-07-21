@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <quill/core/LogLevel.h>
 #include <quill/LogMacros.h>
 #include <quill/sinks/RotatingFileSink.h>
@@ -281,95 +282,53 @@ void Config::load()
                 }
             }
 
-            if (m_server_password.empty()) {
-                LOG_INFO(AVL_LOGGER, "Server does not have a password");
-            } else {
-                LOG_NOTICE(AVL_LOGGER, "Server password is {}{}", COLOR_GOLD, m_server_password);
-            }
-
             // replay loads
             {
                 c(m_replay_mode, experimental, "replay-mode", ReplayMode::NONE, nullptr);
                 c(m_replay_playback_path, experimental, "playback-path", "", nullptr);
                 //a(replay_kick_on_fail, experimental, "replays-kick-on-fail", false, nullptr, reloading);
             }
+
+            if (m_server_password.empty()) {
+                if (!m_player_whitelist_on) {
+                    LOG_WARNING(AVL_LOGGER, "Server does not have a password");
+                }
+            } else {
+                LOG_NOTICE(AVL_LOGGER, "Server password is {}{}", COLOR_GOLD, m_server_password);
+            }
         }
 
-        // save config on first load
+        // save config on server init
         if (m_first_load) {
             YAML::Emitter out;
             out.SetIndent(2);
             out << node;
 
-            VUtils::Resource::WriteFile("server.yml", out.c_str());
-        }
-    }
+            const std::filesystem::path current = "server.yml";
+            const std::filesystem::path backup  = "server.yml.old";
+            const std::filesystem::path temp    = "server.yml.tmp";
 
-    /* 
-    if (auto &&opt = VUtils::Resource::ReadFile<std::string>("blacklist.yml")) {
-        try {
-            auto node   = YAML::Load(*opt);
-            m_blacklist = node.as<decltype(m_blacklist)>();
-        } catch (const YAML::Exception &e) {
-            LOG_ERROR(AVL_LOGGER, "{}", e.what());
-        }
-    }
+            if (VUtils::Resource::WriteFile(temp, out.c_str())) {
+                // mv the '.yml' to '.old'
+                // mv the '.tmp' to '.yml'
+                std::error_code ec;
 
-    if (auto &&opt = VUtils::Resource::ReadFile<std::string>("whitelist.yml")) {
-        try {
-            auto node   = YAML::Load(*opt);
-            m_whitelist = node.as<decltype(m_whitelist)>();
-        } catch (const YAML::Exception &e) {
-            LOG_ERROR(AVL_LOGGER, "{}", e.what());
-        }
-    }
+                // apparently windows is shit, as usual...
+                //  - 'rename' may not overwrite
+                std::filesystem::remove(backup, ec);
 
-    if (auto &&opt = VUtils::Resource::ReadFile<std::string>("admin.yml")) {
-        try {
-            auto node = YAML::Load(*opt);
-            m_admin   = node.as<decltype(m_admin)>();
-        } catch (const YAML::Exception &e) {
-            LOG_ERROR(AVL_LOGGER, "{}", e.what());
-        }
-    } */
-
-/* #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
-    if (TEST_discordAccountLinking) {
-        if (auto &&opt = VUtils::Resource::ReadFile<std::string>("discord-linked.yml")) {
-            try {
-                auto node                           = YAML::Load(*opt);
-                DiscordManager()->m_linked_accounts = node.as<decltype(IDiscordManager::m_linked_accounts)>();
-            } catch (const YAML::Exception &e) {
-                LOG_ERROR(AVL_LOGGER, "{}", e.what());
+                std::filesystem::rename(current, backup, ec);
+                if (ec) {
+                    LOG_ERROR(AVL_LOGGER, "Failed to create yml backup (.old)");
+                } else {
+                    std::filesystem::rename(temp, current, ec);
+                    if (ec) {
+                        LOG_ERROR(AVL_LOGGER, "Failed to move yml temp (.tmp)");
+                    }
+                }
             }
         }
     }
-#endif
 
-    if (reloading) {
-        // then iterate players, settings active and inactive
-        for (auto &&peer : NetManager()->GetPeers()) {
-            peer->SetAdmin(m_admin.contains(peer->m_socket->get_host_name()));
-
-            // TODO add a 'previously gated' bit
-            //  so discord integration doesnt get messed up
-            peer->SetGated(m_discord_player_restrict);
-        }
-    }
-
-    //NetManager()->OnConfigLoad(reloading);
-
-#ifdef _WIN32
-    {
-        //std::string title = serverName + " - " + VConstants::GAME;
-        std::string title
-                = "Avledet " + std::string(AVL_VERSION) + " - Valheim " + std::string(VConstants::GAME);
-        SetConsoleTitle(title.c_str());
-    }
-#endif
-
-    std::error_code err;
-    this->m_settingsLastTime = std::filesystem::last_write_time("server.yml", err);
- */
     m_first_load = false;
 }
