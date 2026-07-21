@@ -287,22 +287,8 @@ void IScriptManager::Uninit()
     m_scripts.clear();
 }
 
-//https://github.com/ThePhD/sol2/issues/980
-// to 'reload' a script
-//  clear / kill all references to scripts, by manually clearing out listeners / callbacks...
-
-// how to handle script behavior on a reload?
-//  a reload is handled not on server start, so some callbacks will never post
-//  so rather, run a on_reload() callback that can handle mid-server operations
-//  or other way to detect that this script has just been loaded midway through during server operations
-
 void IScriptManager::update()
 {
-    //if (VUtils::run_periodic<struct my_test_reloads>(10000ns)) {
-    //    auto &&f = m_scripts.begin();
-    //    unload_script(f->second->m_name);
-    //}
-
     if (VUtils::run_periodic<struct my_test_reloads>(1s)) {
         // iterate all mod entrys
         for (auto &&itr = m_scripts.begin(); itr != m_scripts.end();) {
@@ -335,23 +321,18 @@ void IScriptManager::update()
 void IScriptManager::reload_all()
 {
     assert(false);
-    //m_scripts.clear();
-    //m_callbacks
 
-    // TODO clear all peer lua-registered rpcs
+    // TODO simply unload all scripts one-by-one like below
 
-    // TODO clear all peer lua-registered routes
-
-    // TODO clear anything else
+    // TODO then finally just reset the state
     //m_state = sol::state();
 }
 
-void IScriptManager::unload_script(decltype(m_scripts)::iterator &script_itr, bool gc, bool pop)
+IScriptManager::script_iterator IScriptManager::unload_script(script_iterator script_itr, bool gc, bool pop)
 {
     ScriptInfo &script_info = *script_itr->second;
 
-    //TODO call onDisables() or equivalent
-    this->CallEventOn(&script_info, Events::Disable, true /* true here means reload=true */);
+    this->CallEventOn(&script_info, Events::Disable, !pop /* true here means reload=true */);
 
     /*
         Release all associated callbacks
@@ -403,17 +384,7 @@ void IScriptManager::unload_script(decltype(m_scripts)::iterator &script_itr, bo
             //auto env = sol::get_environment(method->m_func);
             //assert(env.valid());
 
-            // TODO declare the funcs belonging script/ENV earlier in this manager code, 
-            //  then try to steal / ref from it, instead of comparing possible nil ENVs
-
-
-            //assert(env["this"].is<Mod *>());
-            //auto on_mod = env["this"].get<Mod *>();
-
-            //bool contains = m_tmp_reload_mods.contains(mod);
-            //bool contains = &mod == on_mod;
             bool contains = script_info.m_env == method->m_env;
-            //bool contains = (script_info.m_env == env);
 
             if (contains) {
                 // kill it
@@ -438,15 +409,17 @@ void IScriptManager::unload_script(decltype(m_scripts)::iterator &script_itr, bo
     if (gc) {
         m_state.collect_gc();
     }
+
+    return script_itr;
 }
 
-void IScriptManager::reload_script(decltype(m_scripts)::iterator &script_itr)
+IScriptManager::script_iterator IScriptManager::reload_script(script_iterator script_itr)
 {
     ScriptInfo &script_info = *script_itr->second;
     auto root               = std::get<std::filesystem::path>(script_info.m_uri);
 
     LOG_WARNING(AVL_LOGGER, "Unloading script '{}'", script_info.m_name);
-    this->unload_script(script_itr, true, false);
+    script_itr = this->unload_script(script_itr, true, false);
 
     LOG_NOTICE(AVL_LOGGER, "Unloaded script '{}'", script_info.m_name);
 
@@ -460,9 +433,19 @@ void IScriptManager::reload_script(decltype(m_scripts)::iterator &script_itr)
         LOG_ERROR(AVL_LOGGER, "Failed to reload: {}", e.what());
     }
 
-    LOG_NOTICE(AVL_LOGGER, "Lua memory: {}kB", (m_state.memory_used() / 1024));    
+    LOG_NOTICE(AVL_LOGGER, "Lua memory: {}kB", (m_state.memory_used() / 1024));
+
+    // TODO
+    // For instance, hotreloading doesnt refire already called RPCs for certain events,
+    //  for instance, _AvlCommand does not 
+    LOG_WARNING(AVL_LOGGER, "Script hotloading is largely experimental and might result in gameplay/logic inconsistencies! Please use in dev-only environment!");
+
+    return script_itr;
 }
 
+//https://github.com/ThePhD/sol2/issues/980
+// to 'reload' a script
+//  clear / kill all references to scripts, by manually clearing out listeners / callbacks...
 bool IScriptManager::reload_script(std::string_view name)
 {
     auto &&find = m_scripts.find(name);
@@ -471,7 +454,16 @@ bool IScriptManager::reload_script(std::string_view name)
         return false;
     }
 
-    reload_script(find);
+    // TODO 
+    //  we do not assign find, because it would always set it to the next script
+    /* find =  */reload_script(find);
+
+    // TODO should this be combined into OnEnable? but add a reload=bool
+    //  to stay in line with how the OnDisable for unloads is handled like above?
+
+    // TODO it might make more sense to set a status bool for when the first runs
+    //  instead of invoking a custom callback
+    CallEventOn(find->second.get(), Events::HotReload);
 
     return true;
 }

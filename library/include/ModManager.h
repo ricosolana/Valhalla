@@ -114,12 +114,6 @@ class IScriptManager
         avledet::util::Hash const m_hash;
         std::string const m_dbg_desc; // for human readable
 
-        //MethodSig(StreamTypes types, avledet::util::Hash hash) :
-        //    m_types(std::move(types)),
-        //    m_hash(hash)
-        //{
-        //}
-
         MethodSig(StreamTypes types, avledet::util::Hash hash, std::string_view dbg_desc, sol::this_environment te) :
             m_env(te),
             m_types(std::move(types)),
@@ -185,6 +179,7 @@ class IScriptManager
 
         // Event postfix handler
         //static constexpr avledet::util::Hash POSTFIX = __H("POST");
+        static constexpr avledet::util::Hash HotReload = __H("HotReload");
     };
 
     class ScriptInfo
@@ -305,11 +300,12 @@ class IScriptManager
                        std::equal_to<>>
             m_scripts;                                                            //64 bytes
     avledet::util::Map<avledet::util::Hash, std::vector<EventHandle>> m_callbacks;//64 bytes
-    //gtl::btree_map<avledet::util::Hash, std::vector<std::pair<int, sol::function>>> m_callbacks;
-    //avledet::util::Set<ScriptInfo *> m_tmp_reload_mods;                           //64 bytes
     sol::state m_state;//48 bytes
     std::vector<std::string> m_custom_globals; // per-env
     bool m_tmp_unsubscribe {};
+
+public:
+    using script_iterator = decltype(m_scripts)::iterator;
 
   private:
     void load_userdata_network();
@@ -325,12 +321,13 @@ class IScriptManager
     //  ie, native, filebased, dynamic...
     sol::environment create_sandbox();
 
-    void unload_script(decltype(m_scripts)::iterator &script_itr, bool gc, bool pop);
+    // Calls OnDisable and completely strips the script from memory 
+    //  Purges RPCs, callbacks, etc...
+    script_iterator unload_script(script_iterator script_itr, bool gc, bool pop);
 
-    void reload_script(decltype(m_scripts)::iterator &script_itr);
-
-    // TODO
-    //int fail_on_newindex
+    // Calls Unloads, then Reloads new code
+    //  Returns the script_iterator following if any (next; use only for reloads of multiple scripts)
+    script_iterator reload_script(script_iterator script_itr);
 
   public:
     void load_userdata();
@@ -357,10 +354,6 @@ class IScriptManager
         return m_state.new_enum(key, std::forward<Args>(args)...);
     }
 
-    //table x
-	//			     = create_with(meta_function::new_index, detail::fail_on_newindex, meta_function::index, target, meta_function::pairs, stack::stack_detail::readonly_pairs);
-	//			table shim = create_named(name, metatable_key, x);
-
   public:
     ~IScriptManager();
 
@@ -372,10 +365,9 @@ class IScriptManager
 
     void reload_all();
 
-    //decltype(m_callbacks)::iterator::value_type::second_type::iterator
-    // Returns if early cancel requested by script
-    bool _CallEvent(std::vector<EventHandle> &evts, std::vector<EventHandle>::iterator &evt_itr,
-                    sol::variadic_results args)
+private:
+    // Returns whether early cancel requested by script
+    bool _CallEvent(EventHandle &evt, sol::variadic_results args)
     {
         this->m_tmp_unsubscribe = false;// Default unsubscribe state
 
@@ -383,7 +375,7 @@ class IScriptManager
         //  this makes modifications of primitives impossible, but could still modify
         //  pointers/userdata tables...
         //sol::function_result result = itr->second(Args(params)...);
-        sol::protected_function_result result = evt_itr->m_func(sol::as_args(args));
+        sol::protected_function_result result = evt.m_func(sol::as_args(args));
         if (!result.valid()) {
             sol::error error = result;
             LOG_ERROR(AVL_LOGGER, "{}", error.what());
@@ -398,15 +390,10 @@ class IScriptManager
             }
         }
 
-        if (this->m_tmp_unsubscribe) {
-            evt_itr = evts.erase(evt_itr);
-        } else {
-            ++evt_itr;
-        }
-
         return true;
     }
 
+public:
     // script_info is optionally null
     // call events NOT globally (across all scripts), but instead on given script
     template<class... Args>
@@ -420,6 +407,7 @@ class IScriptManager
             auto &&callbacks = find->second;
 
             for (auto &&itr = callbacks.begin(); itr != callbacks.end();) {
+                // skip if not target script (if supplied)
                 if (script_info && itr->m_env != script_info->m_env) {
                     ++itr;
                     continue;
@@ -437,7 +425,14 @@ class IScriptManager
 
                 //sol::variadic_results results(std::forward<Args>(params)...);
 
-                if (!this->_CallEvent(callbacks, itr, std::move(results))) {
+                bool cancelled = !this->_CallEvent(*itr, std::move(results));
+                if (this->m_tmp_unsubscribe) {
+                    itr = callbacks.erase(itr);
+                } else {
+                    ++itr;
+                }
+
+                if (cancelled) {
                     return false;
                 }
             }
@@ -608,8 +603,7 @@ struct avledet::util::Streamer<F, T...>
 template<class F, class... G>
     requires(std::is_same_v<F, IScriptManager::StreamTypes>)
 struct avledet::util::Streamer<F, G...>
-{//lua_State> {
-
+{
     template<typename ArgsOrResults>
     void operator()(avledet::util::Writer &writer, IScriptManager::StreamTypes const &types,
                     ArgsOrResults const &args)
