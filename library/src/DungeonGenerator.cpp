@@ -235,8 +235,8 @@ void DungeonGenerator::GenerateDungeon(VUtils::Random::State &state)
     desmos3d_ss << "]";
 
     //LOG_INFO(AVL_LOGGER, "https://math3d.org: {}", math3d_ss.str());
-    LOG_INFO(AVL_LOGGER, "desmos: {}", desmos_ss.str());
-    LOG_INFO(AVL_LOGGER, "desmos3d: {}", desmos3d_ss.str());
+    LOG_DEBUG(AVL_LOGGER, "desmos: {}", desmos_ss.str());
+    LOG_DEBUG(AVL_LOGGER, "desmos3d: {}", desmos3d_ss.str());
 
 
 }

@@ -14,6 +14,9 @@
 #include "RouteManager.h"
 #include "VUtilsResource.h"
 #include "ZDOManager.h"
+#include <algorithm>
+#include <numeric>
+#include <vector>
 #include "ZoneManager.h"
 
 auto ZONE_MANAGER = std::make_unique<IZoneManager>();// TODO stop constructing in global
@@ -50,37 +53,44 @@ void IZoneManager::PostPrefabInit()
             // TODO read zoneLocations from file
             auto loc = std::make_unique<Feature>();
 
-            loc->m_name              = pkg.read<std::string>();
-            loc->m_hash              = avledet::util::get_stable_hash(loc->m_name);
-            loc->m_biome             = (avledet::util::Biome) pkg.read<std::int32_t>();
-            loc->m_biomeArea         = (avledet::util::BiomeArea) pkg.read<std::int32_t>();
-            loc->m_applyRandomDamage = pkg.read<bool>();
-            loc->m_centerFirst       = pkg.read<bool>();
-            loc->m_clearArea         = pkg.read<bool>();
-            //loc->m_useCustomInteriorTransform = pkg.read<bool>();
-            loc->m_exteriorRadius    = pkg.read<float>();
-            loc->m_interiorRadius    = pkg.read<float>();
-            loc->m_forestTresholdMin = pkg.read<float>();
-            loc->m_forestTresholdMax = pkg.read<float>();
-            //loc->m_interiorPosition = pkg.read<Vector3f>();
-            //loc->m_generatorPosition = pkg.read<Vector3f>();
-            loc->m_group                  = pkg.read<std::string>();
-            loc->m_iconAlways             = pkg.read<bool>();
-            loc->m_iconPlaced             = pkg.read<bool>();
-            loc->m_inForest               = pkg.read<bool>();
-            loc->m_minAltitude            = pkg.read<float>();
-            loc->m_maxAltitude            = pkg.read<float>();
-            loc->m_minDistance            = pkg.read<float>();
-            loc->m_maxDistance            = pkg.read<float>();
-            loc->m_minTerrainDelta        = pkg.read<float>();
-            loc->m_maxTerrainDelta        = pkg.read<float>();
-            loc->m_minDistanceFromSimilar = pkg.read<float>();
-            loc->m_spawnAttempts          = pkg.read<std::int32_t>();
-            loc->m_quantity               = pkg.read<std::int32_t>();
-            loc->m_randomRotation         = pkg.read<bool>();
-            loc->m_slopeRotation          = pkg.read<bool>();
-            loc->m_snapToWater            = pkg.read<bool>();
-            loc->m_unique                 = pkg.read<bool>();
+            loc->m_name                         = pkg.read<std::string>();
+            loc->m_hash                         = avledet::util::get_stable_hash(loc->m_name);
+            loc->m_biome                        = (avledet::util::Biome) pkg.read<std::int32_t>();
+            loc->m_biomeArea                    = (avledet::util::BiomeArea) pkg.read<std::int32_t>();
+            loc->m_applyRandomDamage            = pkg.read<bool>();
+            loc->m_centerFirst                  = pkg.read<bool>();
+            loc->m_clearArea                    = pkg.read<bool>();
+            loc->m_exteriorRadius               = pkg.read<float>();
+            loc->m_interiorRadius               = pkg.read<float>();
+            loc->m_forestTresholdMin            = pkg.read<float>();
+            loc->m_forestTresholdMax            = pkg.read<float>();
+            loc->m_minDistanceFromCenter        = pkg.read<float>();                            // TODO ash
+            loc->m_maxDistanceFromCenter        = pkg.read<float>();                            // TODO ash
+            loc->m_group                        = pkg.read<std::string>();
+            loc->m_iconAlways                   = pkg.read<bool>();
+            loc->m_iconPlaced                   = pkg.read<bool>();
+            loc->m_inForest                     = pkg.read<bool>();
+            loc->m_minAltitude                  = pkg.read<float>();
+            loc->m_maxAltitude                  = pkg.read<float>();
+            loc->m_minDistance                  = pkg.read<float>();
+            loc->m_maxDistance                  = pkg.read<float>();
+            loc->m_minTerrainDelta              = pkg.read<float>();
+            loc->m_maxTerrainDelta              = pkg.read<float>();
+            loc->m_minimumVegetation            = pkg.read<float>();                            // TODO ash
+            loc->m_maximumVegetation            = pkg.read<float>();                            // TODO ash
+            loc->m_surroundCheckVegetation      = pkg.read<bool>();                             // TODO ash
+            loc->m_surroundCheckDistance        = pkg.read<float>();                            // TODO ash
+            loc->m_surroundCheckLayers          = pkg.read<std::int32_t>();                     // TODO ash
+            loc->m_surroundBetterThanAverage    = pkg.read<float>();                            // TODO ash
+            loc->m_minDistanceFromSimilar       = pkg.read<float>();
+            loc->m_groupMax                     = pkg.read<std::string>();                      // TODO ash
+            loc->m_maxDistanceFromSimilar       = pkg.read<float>();                            // TODO ash
+            loc->m_spawnAttempts                = pkg.read<std::int32_t>();
+            loc->m_quantity                     = pkg.read<std::int32_t>();
+            loc->m_randomRotation               = pkg.read<bool>();
+            loc->m_slopeRotation                = pkg.read<bool>();
+            loc->m_snapToWater                  = pkg.read<bool>();
+            loc->m_unique                       = pkg.read<bool>();
 
             // Netview game objects
             auto views = pkg.read<std::int32_t>();
@@ -107,6 +117,8 @@ void IZoneManager::PostPrefabInit()
             //m_featuresByHash.insert({ loc->m_hash, *loc.get() });
             m_features.push_back(std::move(loc));
         }
+
+        assert(pkg.get_pos() == pkg.size());
 
         LOG_NOTICE(AVL_LOGGER, "Loaded {} features", count);
 #endif
@@ -137,40 +149,46 @@ void IZoneManager::PostPrefabInit()
 
             //veg->m_prefab = PrefabManager()->get_prefab(prefabName);
 
-            veg->m_biome                 = (avledet::util::Biome) pkg.read<std::int32_t>();
-            veg->m_biomeArea             = (avledet::util::BiomeArea) pkg.read<std::int32_t>();
-            veg->m_radius                = pkg.read<float>();
-            veg->m_min                   = pkg.read<float>();
-            veg->m_max                   = pkg.read<float>();
-            veg->m_minTilt               = pkg.read<float>();
-            veg->m_maxTilt               = pkg.read<float>();
-            veg->m_groupRadius           = pkg.read<float>();
-            veg->m_forcePlacement        = pkg.read<bool>();
-            veg->m_groupSizeMin          = pkg.read<std::int32_t>();
-            veg->m_groupSizeMax          = pkg.read<std::int32_t>();
-            veg->m_scaleMin              = pkg.read<float>();
-            veg->m_scaleMax              = pkg.read<float>();
-            veg->m_randTilt              = pkg.read<float>();
-            veg->m_blockCheck            = pkg.read<bool>();
-            veg->m_minAltitude           = pkg.read<float>();
-            veg->m_maxAltitude           = pkg.read<float>();
-            veg->m_minOceanDepth         = pkg.read<float>();
-            veg->m_maxOceanDepth         = pkg.read<float>();
-            veg->m_terrainDeltaRadius    = pkg.read<float>();
-            veg->m_minTerrainDelta       = pkg.read<float>();
-            veg->m_maxTerrainDelta       = pkg.read<float>();
-            veg->m_inForest              = pkg.read<bool>();
-            veg->m_forestTresholdMin     = pkg.read<float>();
-            veg->m_forestTresholdMax     = pkg.read<float>();
-            veg->m_snapToWater           = pkg.read<bool>();
-            veg->m_snapToStaticSolid     = pkg.read<bool>();
-            veg->m_groundOffset          = pkg.read<float>();
-            veg->m_chanceToUseGroundTilt = pkg.read<float>();
-            veg->m_minVegetation         = pkg.read<float>();
-            veg->m_maxVegetation         = pkg.read<float>();
+            veg->m_biome                        = (avledet::util::Biome) pkg.read<std::int32_t>();
+            veg->m_biomeArea                    = (avledet::util::BiomeArea) pkg.read<std::int32_t>();
+            veg->m_radius                       = pkg.read<float>();
+            veg->m_min                          = pkg.read<float>();
+            veg->m_max                          = pkg.read<float>();
+            veg->m_minTilt                      = pkg.read<float>();
+            veg->m_maxTilt                      = pkg.read<float>();
+            veg->m_groupRadius                  = pkg.read<float>();
+            veg->m_forcePlacement               = pkg.read<bool>();
+            veg->m_groupSizeMin                 = pkg.read<std::int32_t>();
+            veg->m_groupSizeMax                 = pkg.read<std::int32_t>();
+            veg->m_scaleMin                     = pkg.read<float>();
+            veg->m_scaleMax                     = pkg.read<float>();
+            veg->m_randTilt                     = pkg.read<float>();
+            veg->m_blockCheck                   = pkg.read<bool>();
+            veg->m_minAltitude                  = pkg.read<float>();
+            veg->m_maxAltitude                  = pkg.read<float>();
+            veg->m_minOceanDepth                = pkg.read<float>();
+            veg->m_maxOceanDepth                = pkg.read<float>();
+            veg->m_terrainDeltaRadius           = pkg.read<float>();
+            veg->m_minTerrainDelta              = pkg.read<float>();
+            veg->m_maxTerrainDelta              = pkg.read<float>();
+            veg->m_inForest                     = pkg.read<bool>();
+            veg->m_forestTresholdMin            = pkg.read<float>();
+            veg->m_forestTresholdMax            = pkg.read<float>();
+            veg->m_snapToWater                  = pkg.read<bool>();
+            veg->m_snapToStaticSolid            = pkg.read<bool>();
+            veg->m_groundOffset                 = pkg.read<float>();
+            veg->m_chanceToUseGroundTilt        = pkg.read<float>();
+            veg->m_minVegetation                = pkg.read<float>();
+            veg->m_maxVegetation                = pkg.read<float>();
+            veg->m_surroundCheckVegetation      = pkg.read<bool>();             // TODO
+            veg->m_surroundCheckDistance        = pkg.read<float>();            // TODO
+            veg->m_surroundCheckLayers          = pkg.read<std::int32_t>();     // TODO
+            veg->m_surroundBetterThanAverage    = pkg.read<float>();            // TODO
 
             m_foliage.push_back(std::move(veg));
         }
+
+        assert(pkg.get_pos() == pkg.size());
 
         LOG_NOTICE(AVL_LOGGER, "Loaded {} vegetation", count);
 #endif
@@ -606,6 +624,9 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
         //bool flag = zoneVegetation.m_prefab.GetComponent<ZNetView>() != null;
         float maxTilt           = std::cos(zoneVegetation->m_maxTilt * (float) (VUtils::PI / 180.0));
         float minTilt           = std::cos(zoneVegetation->m_minTilt * (float) (VUtils::PI / 180.0));
+        //float num5 = 32.0f - zoneVegetation.m_groupRadius;        // NEW
+        //this.s_tempVeg.Clear();                               // NEW
+        std::vector<float> s_tempVeg;
         float num6              = UNITS_PER_ZONE * .5f - zoneVegetation->m_groupRadius;
         int const spawnAttempts = zoneVegetation->m_forcePlacement ? (num3 * 50) : num3;
         std::int32_t numSpawned = 0;
@@ -697,6 +718,20 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
                             }
                         }
 
+                        // NEW CODE
+                        if (zoneVegetation->m_minDistanceFromCenter > 0.0f || zoneVegetation->m_maxDistanceFromCenter > 0.0f)
+                        {
+                            //float mag =  Utils.LengthXZ(pos);
+                            float mag =  Vector2f(pos.x, pos.z).magnitude();
+                            if (
+                                (zoneVegetation->m_minDistanceFromCenter > 0.0f && mag < zoneVegetation->m_minDistanceFromCenter) 
+                                || (zoneVegetation->m_maxDistanceFromCenter > 0.0f && mag > zoneVegetation->m_maxDistanceFromCenter))
+                            {
+                                continue;
+                            }
+                        }
+                        // END NEW CODE
+
                         if (zoneVegetation->m_inForest) {
                             float forestFactor = GeoManager()->GetForestFactor(pos);
                             if (forestFactor < zoneVegetation->m_forestTresholdMin
@@ -705,7 +740,45 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
                             }
                         }
 
+                        /**
+                        TODO
+                            confirm the new ashlands logic below
+
+                            There are a BUNCH of new VEGETATION vars that need to be dumped...
+                         */
+                        
+                        if (zoneVegetation->m_surroundCheckVegetation)
+                        {
+                            float num17 = 0.0f;
+                            for (int k = 0; k < zoneVegetation->m_surroundCheckLayers; k++)
+                            {
+                                float num18 = (float)(k + 1) / (float)zoneVegetation->m_surroundCheckLayers * zoneVegetation->m_surroundCheckDistance;
+                                for (int l = 0; l < 6; l++)
+                                {
+                                    float num19 = (float)l / 6.0f * 3.1415927f * 2.0f;
+                                    float vegetationMask2 = heightmap.GetVegetationMask(pos + Vector3f(std::sin(num19) * num18, 0.0f, std::cos(num19) * num18));
+                                    float num20 = (1.0f - num18) / (zoneVegetation->m_surroundCheckDistance * 2.0f);
+                                    num17 += vegetationMask2 * num20;
+                                }
+                            }
+                            /* this. */s_tempVeg.push_back(num17);
+                            if (s_tempVeg.size() < 10)
+                            {
+                                continue;
+                            }
+                            float num21 = *std::max_element(s_tempVeg.begin(), s_tempVeg.end());
+                            //float num22 = this.s_tempVeg.Average();
+                            float num22 = /* this. */std::accumulate(s_tempVeg.begin(), s_tempVeg.end(), 0.0f) / (float)s_tempVeg.size();
+                            float num23 = num22 + (num21 - num22) * zoneVegetation->m_surroundBetterThanAverage;
+                            if (num17 < num23)
+                            {
+                                continue;
+                            }
+                        }
+
                         if (!InsideClearArea(clearAreas, pos)
+                            // Do NOT remove the below
+                            //  These are MY CUSTOM checks to compensate for lack of unity physics...
                             && (zoneVegetation->m_radius == 0
                                 || !OverlapsClearArea(placedAreas, pos, zoneVegetation->m_radius)))// custom
                         {
@@ -899,28 +972,34 @@ void IZoneManager::PrepareFeatures(Feature const &feature)
     unsigned int errBiomeArea       = 0;
     unsigned int errAltitude        = 0;
     unsigned int errForestFactor    = 0;
-    unsigned int errSimilarLocation = 0;
+    //unsigned int errSimilarLocation = 0;
+    unsigned int errorSimilar       = 0;
+    unsigned int errorNotSimilar    = 0;
     unsigned int errTerrainDelta    = 0;
+    unsigned int errorVegetation    = 0;
 
     VUtils::Random::State state(GeoManager()->GetSeed() + feature.m_hash);
     float const locationRadius = std::max(feature.m_exteriorRadius, feature.m_interiorRadius);
 
     float range = feature.m_centerFirst ? feature.m_minDistance : 10000;
 
+    std::vector<float> s_tempVeg;
+
     for (int a = 0; a < feature.m_spawnAttempts && spawnedLocations < feature.m_quantity; a++) {
         auto randomZone = GetRandomZone(state, range);
-        if (feature.m_centerFirst)
+        if (feature.m_centerFirst) {
             range++;
+        }
 
-        if (m_generatedFeatures.contains(randomZone))
+        if (m_generatedFeatures.contains(randomZone)) {
             errLocations++;
-        else {
+        } else {
             auto zonePos                       = ZoneToWorldPos(randomZone);
             avledet::util::BiomeArea biomeArea = GeoManager()->GetBiomeArea(zonePos);
 
-            if (!(std::to_underlying(feature.m_biomeArea) & std::to_underlying(biomeArea)))
+            if (!(std::to_underlying(feature.m_biomeArea) & std::to_underlying(biomeArea))) {
                 errBiomeArea++;
-            else {
+            } else {
                 for (int i = 0; i < 20; i++) {
                     auto randomPointInZone = GetRandomPointInZone(state, randomZone, locationRadius);
 
@@ -934,8 +1013,9 @@ void IZoneManager::PrepareFeatures(Feature const &feature)
                         if (!(std::to_underlying(biome) & std::to_underlying(feature.m_biome)))
                             errNoneBiomes++;
                         else {
+                            avledet::util::Color color;
                             randomPointInZone.y
-                                    = GeoManager()->GetHeight(randomPointInZone.x, randomPointInZone.z);
+                                    = GeoManager()->GetHeight(randomPointInZone.x, randomPointInZone.z, color);
                             float waterDiff = randomPointInZone.y - WATER_LEVEL;
                             if (waterDiff < feature.m_minAltitude || waterDiff > feature.m_maxAltitude)
                                 errAltitude++;
@@ -949,12 +1029,101 @@ void IZoneManager::PrepareFeatures(Feature const &feature)
                                     }
                                 }
 
+                                if (feature.m_minDistanceFromCenter > 0.0f || feature.m_maxDistanceFromCenter > 0.0f) {
+                                    //Utils.LengthXZ(randomPointInZone);
+                                    float num4 = Vector2f(randomPointInZone.x, randomPointInZone.z).magnitude();
+                                    if ((feature.m_minDistanceFromCenter > 0.0f && num4 < feature.m_minDistanceFromCenter) || (feature.m_maxDistanceFromCenter > 0.0f && num4 > feature.m_maxDistanceFromCenter))
+                                    {
+                                        continue;
+                                    }
+                                }
+
                                 float delta = 0;
                                 Vector3f vector;
                                 GeoManager()->GetTerrainDelta(state, randomPointInZone,
                                                               feature.m_exteriorRadius, delta, vector);
-                                if (delta > feature.m_maxTerrainDelta || delta < feature.m_minTerrainDelta)
+                                
+                                if (delta > feature.m_maxTerrainDelta || delta < feature.m_minTerrainDelta) {
                                     errTerrainDelta++;
+                                } 
+                                else if (feature.m_minDistanceFromSimilar > 0.0f && HaveLocationInRange(feature, feature.m_group, randomPointInZone, feature.m_minDistanceFromSimilar, false))
+                                {
+                                    errorSimilar++;
+                                }
+                                else if (feature.m_maxDistanceFromSimilar > 0.0f && !HaveLocationInRange(feature, feature.m_groupMax, randomPointInZone, feature.m_maxDistanceFromSimilar, true))
+                                {
+                                    errorNotSimilar++;
+                                } else {
+
+                                    float a = color.a;
+                                    if (feature.m_minimumVegetation > 0.0f && a <= feature.m_minimumVegetation)
+                                    {
+                                        errorVegetation++;
+                                    }
+                                    else
+                                    {
+                                        if (feature.m_maximumVegetation >= 1.0f || a < feature.m_maximumVegetation)
+                                        {
+                                            if (feature.m_surroundCheckVegetation)
+                                            {
+                                                float num6 = 0.0f;
+                                                for (int k = 0; k < feature.m_surroundCheckLayers; k++)
+                                                {
+                                                    float num7 = (float)(k + 1) / (float)feature.m_surroundCheckLayers * feature.m_surroundCheckDistance;
+                                                    for (int l = 0; l < 6; l++)
+                                                    {
+                                                        float num8 = (float)l / 6.0f * 3.1415927f * 2.0f;
+                                                        Vector3f vector2 = randomPointInZone + Vector3f(std::sin(num8) * num7, 0.0f, std::cos(num8) * num7);
+                                                        avledet::util::Color color2;
+                                                        GeoManager()->GetHeight(vector2.x, vector2.z, color2);
+                                                        float num9 = (feature.m_surroundCheckDistance - num7) / (feature.m_surroundCheckDistance * 2.0f);
+                                                        num6 += color2.a * num9;
+                                                    }
+                                                }
+                                                s_tempVeg.push_back(num6);
+                                                if (s_tempVeg.size() < 10)
+                                                {
+                                                    continue;
+                                                }
+                                                float vmax = *std::max_element(s_tempVeg.begin(), s_tempVeg.end());
+                                                //float = this.s_tempVeg.Average();
+                                                float vmean = /* this. */std::accumulate(s_tempVeg.begin(), s_tempVeg.end(), 0.0f) / (float)s_tempVeg.size();
+                                                //float num12 = num11 + (num21 - num22) * zoneVegetation->m_surroundBetterThanAverage;
+
+                                                //float num10 = s_tempVeg.Max();
+                                                //float num11 = this.s_tempVeg.Average();
+                                                float num12 = vmean + (vmax - vmean) * feature.m_surroundBetterThanAverage;
+                                                if (num6 < num12)
+                                                {
+                                                    continue;
+                                                }
+                                                //ZLog.DevLog(string.Format("Surround check passed with a value of {0}, cutoff was {1}, max: {2}, average: {3}.", new object[] { num6, num12, num10, num11 }));
+                                            }
+
+                                            /**
+                                                VEGETATION PLACEMENT SUCCESS
+                                            */
+
+                                            //this.RegisterLocation(location, randomPointInZone, false);
+                                            //num2 = placed + 1;
+                                            //placed = num2;
+                                            //break;
+
+                                            auto zone = WorldToZonePos(randomPointInZone);
+
+                                            m_generatedFeatures[zone] = std::make_unique<Feature::Instance>(
+                                                    feature, randomPointInZone);
+
+                                            spawnedLocations++;
+                                            break;
+                                        }
+                                        errorVegetation++;
+                                    }
+
+                                }
+
+/*                                 else
+                                {
                                 else {
                                     if (feature.m_minDistanceFromSimilar <= 0
                                         || !HaveLocationInRange(feature, randomPointInZone)) {
@@ -967,7 +1136,24 @@ void IZoneManager::PrepareFeatures(Feature const &feature)
                                         break;
                                     }
                                     errSimilarLocation++;
-                                }
+                                } */
+                                
+                                
+/*                                 if (delta > feature.m_maxTerrainDelta || delta < feature.m_minTerrainDelta) {
+                                    errTerrainDelta++;
+                                } else {
+                                    if (feature.m_minDistanceFromSimilar <= 0
+                                        || !HaveLocationInRange(feature, randomPointInZone)) {
+                                        auto zone = WorldToZonePos(randomPointInZone);
+
+                                        m_generatedFeatures[zone] = std::make_unique<Feature::Instance>(
+                                                feature, randomPointInZone);
+
+                                        spawnedLocations++;
+                                        break;
+                                    }
+                                    errSimilarLocation++;
+                                } */
                             }
                         }
                     }
@@ -991,20 +1177,33 @@ void IZoneManager::PrepareFeatures(Feature const &feature)
     }
 }
 
-bool IZoneManager::HaveLocationInRange(Feature const &loc, Vector3f p)
+bool IZoneManager::HaveLocationInRange(Feature const &loc, std::string const& group, Vector3f p, float radius, bool maxGroup)
 {
-    for (auto &&pair : m_generatedFeatures) {
-        auto &&locationInstance = pair.second;
-        auto &&location         = locationInstance->m_feature.get();
-
-        if ((location == loc || (!loc.m_group.empty() && loc.m_group == location.m_group))
-            && locationInstance->m_pos.distance_to(p) < loc.m_minDistanceFromSimilar)// TODO use sqdist
+    for (const auto& pair : m_generatedFeatures)
+    {
+        const auto& locationInstance             = pair.second;
+        const auto& location    = locationInstance->m_feature.get();
+        if ((location == loc || (!maxGroup && !group.empty() && group == location.m_group) 
+        || (maxGroup && !group.empty() && group == location.m_groupMax)) 
+            && locationInstance->m_pos.sq_distance_to(p) < radius * radius)
         {
             return true;
         }
     }
     return false;
 }
+
+/* private bool HaveLocationInRange(string prefabName, string group, Vector3 p, float radius, bool maxGroup = false)
+{
+    foreach (ZoneSystem.LocationInstance locationInstance in this.m_locationInstances.Values)
+    {
+        if ((locationInstance.m_location.m_prefab.Name == prefabName || (!maxGroup && group.Length > 0 && group == locationInstance.m_location.m_group) || (maxGroup && group.Length > 0 && group == locationInstance.m_location.m_groupMax)) && Vector3.Distance(locationInstance.m_position, p) < radius)
+        {
+            return true;
+        }
+    }
+    return false;
+} */
 
 Vector3f IZoneManager::GetRandomPointInZone(VUtils::Random::State &state, ZoneID zone, float locationRadius)
 {

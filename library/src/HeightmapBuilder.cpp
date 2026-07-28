@@ -137,11 +137,10 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone)
     //WorldGenerator worldGen = data.m_worldGen;
     //data.m_cornerBiomes = new Heightmap.Biome[4];
     base->m_cornerBiomes[0] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.z,  0.02f, false);
-    base->m_cornerBiomes[1] = GEO->GetBiome(baseWorldPos.x + IZoneManager::UNITS_PER_ZONE, baseWorldPos.z,  0.02f, false);
-    base->m_cornerBiomes[2]
-            = GEO->GetBiome(baseWorldPos.x, baseWorldPos.z + (float) IZoneManager::UNITS_PER_ZONE,  0.02f, false);
-    base->m_cornerBiomes[3] = GEO->GetBiome(baseWorldPos.x + IZoneManager::UNITS_PER_ZONE,
-                                            baseWorldPos.z + IZoneManager::UNITS_PER_ZONE,  0.02f, false);
+    
+    base->m_cornerBiomes[1] = GEO->GetBiome((float)((double)baseWorldPos.x + (double)IZoneManager::UNITS_PER_ZONE), baseWorldPos.z, 0.02f, false);
+    base->m_cornerBiomes[2] = GEO->GetBiome(baseWorldPos.x, (float)((double)baseWorldPos.z + (double)IZoneManager::UNITS_PER_ZONE), 0.02f, false);
+    base->m_cornerBiomes[3] = GEO->GetBiome((float)((double)baseWorldPos.x + (double)IZoneManager::UNITS_PER_ZONE), (float)((double)baseWorldPos.z + (double)IZoneManager::UNITS_PER_ZONE), 0.02f, false);
 
     auto const& biome1 = base->m_cornerBiomes[0];
     auto const& biome2 = base->m_cornerBiomes[1];
@@ -149,14 +148,14 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone)
     auto const& biome4 = base->m_cornerBiomes[3];
 
     base->m_baseHeights.resize(Heightmap::E_WIDTH * Heightmap::E_WIDTH);
-    base->m_base_mask.resize(IZoneManager::UNITS_PER_ZONE * IZoneManager::UNITS_PER_ZONE);
+    base->m_base_mask.resize(Heightmap::E_WIDTH * Heightmap::E_WIDTH);
 
     for (int ry = 0; ry < Heightmap::E_WIDTH; ry++) {
-        float const world_y = baseWorldPos.z + (float)ry;
+        float const world_y = (float)((double)baseWorldPos.z + (double)ry);
         float const ty      = VUtils::Math::SmoothStep(0.0f, 1.0f, (float)((double)ry / (double)IZoneManager::UNITS_PER_ZONE));
 
         for (int rx = 0; rx < Heightmap::E_WIDTH; rx++) {
-            float const world_x = baseWorldPos.x + (float)rx;
+            float const world_x = (float)((double)baseWorldPos.x + (float)rx);
             float const tx      = VUtils::Math::SmoothStep(0.0f, 1.0f, (float)((double)rx / (double)IZoneManager::UNITS_PER_ZONE));
 
             auto colorMask = avledet::util::Colors::BLACK;

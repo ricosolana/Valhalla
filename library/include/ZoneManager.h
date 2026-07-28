@@ -74,6 +74,7 @@ class IZoneManager
 
   public:
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
+    // Aka ZoneLocation
     class Feature
     {
       public:
@@ -82,35 +83,42 @@ class IZoneManager
 
         avledet::util::Biome m_biome;
         avledet::util::BiomeArea m_biomeArea = avledet::util::BiomeArea::Everything;
-        bool m_applyRandomDamage;
+        std::int32_t m_quantity;
+        //bool m_prioritized; // directly optimized out in its only usage for spawn attempts
+        bool m_applyRandomDamage; // externally stored (C# Location)
         bool m_centerFirst;
-        bool m_clearArea;
-        //bool m_useCustomInteriorTransform;
-
-        float m_exteriorRadius = 10;
-        float m_interiorRadius = 10;
-        float m_forestTresholdMin;
-        float m_forestTresholdMax = 1;
-        //Vector3f m_interiorPosition;
-        //Vector3f m_generatorPosition;
-        std::string m_group = "";
+        bool m_unique;
+        std::string m_group;
+        float m_minDistanceFromSimilar;
+        std::string m_groupMax;                         // TODO ashlands new
+        float m_maxDistanceFromSimilar;                 // TODO ashlands new
         bool m_iconAlways;
         bool m_iconPlaced;
-        bool m_inForest;
-        float m_minAltitude = -1000;
-        float m_maxAltitude = 1000;
-        float m_minDistance;
-        float m_maxDistance;
-        float m_minTerrainDelta;
-        float m_maxTerrainDelta = 2;
-        float m_minDistanceFromSimilar;
-        //bool m_prioritized;
-        std::int32_t m_spawnAttempts;// 200000 or 100000 depending on priority
-        std::int32_t m_quantity;
         bool m_randomRotation = true;
         bool m_slopeRotation;
         bool m_snapToWater;
-        bool m_unique;
+        float m_interiorRadius = 10;
+        float m_exteriorRadius = 10;
+        bool m_clearArea;
+        float m_minTerrainDelta;
+        float m_maxTerrainDelta = 2;
+		float m_minimumVegetation;                      // TODO ash
+		float m_maximumVegetation = 1;                  // TODO ash
+		bool m_surroundCheckVegetation;                 // TODO ash
+		float m_surroundCheckDistance = 20;             // TODO ash
+		int m_surroundCheckLayers = 2;                  // TODO ash
+		float m_surroundBetterThanAverage;              // TODO ash
+        bool m_inForest;
+        float m_forestTresholdMin;
+        float m_forestTresholdMax = 1;
+		float m_minDistanceFromCenter;                  // TODO ash
+		float m_maxDistanceFromCenter;                  // TODO ash
+        float m_minDistance;
+        float m_maxDistance;
+        float m_minAltitude = -1000;
+        float m_maxAltitude = 1000;
+
+        std::int32_t m_spawnAttempts;// 200000 or 100000 depending on priority
         std::vector<Prefab::Instance> m_pieces;//TODO rename to views/prefab templates...?
         std::vector<avledet::gen::RandomSpawn> m_random_spawns;
 
@@ -143,37 +151,44 @@ class IZoneManager
       public:
         Prefab::Reference m_prefab;
 
-        avledet::util::Biome m_biome         = avledet::util::Biome::None;
-        avledet::util::BiomeArea m_biomeArea = avledet::util::BiomeArea::Everything;
         float m_radius                       = 0;// My custom impl
+        
         float m_min                          = 0;
         float m_max                          = 10;
-        float m_minTilt                      = 0;
-        float m_maxTilt                      = 90;
-        float m_groupRadius                  = 0;
         bool m_forcePlacement                = false;
-        std::int32_t m_groupSizeMin          = 1;
-        std::int32_t m_groupSizeMax          = 1;
         float m_scaleMin                     = 1;
         float m_scaleMax                     = 1;
         float m_randTilt                     = 0;
+        float m_chanceToUseGroundTilt        = 0;
+        avledet::util::Biome m_biome         = avledet::util::Biome::None;
+        avledet::util::BiomeArea m_biomeArea = avledet::util::BiomeArea::Everything;
         bool m_blockCheck                    = true;
         float m_minAltitude                  = -1000;
         float m_maxAltitude                  = 1000;
+        float m_minVegetation                = 0;
+        float m_maxVegetation                = 0;
+		bool m_surroundCheckVegetation       = 0; // TODO
+		float m_surroundCheckDistance        = 20;// TODO
+		int m_surroundCheckLayers            = 2; // TODO
+		float m_surroundBetterThanAverage    = 0; // TODO
         float m_minOceanDepth                = 0;
         float m_maxOceanDepth                = 0;
+        float m_minTilt                      = 0;
+        float m_maxTilt                      = 90;
+        bool m_snapToStaticSolid             = false;
         float m_terrainDeltaRadius           = 0;
-        float m_minTerrainDelta              = 0;
         float m_maxTerrainDelta              = 2;
+        float m_minTerrainDelta              = 0;
+        bool m_snapToWater                   = false;
+        float m_groundOffset                 = 0;
+        std::int32_t m_groupSizeMin          = 1;
+        std::int32_t m_groupSizeMax          = 1;
+        float m_groupRadius                  = 0;
+		float m_minDistanceFromCenter        = 0;
+		float m_maxDistanceFromCenter        = 0;
         bool m_inForest                      = false;
         float m_forestTresholdMin            = 0;
         float m_forestTresholdMax            = 1;
-        bool m_snapToWater                   = false;
-        bool m_snapToStaticSolid             = false;
-        float m_groundOffset                 = 0;
-        float m_chanceToUseGroundTilt        = 0;
-        float m_minVegetation                = 0;
-        float m_maxVegetation                = 0;
 
         Foliage(Prefab::Reference prefab) 
             : m_prefab(prefab) {}
@@ -277,7 +292,7 @@ class IZoneManager
     std::vector<ClearArea> TryGenerateFeature(ZoneID zone);
     void PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> const &clearAreas);
 
-    bool HaveLocationInRange(Feature const &feature, Vector3f pos);
+    bool HaveLocationInRange(Feature const &loc, std::string const& group, Vector3f p, float radius, bool maxGroup);
     Vector3f GetRandomPointInZone(VUtils::Random::State &state, ZoneID zone, float range);
     Vector3f GetRandomPointInRadius(VUtils::Random::State &state, Vector3f pos, float range);
     bool InsideClearArea(std::vector<ClearArea> const &areas, Vector3f pos);
