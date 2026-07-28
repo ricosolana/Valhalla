@@ -1,6 +1,8 @@
 #pragma once
 
+#include "FastNoise.h"
 #include "VUtils.h"
+#include <memory>
 #include <quill/Logger.h>
 #include <shared_mutex>
 
@@ -60,6 +62,8 @@ class IGeoManager
     //std::int32_t m_streamSeed;
     VUtils::Random::State m_river_random;
     VUtils::Random::State m_stream_random;
+
+    std::unique_ptr<avledet::util::FastNoise> m_noiseGen;
 
     std::vector<Vector2f> m_lakes;
     std::vector<River> m_rivers;

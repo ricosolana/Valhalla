@@ -104,11 +104,11 @@ local commands = {
             --    return peer:console_message('add "-y" to confirm')
             --end
 
-            -- ignore SESSIONED flags
-            withFlags = withFlags & ~Flag.SESSIONED
+            -- ignore PERSISTENT flags
+            withFlags = withFlags & ~Flag.PERSISTENT
 
-            -- exclude SESSIONED flags
-            withoutFlags = withoutFlags | Flag.SESSIONED
+            -- exclude PERSISTENT flags
+            withoutFlags = withoutFlags | Flag.PERSISTENT
 
             -- target zdos in radius zdo
             if mode == "nearby" then
@@ -134,6 +134,87 @@ local commands = {
         end,
         usage = '<"nearby"/"closest"> <prefab/"all"> <radius> [flags] [!flags]',
         desc = "destroy zdos in world according to filters"
+    },
+    list = {
+        func = function(peer, cmd, args)
+            assert(#args >= 3, "not enough args")
+
+            local mode =
+                assert((args[1] == "nearby" and args[1]) or (args[1] == "closest" and args[1]), "invalid selector mode")
+            local prefab = args[2] ~= "all" and VUtils.String.get_stable_hash(args[2]) or 0
+            local radius = assert(tonumber(args[3]), "radius expects number")
+
+            local withFlags = #args >= 4 and assert(Flag[string.upper(args[4])], "invalid flag") or 0
+            local withoutFlags = #args >= 5 and assert(Flag[string.upper(args[5])], "invalid !flag") or 0
+
+            -- require PERSISTENT flags
+            withFlags = withFlags | Flag.PERSISTENT
+
+            -- exclude nno PERSISTENT flags
+            --withoutFlags = withoutFlags & ~ Flag.PERSISTENT
+
+            if mode == "nearby" then
+                local zdos = ZDOManager:get_zdos(peer.zdo.pos, radius, prefab, withFlags, withoutFlags)
+                local total = #zdos
+
+                local prefabCounts = {}
+                local flagCounts = {}
+
+                -- seed every known flag at 0 so the report is stable even when a flag never appears
+                for flagName, flagValue in pairs(Flag) do
+                    if flagValue ~= 0 then
+                        flagCounts[flagName] = 0
+                    end
+                end
+
+                for i = 1, total do
+                    local zdo = zdos[i]
+                    local pname = zdo.prefab.name
+                    prefabCounts[pname] = (prefabCounts[pname] or 0) + 1
+
+                    -- NOTE: assumes zdo exposes its raw flag bitmask as zdo.flags.
+                    -- Adjust to whatever accessor your ZDO binding actually provides
+                    -- (e.g. zdo:get_flags()) if this field name doesn't exist.
+                    local zflags = zdo.prefab.flags or 0
+                    for flagName, flagValue in pairs(Flag) do
+                        if flagValue ~= 0 and (zflags & flagValue) == flagValue then
+                            flagCounts[flagName] = flagCounts[flagName] + 1
+                        end
+                    end
+                end
+
+                peer:console_message("total zdos: " .. total)
+
+                -- sort prefabs by count, descending
+                --local prefabList = {}
+                --for pname, count in pairs(prefabCounts) do
+                --    prefabList[#prefabList + 1] = { name = pname, count = count }
+                --end
+                --table.sort(prefabList, function(a, b) return a.count > b.count end)
+                --peer:console_message("-- by prefab --")
+                --for _, entry in ipairs(prefabList) do
+                --    peer:console_message(("  %s: %d"):format(entry.name, entry.count))
+                --end
+
+                peer:console_message("-- by flag --")
+                for flagName, count in pairs(flagCounts) do
+                    if count > 0 then
+                        peer:console_message(("  [%s]: %d"):format(flagName, count))
+                    end
+                end
+
+            elseif mode == "closest" then
+                local zdo = ZDOManager:nearest_zdo(peer.zdo.pos, radius, prefab, withFlags, withoutFlags)
+
+                if zdo then
+                    peer:console_message("nearest match: " .. zdo.prefab.name .. " " .. tostring(zdo.pos))
+                else
+                    peer:console_message("no matches found")
+                end
+            end
+        end,
+        usage = '<"nearby"/"closest"> <prefab/"all"> <radius> [flags] [!flags]',
+        desc = "list zdos in world according to filters and report statistics"
     },
     findfeature = {
         func = function(peer, cmd, args)
@@ -411,26 +492,44 @@ local invoke = function(peer, rargs)
     end
 end
 
+local function tryRegisterCommand(peer)
+    print("Registering command avl")
+
+    peer:register(
+        MethodSig.new("_AvlCommand", Type.INT, Type.STRINGS),
+        function(peer, _, rargs)
+            -- rargs is a userdata container
+            -- "sol.std::vector<std::__cxx11::basic_string<char> >: 0x555557429b78"
+
+            if not peer.admin then
+                peer:console_message("must be an admin")
+            else
+                invoke(peer, rargs)
+            end
+        end
+    )
+
+    print("Registered command avl")
+end
+
 Avledet:subscribe(
     "Join",
     function(peer)
-        print("Registering command avl")
+        tryRegisterCommand(peer)
+    end
+)
 
-        peer:register(
-            MethodSig.new("_AvlCommand", Type.INT, Type.STRINGS),
-            function(peer, _, rargs)
-                -- rargs is a userdata container
-                -- "sol.std::vector<std::__cxx11::basic_string<char> >: 0x555557429b78"
-
-                if not peer.admin then
-                    peer:console_message("must be an admin")
-                else
-                    invoke(peer, rargs)
-                end
-            end
-        )
-
-        print("Registered command avl")
+Avledet:subscribe(
+    "HotReload",
+    function()
+        local peers = NetManager.peers
+        if #peers > 0 then
+            local peer = peers[1]
+            print('found peer on reload: ' .. peer.name)
+            tryRegisterCommand(peer)
+        else
+            print('no peers to re-register to...')
+        end
     end
 )
 

@@ -2,13 +2,18 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
+#include <memory>
 #include <mutex>
+#include <quill/LogMacros.h>
 #include <quill/sinks/ConsoleSink.h>
 #include <shared_mutex>
 #include <vector>
 
 #include "GeoManager.h"
+#include "Avledet.h"
+#include "FastNoise.h"
 #include "Types.h"
+#include "VUtils.h"
 
 /*
     TODO
@@ -41,16 +46,14 @@ void IGeoManager::PostWorldInit()
 
     this->VersionSetup(m_world->m_worldGenVersion);
     auto state = VUtils::Random::State(this->m_world->m_seed);
+    
     // TODO impl FastNoise
-    //if (m_noiseGen == null)
-    //{
-    //    m_noiseGen = FastNoise(this->m_world.m_seed);
-    //    m_noiseGen.SetNoiseType(FastNoise.NoiseType.Cellular);
-    //    m_noiseGen.SetCellularDistanceFunction(FastNoise.CellularDistanceFunction.Euclidean);
-    //    m_noiseGen.SetCellularReturnType(FastNoise.CellularReturnType.Distance);
-    //    m_noiseGen.SetFractalOctaves(2);
-    //}
-    //m_noiseGen.SetSeed(0);
+    m_noiseGen = std::make_unique<avledet::util::FastNoise>(this->m_world->m_seed);
+    m_noiseGen->SetNoiseType(avledet::util::FastNoise::NoiseType::Cellular);
+    m_noiseGen->SetCellularDistanceFunction(avledet::util::FastNoise::CellularDistanceFunction::Euclidean);
+    m_noiseGen->SetCellularReturnType(avledet::util::FastNoise::CellularReturnType::Distance);
+    m_noiseGen->SetFractalOctaves(2);
+        
     this->m_offset0 = (float)state.range(-10000, 10000);
     this->m_offset1 = (float)state.range(-10000, 10000);
     this->m_offset2 = (float)state.range(-10000, 10000);
@@ -866,14 +869,21 @@ float IGeoManager::GetAshlandsHeightPregenerate(float wx, float wy)
     return this->AddRivers(num, num2, num3);
 }
 
+
+
 float IGeoManager::GetAshlandsHeight(float wx, float wy, VUtils::Color &mask, bool cheap)
 {
-    return 10.0f;
-/*
-    // TODO impl FastNoise
+    //As for the code: yes, this is not original to the Valheim devs. 
+    //This is almost verbatim FastNoise by Jordan Peck (GitHub handle Auburns), 
+    //a well-known open-source C++ noise library that has an official C# port. 
+    //The identifying fingerprints are unmistakable...
+    if (VUtils::run_periodic<struct warn_todo_ashlands_gen1>(15s)) {
+        LOG_WARNING(AVL_LOGGER, "Ashlands fastnoise for generation TODO");
+    }
+
     double num = (double)wx;
     double num2 = (double)wy;
-    double num3 = (double)this->GetBaseHeight((float)num, (float)num2, false);
+    double num3 = (double)this->GetBaseHeight((float)num, (float)num2);
     double num4 = (double)WorldAngle((float)num, (float)num2) * 100.0;
     double num5 = VUtils::Math::magnitude(num, num2 + (double)ashlandsYOffset - (double)ashlandsYOffset * 0.3) - ((double)ashlandsMinDistance + num4);
     num5 = std::abs(num5) / 1000.0;
@@ -892,7 +902,7 @@ float IGeoManager::GetAshlandsHeight(float wx, float wy, VUtils::Color &mask, bo
     int num11 = (cheap ? 2 : 5);
     for (int i = 0; i < num11; i++)
     {
-        num8 += num9 * VUtils::Math::MathfLikeSmoothStep(0.0, 1.0, m_noiseGen.GetCellular(num * num10, num2 * num10));
+        num8 += num9 * VUtils::Math::MathfLikeSmoothStep(0.0, 1.0, m_noiseGen->GetCellular(num * num10, num2 * num10));
         num10 *= 2.0;
         num9 *= 0.5;
     }
@@ -910,13 +920,13 @@ float IGeoManager::GetAshlandsHeight(float wx, float wy, VUtils::Color &mask, bo
     int num19 = (cheap ? 2 : 3);
     for (int j = 0; j < num19; j++)
     {
-        num16 += num17 * m_noiseGen.GetCellular(num * num18, num2 * num18);
+        num16 += num17 * m_noiseGen->GetCellular(num * num18, num2 * num18);
         num18 *= 2.0;
         num17 *= 0.5;
     }
     num16 = VUtils::Math::Remap(num16, -1.0, 1.0, 0.0, 1.0);
     num16 = VUtils::Math::Clamp01(std::pow(num16, 4.0) * 2.0);
-    double num20 = m_noiseGen.GetSimplexFractal(num * 0.075, num2 * 0.075);
+    double num20 = m_noiseGen->GetSimplexFractal(num * 0.075, num2 * 0.075);
     num20 = VUtils::Math::Remap(num20, -1.0, 1.0, 0.0, 1.0);
     num20 = std::pow(num20, 1.399999976158142);
     num14 *= num20;
@@ -929,10 +939,10 @@ float IGeoManager::GetAshlandsHeight(float wx, float wy, VUtils::Color &mask, bo
     double num23 = (double)VUtils::Math::PerlinNoise(num * 0.05 + 5124.0, num2 * 0.05 + 5000.0);
     num23 = std::pow(num23, 2.0);
     num23 = VUtils::Math::Remap(num23, 0.0, 1.0, 0.009999999776482582, 0.054999999701976776);
-    double num24 = (double)std::clamp((float)(num14 - num23), (float)(num15 + 0.009999999776482582), 5000.0f);
+    double num24 = (double)VUtils::Math::Clamp((float)(num14 - num23), (float)(num15 + 0.009999999776482582), 5000.0f);
     num14 = VUtils::Math::Lerp(num14, num24, num22);
-    mask = VUtils::Color(0.0f, 0.0f, 0.0f, (float)num22);
-    return (float)num14;*/
+    mask = avledet::util::Color(0.0f, 0.0f, 0.0f, (float)num22);
+    return (float)num14;
 }
 
 float IGeoManager::GetEdgeHeight(float wx, float wy)

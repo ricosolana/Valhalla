@@ -63,6 +63,7 @@ void IScriptManager::load_userdata_prefab()
         sol::no_constructor, 
         "name", sol::readonly(&Prefab::m_name), 
         "hash", sol::readonly(&Prefab::m_hash),
+        "flags", sol::readonly(&Prefab::m_flags),
         "flags_all", &Prefab::AllFlagsPresent,
         "flags_any", &Prefab::AnyFlagsPresent, 
         "flags_none", &Prefab::AllFlagsAbsent,

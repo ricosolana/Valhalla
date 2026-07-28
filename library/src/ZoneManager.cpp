@@ -199,7 +199,7 @@ void IZoneManager::PostPrefabInit()
     LOCATION_PROXY_PREFAB = PrefabManager()->find_prefab(avledet::util::hashes::Object::LocationProxy);
 
     if (!ZONE_CTRL_PREFAB || !LOCATION_PROXY_PREFAB)
-        throw std::runtime_error("prefabs missing");
+        throw std::runtime_error("zone and location prefabs missing");
 #endif
 
     RouteManager()->Register("SetGlobalKey",
@@ -670,6 +670,8 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
                               & std::to_underlying(biomeArea))))
                         continue;
 
+                    // so, TODO
+                    //  make *some* or certain vegetation spawn really high up if a tall spire is in radius
                     // Mistlands only
                     //  A huge amount of mistlands are angled rock spires (not part of terrain),
                     //  so vegetation spanws on top of these,

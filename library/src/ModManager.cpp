@@ -440,6 +440,19 @@ IScriptManager::script_iterator IScriptManager::reload_script(script_iterator sc
     //  for instance, _AvlCommand does not 
     LOG_WARNING(AVL_LOGGER, "Script hotloading is largely experimental and might result in gameplay/logic inconsistencies! Please use in dev-only environment!");
 
+    // TODO should this be combined into OnEnable? but add a reload=bool
+    //  to stay in line with how the OnDisable for unloads is handled like above?
+
+    // TODO it might make more sense to set a status bool for when the first runs
+    //  instead of invoking a custom callback
+
+    //   !!! TODO !!!
+    //  the pop behavior can really get confusing... and really screw things up
+    //  should be completely separated to avoid segfaults later if I ever use pop
+    //  for later reference:
+    //      - pop is intended ONLY for when totally unloading mod from memory. like maybe during server stop.
+    CallEventOn(&script_info, Events::HotReload);
+
     return script_itr;
 }
 
@@ -457,13 +470,6 @@ bool IScriptManager::reload_script(std::string_view name)
     // TODO 
     //  we do not assign find, because it would always set it to the next script
     /* find =  */reload_script(find);
-
-    // TODO should this be combined into OnEnable? but add a reload=bool
-    //  to stay in line with how the OnDisable for unloads is handled like above?
-
-    // TODO it might make more sense to set a status bool for when the first runs
-    //  instead of invoking a custom callback
-    CallEventOn(find->second.get(), Events::HotReload);
 
     return true;
 }

@@ -19,6 +19,7 @@ target_sources(avledet_library
         ${CMAKE_CURRENT_SOURCE_DIR}/DungeonGenerator.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/DungeonManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/DungeonRoom.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/FastNoise.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/GeoManager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Heightmap.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/HeightmapBuilder.cpp

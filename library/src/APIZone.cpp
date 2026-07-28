@@ -63,7 +63,7 @@ void IScriptManager::load_userdata_zone()
         "find_nearest_feature", &IZoneManager::find_nearest_feature, 
         "to_zone_pos", &IZoneManager::WorldToZonePos, 
         "to_world_pos", &IZoneManager::ZoneToWorldPos, 
-        "global_keys", sol::property(&IZoneManager::m_globalKeys)
+        "global_keys", sol::property(&IZoneManager::m_globalKeys) // TODO rw property?
     );
 
     // clang-format on
