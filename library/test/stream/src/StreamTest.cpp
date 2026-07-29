@@ -64,14 +64,14 @@ TEST(AvledetStream, writeReadScopedBlock)
         writer.write(Vector3f::ZERO);      // dummy
         writer.write(std::string_view(""));// dummy
 
-        //auto world = WorldManager()->GetWorld();
+        //auto world = WorldManager::instance().GetWorld();
 
         writer.write(std::string_view(""));                       //world->m_name);
         writer.write(avledet::util::get_stable_hash("vj19gysh4"));//world->m_seed));
         writer.write(std::string_view("vj19gysh4"));//world->m_seedName);// Peer does not seem to use
         writer.write(avledet::util::UserID(981893791712731911));//world->m_uid);
         writer.write((int) 2);                                  //world->m_worldGenVersion);
-        writer.write(2034.5);                                   //Avledet()->GetWorldTime());
+        writer.write(2034.5);                                   //Avledet::instance().GetWorldTime());
     }
     //ASSERT_NO_THROW(statement)
     auto rpc = avledet::rpc::RpcBase<int>();

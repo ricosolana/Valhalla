@@ -9,13 +9,14 @@
 #include <thread>
 #include <utility>
 
+#include "Manager.h"
 #include "NetAcceptor.h"
 #include "Peer.h"
 #include "Types.h"
 
-class INetManager
+class NetManager : public avledet::util::IManager<NetManager>
 {
-    friend class IScriptManager;
+    friend class ScriptManager;
 
   private:
     avledet::util::Map<std::string, std::int32_t, ankerl::unordered_dense::string_hash> m_sessionIndexes;
@@ -69,5 +70,3 @@ class INetManager
     }
 };
 
-// Manager class for everything related to networking at a mildly abstracted level
-INetManager *NetManager();

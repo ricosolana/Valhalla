@@ -9,7 +9,7 @@
     #include "ModManager.h"
     #include "Quaternion.h"
 
-void IScriptManager::load_userdata_quaternion()
+void ScriptManager::load_userdata_quaternion()
 {
     // clang-format off
 

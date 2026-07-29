@@ -1,13 +1,14 @@
 #pragma once
 
 #include "HeightMap.h"
+#include "Manager.h"
 #include "TerrainModifier.h"
 #include "Types.h"
 #include "VUtils.h"
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
 
-class IHeightmapManager
+class HeightmapManager : public avledet::util::IManager<HeightmapManager>
 {
     //avledet::util::Set<ZoneID> m_population;
     avledet::util::Map<ZoneID, std::unique_ptr<Heightmap>> m_heightmaps;
@@ -49,8 +50,5 @@ class IHeightmapManager
 
     //Heightmap* CreateHeightmap(const Vector2i& zone);
 };
-
-// Manager class for everything related to finely partitioned world heights and biomes during generation
-IHeightmapManager *HeightmapManager();
 
 #endif// AVL_IS_ON(AVL_ZONE_GENERATION)

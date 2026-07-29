@@ -8,7 +8,7 @@
     #include "ModManager.h"
     #include "PrefabManager.h"
 
-void IScriptManager::load_userdata_prefab()
+void ScriptManager::load_userdata_prefab()
 {
     // clang-format off
 
@@ -80,16 +80,16 @@ void IScriptManager::load_userdata_prefab()
     //  ive about reached the limit of using bitflags with lua, and will have to opt for a different type (I dont want to use the intwrapper for flags)
 
 
-    this->new_usertype<IPrefabManager>("IPrefabManager", 
+    this->new_usertype<PrefabManager>("IPrefabManager", 
         sol::no_constructor,
         "find_prefab", sol::overload(
-            sol::resolve<Prefab const *(avledet::util::Hash) const>(&IPrefabManager::find_prefab),
-            sol::resolve<Prefab const *(std::string_view) const>(&IPrefabManager::find_prefab)),
+            sol::resolve<Prefab const *(avledet::util::Hash) const>(&PrefabManager::find_prefab),
+            sol::resolve<Prefab const *(std::string_view) const>(&PrefabManager::find_prefab)),
         // TODO restrict prefab registration to startup only
         //  Will require an event handler to be called prior to ZDOs being loaded
         "register", sol::overload(
-            sol::resolve<void(std::string, Vector3f, Prefab::Flag)>(&IPrefabManager::Register),
-            sol::resolve<void(DataReader&)>(&IPrefabManager::Register))
+            sol::resolve<void(std::string, Vector3f, Prefab::Flag)>(&PrefabManager::Register),
+            sol::resolve<void(DataReader&)>(&PrefabManager::Register))
     );
 
     // clang-format on

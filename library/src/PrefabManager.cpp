@@ -14,14 +14,7 @@
 #include "VUtilsResource.h"
 #include "ZDO.h"
 
-auto PREFAB_MANAGER = std::make_unique<IPrefabManager>();
-
-IPrefabManager *PrefabManager()
-{
-    return PREFAB_MANAGER.get();
-}
-
-void IPrefabManager::Init()
+void PrefabManager::Init()
 {
     LOG_NOTICE(AVL_LOGGER, "Initializing PrefabManager");
 
@@ -50,7 +43,7 @@ void IPrefabManager::Init()
     LOG_NOTICE(AVL_LOGGER, "Loaded {}/{} prefabs", m_prefabs.size(), count);
 }
 
-Prefab const *IPrefabManager::find_prefab(avledet::util::Hash hash) const
+Prefab const *PrefabManager::find_prefab(avledet::util::Hash hash) const
 {
     auto &&find = m_prefabs.find(hash);
     if (find != m_prefabs.end())
@@ -60,14 +53,14 @@ Prefab const *IPrefabManager::find_prefab(avledet::util::Hash hash) const
 
 // Get a prefab by name
 //	Returns the prefab or null
-Prefab const *IPrefabManager::find_prefab(std::string_view name) const
+Prefab const *PrefabManager::find_prefab(std::string_view name) const
 {
     return find_prefab(avledet::util::get_stable_hash(name));
 }
 
 // Get a definite prefab
 //	Throws if prefab not found
-Prefab::Reference IPrefabManager::get_prefab(avledet::util::Hash hash) const
+Prefab::Reference PrefabManager::get_prefab(avledet::util::Hash hash) const
 {
     auto prefab = find_prefab(hash);
     if (!prefab)
@@ -77,12 +70,12 @@ Prefab::Reference IPrefabManager::get_prefab(avledet::util::Hash hash) const
 
 // Get a definite prefab
 //	Throws if prefab not found
-Prefab::Reference IPrefabManager::get_prefab(std::string_view name) const
+Prefab::Reference PrefabManager::get_prefab(std::string_view name) const
 {
     return get_prefab(avledet::util::get_stable_hash(name));
 }
 
-Prefab::Reference IPrefabManager::get_indexed_prefab(Prefab::IndexType index) const
+Prefab::Reference PrefabManager::get_indexed_prefab(Prefab::IndexType index) const
 {
     //Do not query a "NULL" prefab
     assert(index != Prefab::NONE);
@@ -95,7 +88,7 @@ Prefab::Reference IPrefabManager::get_indexed_prefab(Prefab::IndexType index) co
     return std::ref(*itr->get());
 }
 
-Prefab::IndexType IPrefabManager::get_prefab_index(avledet::util::Hash hash) const
+Prefab::IndexType PrefabManager::get_prefab_index(avledet::util::Hash hash) const
 {
     auto &&itr = m_prefabs.find(hash);
     if (itr != m_prefabs.end()) {
@@ -107,12 +100,12 @@ Prefab::IndexType IPrefabManager::get_prefab_index(avledet::util::Hash hash) con
     //throw std::runtime_error("nyi");
 }
 
-Prefab::IndexType IPrefabManager::get_prefab_index(Prefab::Reference prefab) const
+Prefab::IndexType PrefabManager::get_prefab_index(Prefab::Reference prefab) const
 {
     return this->get_prefab_index(prefab.get().m_hash);
 }
 
-void IPrefabManager::Register(std::string name, Vector3f scale, Prefab::Flag flags)
+void PrefabManager::Register(std::string name, Vector3f scale, Prefab::Flag flags)
 {
     //avledet::util::Hash hash = avledet::util::get_stable_hash(name);
     auto &&emp    = m_prefabs.emplace(std::make_unique<Prefab>(name, scale, flags));
@@ -134,7 +127,7 @@ void IPrefabManager::Register(std::string name, Vector3f scale, Prefab::Flag fla
     //assert(false);//TODO ^^^
 }
 
-void IPrefabManager::Register(DataReader &reader)
+void PrefabManager::Register(DataReader &reader)
 {
     auto name = reader.read<std::string>();
     auto hash = reader.read<avledet::util::Hash>();

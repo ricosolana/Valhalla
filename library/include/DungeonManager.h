@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Manager.h"
 #include "ModManager.h"
 #include "VUtils.h"
 #include <vector>
@@ -10,10 +11,10 @@
     #include "Prefab.h"
     #include "ZDO.h"
 
-class IDungeonManager
+class DungeonManager : public avledet::util::IManager<DungeonManager>
 {
-    friend class IZDOManager;
-    friend class IZoneManager;
+    friend class ZdoManager;
+    friend class ZoneManager;
 
   public:
     avledet::util::Map<avledet::util::Hash, std::unique_ptr<Dungeon>> m_dungeons;
@@ -55,8 +56,5 @@ class IDungeonManager
 
     //std::vector<const Dungeon*> get_dungeons() const;
 };
-
-// Manager for everything related to dungeon spawning
-IDungeonManager *DungeonManager();
 
 #endif

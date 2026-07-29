@@ -39,15 +39,8 @@
     #include "Types.h"
     #include "VUtilsResource.h"
 
-auto SCRIPT_MANAGER = std::make_unique<IScriptManager>();
-
-IScriptManager *ScriptManager()
-{
-    return SCRIPT_MANAGER.get();
-}
-
-std::tuple<IScriptManager::ScriptInfo, std::string>
-IScriptManager::load_file_script(std::filesystem::path script_root)
+std::tuple<ScriptManager::ScriptInfo, std::string>
+ScriptManager::load_file_script(std::filesystem::path script_root)
 {
     YAML::Node loadNode;
 
@@ -110,7 +103,7 @@ IScriptManager::load_file_script(std::filesystem::path script_root)
 //    return 1;
 //}
 
-void IScriptManager::execute(ScriptInfo const &_plugin_info, std::string const &code, bool replace)
+void ScriptManager::execute(ScriptInfo const &_plugin_info, std::string const &code, bool replace)
 {
     //m_scripts[info.m_name] = std::make_unique<ScriptInfo>(info);
     auto &&try_emplace
@@ -194,9 +187,7 @@ void my_sethook_cb(lua_State *L, lua_Debug *ar)
     LOG_WARNING(AVL_LOGGER, "Lua function taking too long, maybe early terminate?");
 };
 
-IScriptManager::~IScriptManager() {}
-
-void IScriptManager::Init()
+void ScriptManager::Init()
 {
     LOG_NOTICE(AVL_LOGGER, "Initializing ModManager");
 
@@ -280,14 +271,14 @@ void IScriptManager::Init()
     LOG_NOTICE(AVL_LOGGER, "Loaded {} scripts", m_scripts.size());
 }
 
-void IScriptManager::Uninit()
+void ScriptManager::Uninit()
 {
-    AVL_SCRIPT_EVENT(IScriptManager::Events::Disable);
+    AVL_SCRIPT_EVENT(ScriptManager::Events::Disable);
     m_callbacks.clear();
     m_scripts.clear();
 }
 
-void IScriptManager::update()
+void ScriptManager::update()
 {
     if (VUtils::run_periodic<struct my_test_reloads>(1s)) {
         // iterate all mod entrys
@@ -318,7 +309,7 @@ void IScriptManager::update()
     }
 }
 
-void IScriptManager::reload_all()
+void ScriptManager::reload_all()
 {
     assert(false);
 
@@ -328,7 +319,7 @@ void IScriptManager::reload_all()
     //m_state = sol::state();
 }
 
-IScriptManager::script_iterator IScriptManager::unload_script(script_iterator script_itr, bool gc, bool pop)
+ScriptManager::script_iterator ScriptManager::unload_script(script_iterator script_itr, bool gc, bool pop)
 {
     ScriptInfo &script_info = *script_itr->second;
 
@@ -365,7 +356,7 @@ IScriptManager::script_iterator IScriptManager::unload_script(script_iterator sc
         Release all registered RPCs
     */
 
-    for (auto &&peer_pair : NetManager()->m_connectedPeers) {
+    for (auto &&peer_pair : NetManager::instance().m_connectedPeers) {
         for (auto &&method_itr = peer_pair->m_methods.begin(); method_itr != peer_pair->m_methods.end();) {
             //map
             //auto &&method = dynamic_cast<MethodImplLua<Peer *> *>(method_itr->second.get());
@@ -413,7 +404,7 @@ IScriptManager::script_iterator IScriptManager::unload_script(script_iterator sc
     return script_itr;
 }
 
-IScriptManager::script_iterator IScriptManager::reload_script(script_iterator script_itr)
+ScriptManager::script_iterator ScriptManager::reload_script(script_iterator script_itr)
 {
     ScriptInfo &script_info = *script_itr->second;
     auto root               = std::get<std::filesystem::path>(script_info.m_uri);
@@ -459,7 +450,7 @@ IScriptManager::script_iterator IScriptManager::reload_script(script_iterator sc
 //https://github.com/ThePhD/sol2/issues/980
 // to 'reload' a script
 //  clear / kill all references to scripts, by manually clearing out listeners / callbacks...
-bool IScriptManager::reload_script(std::string_view name)
+bool ScriptManager::reload_script(std::string_view name)
 {
     auto &&find = m_scripts.find(name);
     if (find == m_scripts.end()) {

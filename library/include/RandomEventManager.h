@@ -1,11 +1,13 @@
 #pragma once
 
 #include "DataStream.h"
+#include "Manager.h"
 #include "Types.h"
 #include "Vector.h"
 #include "VUtils.h"
 
-class IRandomEventManager
+//formerly RandomEventManager
+class RaidManager : public avledet::util::IManager<RaidManager>
 {
   public:
     class Event
@@ -67,5 +69,3 @@ class IRandomEventManager
     void Save(DataWriter &writer);
     void Load(DataReader &reader, int version);
 };
-
-IRandomEventManager *RandomEventManager();

@@ -10,7 +10,7 @@
 
 using namespace avledet::util;
 
-void IScriptManager::load_userdata_peer()
+void ScriptManager::load_userdata_peer()
 {
     // clang-format off
 

@@ -7,15 +7,16 @@
 #include <memory>
 
 #include "DataStream.h"
+#include "Manager.h"
 #include "Prefab.h"
 #include "Types.h"
 
 // TODO consider moving Instantiate(...) to ZDOManager
 //	this class doesnt do much besides try to simulate Unity in appearance
 //		which is not the desired result...
-class IPrefabManager
+class PrefabManager : public avledet::util::IManager<PrefabManager>
 {
-    friend class IDiscordManager;
+    friend class DiscordManager;
 
   private:
     // TODO use set and use hash within from prefab
@@ -48,6 +49,3 @@ class IPrefabManager
 
     void Register(DataReader &reader);
 };
-
-// Manager class for everything related to ZDO-belonging Prefabs and their base data
-IPrefabManager *PrefabManager();

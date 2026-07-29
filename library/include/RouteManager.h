@@ -3,15 +3,16 @@
 #include "Avledet.h"
 #include "DataStream.h"
 #include "Hashes.h"
+#include "Manager.h"
 #include "Method.h"
 #include "ModManager.h"
 #include "NetManager.h"
 #include "Peer.h"
 #include <tuple>
 
-class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
+class RouteManager : public avledet::util::IManager<RouteManager>, public avledet::rpc::RpcBase<Peer::Ptr>
 {
-    friend class INetManager;
+    friend class NetManager;
 
   public:
     static constexpr std::int64_t EVERYBODY = 0;
@@ -31,10 +32,10 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
     {
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
         register_method(
-                std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, dbg_desc, IScriptManager::Events::RouteIn, func));
+                std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, dbg_desc, ScriptManager::Events::RouteIn, func));
 
         //m_methods[hash]
-        //        = std::make_unique<MethodImpl<Peer::Ptr, F>>(func, IScriptManager::Events::RouteIn, hash);
+        //        = std::make_unique<MethodImpl<Peer::Ptr, F>>(func, ScriptManager::Events::RouteIn, hash);
 #else
         register_method(std::make_unique<MethodImpl<Peer::Ptr, F>>(hash, func));
 
@@ -49,7 +50,7 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
     }
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-    void RegisterLua(IScriptManager::MethodSig const &sig, sol::function const &func)
+    void RegisterLua(ScriptManager::MethodSig const &sig, sol::function const &func)
     {
         //VLOG(1) << "RegisterLua, func: " << sol::state_view(func.lua_state())["tostring"](func).get<std::string>() << ", hash: " << sig.m_hash;
 
@@ -72,7 +73,7 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
             // If the script wants to modify the arguments, it will be allowed, ...
             //  BUT, it will have to subsequently make a new call to Invoke(Lua)
             //  Its just safer this way..
-            if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteOutAll ^ hash, targetZDO, params...))
+            if (!AVL_SCRIPT_EVENT(ScriptManager::Events::RouteOutAll ^ hash, targetZDO, params...))
                 return;
 
             avledet::util::Writer writer;
@@ -88,11 +89,11 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
                 }
             }
 
-            for (auto &&peer : NetManager()->GetPeers()) {
+            for (auto &&peer : NetManager::instance().GetPeers()) {
                 peer->Send(writer.get_buf());
             }
         } else {
-            if (auto peer = NetManager()->FindPeerByUserID(target)) {
+            if (auto peer = NetManager::instance().FindPeerByUserID(target)) {
                 peer->RouteView(targetZDO, hash, params...);
             }
         }
@@ -107,7 +108,7 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
     }
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-    void InvokeViewLua(std::int64_t target, ZDOID const &targetZDO, IScriptManager::MethodSig const &repr,
+    void InvokeViewLua(std::int64_t target, ZDOID const &targetZDO, ScriptManager::MethodSig const &repr,
                        sol::variadic_args const &args)
     {
         if (target == EVERYBODY) {
@@ -142,11 +143,11 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
                 }
             }
 
-            for (auto &&peer : NetManager()->GetPeers()) {
+            for (auto &&peer : NetManager::instance().GetPeers()) {
                 peer->Send(writer.get_buf());
             }
         } else {
-            if (auto peer = NetManager()->FindPeerByUserID((std::int64_t) target)) {
+            if (auto peer = NetManager::instance().FindPeerByUserID((std::int64_t) target)) {
                 peer->RouteViewLua(targetZDO, repr, args);
             }
         }
@@ -174,7 +175,7 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
     }
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-    void InvokeLua(std::int64_t target, IScriptManager::MethodSig const &repr, sol::variadic_args const &args)
+    void InvokeLua(std::int64_t target, ScriptManager::MethodSig const &repr, sol::variadic_args const &args)
     {
         InvokeViewLua(target, ZDOID::NONE, repr, args);
     }
@@ -196,7 +197,7 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
     }
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
-    void InvokeAllLua(IScriptManager::MethodSig const &repr, sol::variadic_args const &args)
+    void InvokeAllLua(ScriptManager::MethodSig const &repr, sol::variadic_args const &args)
     {
         InvokeLua(EVERYBODY, repr, args);
     }
@@ -243,6 +244,3 @@ class IRouteManager : public avledet::rpc::RpcBase<Peer::Ptr>
         //return writer;
     }
 };
-
-// Manager class for everything related to high-level networking for simulated p2p communication
-IRouteManager *RouteManager();

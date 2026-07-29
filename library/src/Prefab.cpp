@@ -3,7 +3,7 @@
 
 Prefab::Reference Prefab::Instance::get_prefab() const
 {
-    return PrefabManager()->get_prefab(m_prefabHash);
+    return PrefabManager::instance().get_prefab(m_prefabHash);
 }
 
 Prefab::Prefab(std::string name, avledet::util::CSU::Vector3f const &localScale, Flag flags) :

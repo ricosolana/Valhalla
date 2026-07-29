@@ -27,10 +27,10 @@ TEST(Scripting, blah)
 
     //auto path = std::filesystem::current_path();
 
-    Avledet()->init();
+    Avledet::instance().init();
 
     // run game once
-    Avledet()->update();
+    Avledet::instance().update();
 
     AVL_LOGGER->set_log_level(quill::LogLevel::Info);
 
@@ -39,8 +39,8 @@ TEST(Scripting, blah)
 
     // perform LUA test
     //  state test
-    ScriptManager()->execute(IScriptManager::ScriptInfo("test1", "chunk1", ""), code, false);
+    ScriptManager::instance().execute(ScriptManager::ScriptInfo("test1", "chunk1", ""), code, false);
 
     // cleanup
-    Avledet()->uninit();
+    Avledet::instance().uninit();
 }

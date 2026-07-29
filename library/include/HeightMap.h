@@ -12,7 +12,7 @@
     //#include "HMBuildData.h"
     #include "ZoneManager.h"
 
-class IHeightmapManager;
+class HeightmapManager;
 
 class Rigidbody
 {};
@@ -45,7 +45,7 @@ class BaseHeightmap
 
 class Heightmap
 {
-    friend class IHeightmapManager;
+    friend class HeightmapManager;
 
   public:
     static constexpr avledet::util::Color m_paintMaskDirt       = avledet::util::Colors::RED;
@@ -64,7 +64,7 @@ class Heightmap
     //11/30/2022 11:24:44: m_scale: 1
     //11/30/2022 11:24:44: m_distantLodEditorHax: False
 
-    static constexpr int E_WIDTH = IZoneManager::UNITS_PER_ZONE + 1;
+    static constexpr int E_WIDTH = ZoneManager::UNITS_PER_ZONE + 1;
 
   private:
     ZoneID const m_zone;

@@ -13,11 +13,11 @@ local tests = { function() -- [1]
     print('Set userdata global "Vector3f.nefarious" to "bad"')
     Vector3f.nefarious = "bad"
 end, function() -- [2]
-    assert(IAvledet.nefarious == nil, 'Plugins might be loading out of order, fix this!')
+    assert(Avledet.nefarious == nil, 'Plugins might be loading out of order, fix this!')
 
     -- Main part
-    print('Set userdata global "IAvledet.nefarious" to "bad"')
-    IAvledet.nefarious = "bad"
+    print('Set userdata global "Avledet.nefarious" to "bad"')
+    Avledet.nefarious = "bad"
 end }
 
 -- Call test

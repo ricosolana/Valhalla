@@ -14,7 +14,7 @@
 
 class Room
 {
-    friend class IDungeonManager;
+    friend class DungeonManager;
 
   public:
   private:

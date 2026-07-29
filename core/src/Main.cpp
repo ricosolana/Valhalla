@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 #ifndef _DEBUG
     try {
 #endif// _DEBUG
-        Avledet()->Start();
+        Avledet::instance().Start();
 #ifndef _DEBUG
     } catch (std::exception const &e) {
         // technically, we handle the error here, but this is the outer-error catcher

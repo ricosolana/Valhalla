@@ -47,7 +47,7 @@ Peer::Peer(ISocket::Ptr socket) :
             rpc->m_pos = reader.read<Vector3f>();
 #if AVL_IS_ON(AVL_DISALLOW_NON_CONFORMING_PLAYERS)
             if (rpc->m_pos.Hsq_magnitude()
-                > IZoneManager::WORLD_RADIUS_IN_METERS * IZoneManager::WORLD_RADIUS_IN_METERS)
+                > ZoneManager::WORLD_RADIUS_IN_METERS * ZoneManager::WORLD_RADIUS_IN_METERS)
                 throw std::runtime_error("peer position is outside of map");
 #endif
             rpc->m_name = reader.read<std::string>();
@@ -57,7 +57,7 @@ Peer::Peer(ISocket::Ptr socket) :
 #endif
             auto password = reader.read<std::string_view>();
 
-            if (AVL_SETTINGS.m_player_auth) {
+            if (AVL_CONFIG.m_player_auth) {
                 auto ticket = reader.read<avledet::util::ByteView>();
 
                 if (auto steamSocket = std::dynamic_pointer_cast<SteamSocket>(rpc->m_socket)) {
@@ -69,40 +69,40 @@ Peer::Peer(ISocket::Ptr socket) :
                 }
             }
 
-            if (password != std::string_view(NetManager()->m_passwordHash))
+            if (password != std::string_view(NetManager::instance().m_passwordHash))
                 return rpc->close(ConnectionStatus::ErrorPassword);
 
             // if peer already connected
             //  peers with a new character can connect while replaying,
             //  but same characters with presumably same uuid will not work (same host/steam acc works because ReplaySocket prepends host with a 'REPLAY_'
-            if (NetManager()->FindPeerByUserID(rpc->GetUserID()) || NetManager()->FindPeerByName(rpc->m_name))
+            if (NetManager::instance().FindPeerByUserID(rpc->GetUserID()) || NetManager::instance().FindPeerByName(rpc->m_name))
                 return rpc->close(ConnectionStatus::ErrorAlreadyConnected);
 
-            NetManager()->OnPeerConnect(rpc);
+            NetManager::instance().OnPeerConnect(rpc);
 
             return false;
         });
 
-        if (Avledet()->m_blacklist.contains(rpc->m_socket->get_host_name()))
+        if (Avledet::instance().m_blacklist.contains(rpc->m_socket->get_host_name()))
             return rpc->close(ConnectionStatus::ErrorBanned);
 
-        if (NetManager()->FindPeerByHost(rpc->m_socket->get_host_name()))
+        if (NetManager::instance().FindPeerByHost(rpc->m_socket->get_host_name()))
             return rpc->close(ConnectionStatus::ErrorAlreadyConnected);
 
         // if whitelist enabled
-        if (AVL_SETTINGS.m_player_whitelist_on
-            && !Avledet()->m_whitelist.contains(rpc->m_socket->get_host_name())) {
+        if (AVL_CONFIG.m_player_whitelist_on
+            && !Avledet::instance().m_whitelist.contains(rpc->m_socket->get_host_name())) {
             return rpc->close(ConnectionStatus::ErrorFull);
         }
 
         // if too many players online
-        if (NetManager()->GetPeers().size() >= AVL_SETTINGS.m_player_limit)
+        if (NetManager::instance().GetPeers().size() >= AVL_CONFIG.m_player_limit)
             return rpc->close(ConnectionStatus::ErrorFull);
 
-        bool hasPassword = !AVL_SETTINGS.m_server_password.empty();
+        bool hasPassword = !AVL_CONFIG.m_server_password.empty();
 
         rpc->Invoke(avledet::util::hashes::Rpc::S2C_Handshake, hasPassword,
-                    std::string_view(NetManager()->m_passwordSalt));
+                    std::string_view(NetManager::instance().m_passwordSalt));
 
         return false;
     });
@@ -149,13 +149,13 @@ void Peer::update()
             InternalInvoke(hash, reader);
         }
         
-        if (AVL_SETTINGS.m_replay_mode == ReplayMode::CAPTURE) {
+        if (AVL_CONFIG.m_replay_mode == ReplayMode::CAPTURE) {
             //assert(false); // TODO
             avledet::replay::ReplayManager()->on_packet(shared_from_this(), std::move(bytes));
         }
     }
 
-    if (AVL_SETTINGS.m_player_timeout > 0s && now - m_lastPing > AVL_SETTINGS.m_player_timeout) [[unlikely]] {
+    if (AVL_CONFIG.m_player_timeout > 0s && now - m_lastPing > AVL_CONFIG.m_player_timeout) [[unlikely]] {
         LOG_INFO(AVL_LOGGER, "{} has timed out", this->m_socket->get_host_name());
         Disconnect();
     }
@@ -206,7 +206,7 @@ void Peer::SetGated(bool enable)
 
 ZDO::optional Peer::find_zdo()
 {
-    return ZDOManager()->find_zdo(m_characterID);
+    return ZdoManager::instance().find_zdo(m_characterID);
 }
 
 void Peer::Teleport(Vector3f pos, Quaternion rot, bool animation)
@@ -223,7 +223,7 @@ void Peer::RouteParams(avledet::util::UserID const &sender, ZDOID targetZDO, avl
     {
         avledet::util::WriterScopedEncap scoped(writer);
 
-        RouteManager()->prepare_packet(writer, sender, this->GetUserID(), targetZDO, hash);
+        RouteManager::instance().prepare_packet(writer, sender, this->GetUserID(), targetZDO, hash);
 
         writer.write(params);
     }
@@ -231,7 +231,7 @@ void Peer::RouteParams(avledet::util::UserID const &sender, ZDOID targetZDO, avl
     this->Send(writer.release());
 
     //this->Invoke(avledet::util::hashes::Rpc::RoutedRPC,
-    //RouteManager()->Serialize(sender, this->GetUserID(), targetZDO, hash, std::move(params)));
+    //RouteManager::instance().Serialize(sender, this->GetUserID(), targetZDO, hash, std::move(params)));
 }
 
 void Peer::RouteParams(ZDOID targetZDO, avledet::util::Hash hash, avledet::util::Bytes params)
@@ -244,7 +244,7 @@ void Peer::ZDOSectorInvalidated(ZDO::reference zdo)
     if (zdo->is_owner(this->GetUserID()))
         return;
 
-    if (!ZoneManager()->ZonesOverlap(zdo->get_zone(), m_pos)) {
+    if (!ZoneManager::instance().ZonesOverlap(zdo->get_zone(), m_pos)) {
         if (m_zdos.erase(zdo->get_id())) {
             m_invalidSector.insert(zdo->get_id());
         }

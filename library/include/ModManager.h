@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CompileSettings.h"
+#include "Manager.h"
 #include <filesystem>
 #include <quill/LogMacros.h>
 #include <sol/as_args.hpp>
@@ -69,7 +70,7 @@ namespace sol {
 
 }// namespace sol
 
-class IScriptManager
+class ScriptManager : public avledet::util::IManager<ScriptManager>
 {
   public:
     enum class StreamType
@@ -184,7 +185,7 @@ class IScriptManager
 
     class ScriptInfo
     {
-        friend class IScriptManager;
+        friend class ScriptManager;
 
       public:
         std::string m_name;
@@ -355,7 +356,6 @@ public:
     }
 
   public:
-    ~IScriptManager();
 
     void Init();
     void Uninit();
@@ -485,113 +485,110 @@ public:
     }
 };
 
-    #define AVL_SCRIPT_EVENT(name, ...) ScriptManager()->CallEvent((name) __VA_OPT__(, ) __VA_ARGS__)
+    #define AVL_SCRIPT_EVENT(name, ...) ScriptManager::instance().CallEvent((name) __VA_OPT__(, ) __VA_ARGS__)
     #define AVL_SCRIPT_EVENT_TUPLE(name, ...) \
-        ScriptManager()->CallEventTuple((name) __VA_OPT__(, ) __VA_ARGS__)
-
-// Manager class for everything related to lua scripts
-IScriptManager *ScriptManager();
+        ScriptManager::instance().CallEventTuple((name) __VA_OPT__(, ) __VA_ARGS__)
 
 template<class F, class... T>
-    requires(std::is_same_v<F, IScriptManager::StreamType>)
+    requires(std::is_same_v<F, ScriptManager::StreamType>)
 struct avledet::util::Streamer<F, T...>
 {
 
     template<class ObjectOrProxy>
-    void operator()(avledet::util::Writer &writer, IScriptManager::StreamType type, ObjectOrProxy const &arg)
+    void operator()(avledet::util::Writer &writer, ScriptManager::StreamType type, ObjectOrProxy const &arg)
     {
         switch (type) {
             // TODO add recent unsigned types
-        case IScriptManager::StreamType::UINT8: writer.write(arg.template as<std::uint8_t>()); break;
-        case IScriptManager::StreamType::UINT16: writer.write(arg.template as<std::uint16_t>()); break;
-        case IScriptManager::StreamType::UINT32: writer.write(arg.template as<std::uint32_t>()); break;
-        case IScriptManager::StreamType::UINT64: writer.write(arg.template as<std::uint64_t>()); break;
-        case IScriptManager::StreamType::INT8: writer.write(arg.template as<std::int8_t>()); break;
-        case IScriptManager::StreamType::INT16: writer.write(arg.template as<std::int16_t>()); break;
-        case IScriptManager::StreamType::INT32: writer.write(arg.template as<std::int32_t>()); break;
-        case IScriptManager::StreamType::INT64: writer.write(arg.template as<std::int64_t>()); break;
-        case IScriptManager::StreamType::FLOAT: writer.write(arg.template as<std::float_t>()); break;
-        case IScriptManager::StreamType::DOUBLE: writer.write(arg.template as<std::double_t>()); break;
-        case IScriptManager::StreamType::STRING: writer.write(arg.template as<std::string>()); break;
-        case IScriptManager::StreamType::BOOL: writer.write(arg.template as<bool>()); break;
-        case IScriptManager::StreamType::BYTES: writer.write(arg.template as<avledet::util::Bytes>()); break;
-        case IScriptManager::StreamType::ZDOID: writer.write(arg.template as<avledet::util::ZDOID>()); break;
-        case IScriptManager::StreamType::VECTOR3f:
+        case ScriptManager::StreamType::UINT8: writer.write(arg.template as<std::uint8_t>()); break;
+        case ScriptManager::StreamType::UINT16: writer.write(arg.template as<std::uint16_t>()); break;
+        case ScriptManager::StreamType::UINT32: writer.write(arg.template as<std::uint32_t>()); break;
+        case ScriptManager::StreamType::UINT64: writer.write(arg.template as<std::uint64_t>()); break;
+        case ScriptManager::StreamType::INT8: writer.write(arg.template as<std::int8_t>()); break;
+        case ScriptManager::StreamType::INT16: writer.write(arg.template as<std::int16_t>()); break;
+        case ScriptManager::StreamType::INT32: writer.write(arg.template as<std::int32_t>()); break;
+        case ScriptManager::StreamType::INT64: writer.write(arg.template as<std::int64_t>()); break;
+        case ScriptManager::StreamType::FLOAT: writer.write(arg.template as<std::float_t>()); break;
+        case ScriptManager::StreamType::DOUBLE: writer.write(arg.template as<std::double_t>()); break;
+        case ScriptManager::StreamType::STRING: writer.write(arg.template as<std::string>()); break;
+        case ScriptManager::StreamType::BOOL: writer.write(arg.template as<bool>()); break;
+        case ScriptManager::StreamType::BYTES: writer.write(arg.template as<avledet::util::Bytes>()); break;
+        case ScriptManager::StreamType::ZDOID: writer.write(arg.template as<avledet::util::ZDOID>()); break;
+        case ScriptManager::StreamType::VECTOR3f:
             writer.write(arg.template as<avledet::util::CSU::Vector3f>());
             break;
-        case IScriptManager::StreamType::VECTOR2i:
+        case ScriptManager::StreamType::VECTOR2i:
             writer.write(arg.template as<avledet::util::CSU::Vector2i>());
             break;
-        case IScriptManager::StreamType::QUATERNION:
+        case ScriptManager::StreamType::QUATERNION:
             writer.write(arg.template as<avledet::util::CSU::Quaternion>());
             break;
-        case IScriptManager::StreamType::CHAR16: writer.write(arg.template as<char16_t>()); break;
+        case ScriptManager::StreamType::CHAR16: writer.write(arg.template as<char16_t>()); break;
         default:
             throw std::runtime_error("type <" + std::string(magic_enum::enum_name(type))
                                      + "> has no write implementation");
         }
     }
 
-    sol::object operator()(avledet::util::Reader &reader, IScriptManager::StreamType type, lua_State *state)
+    sol::object operator()(avledet::util::Reader &reader, ScriptManager::StreamType type, lua_State *state)
     {
         switch (type) {
-        case IScriptManager::StreamType::BYTES:
+        case ScriptManager::StreamType::BYTES:
             // Will be interpreted as sol container type
             // see https://sol2.readthedocs.io/en/latest/containers.html
             return sol::make_object(state, reader.read<avledet::util::Bytes>());
-        case IScriptManager::StreamType::STRING:
+        case ScriptManager::StreamType::STRING:
             // Primitive: string
             return sol::make_object(state, reader.read<std::string>());
-        case IScriptManager::StreamType::ZDOID:
+        case ScriptManager::StreamType::ZDOID:
             // Userdata: ZDOID
             return sol::make_object(state, reader.read<avledet::util::ZDOID>());
-        case IScriptManager::StreamType::VECTOR3f:
+        case ScriptManager::StreamType::VECTOR3f:
             // Userdata: Vector3f
             return sol::make_object(state, reader.read<avledet::util::CSU::Vector3f>());
-        case IScriptManager::StreamType::VECTOR2i:
+        case ScriptManager::StreamType::VECTOR2i:
             // Userdata: Vector2i
             return sol::make_object(state, reader.read<avledet::util::CSU::Vector2i>());
-        case IScriptManager::StreamType::QUATERNION:
+        case ScriptManager::StreamType::QUATERNION:
             // Userdata: Quaternion
             return sol::make_object(state, reader.read<avledet::util::CSU::Quaternion>());
-        case IScriptManager::StreamType::STRINGS:
+        case ScriptManager::StreamType::STRINGS:
             // Container type of Primitive: string
             //return sol::make_object(state, reader.read<avledet::util::Strings>());
             return sol::make_object(state, reader.read<std::vector<std::string>>());
-        case IScriptManager::StreamType::BOOL:
+        case ScriptManager::StreamType::BOOL:
             // Primitive: boolean
             return sol::make_object(state, reader.read<bool>());
-        case IScriptManager::StreamType::INT8:
+        case ScriptManager::StreamType::INT8:
             // Primitive: number
             return sol::make_object(state, reader.read<std::int8_t>());
-        case IScriptManager::StreamType::INT16:
+        case ScriptManager::StreamType::INT16:
             // Primitive: number
             return sol::make_object(state, reader.read<std::int16_t>());
-        case IScriptManager::StreamType::INT32:
+        case ScriptManager::StreamType::INT32:
             // Primitive: number
             return sol::make_object(state, reader.read<std::int32_t>());
-        case IScriptManager::StreamType::INT64:
+        case ScriptManager::StreamType::INT64:
             // Userdata: Int64Wrapper
             return sol::make_object(state, reader.read<std::int64_t>());// ReadInt64());
-        case IScriptManager::StreamType::UINT8:
+        case ScriptManager::StreamType::UINT8:
             // Primitive: number
             return sol::make_object(state, reader.read<std::uint8_t>());
-        case IScriptManager::StreamType::UINT16:
+        case ScriptManager::StreamType::UINT16:
             // Primitive: number
             return sol::make_object(state, reader.read<std::uint16_t>());
-        case IScriptManager::StreamType::UINT32:
+        case ScriptManager::StreamType::UINT32:
             // Primitive: number
             return sol::make_object(state, reader.read<std::uint32_t>());
-        case IScriptManager::StreamType::UINT64:
+        case ScriptManager::StreamType::UINT64:
             // Userdata: UInt64Wrapper
             return sol::make_object(state, reader.read<std::uint64_t>());
-        case IScriptManager::StreamType::FLOAT:
+        case ScriptManager::StreamType::FLOAT:
             // Primitive: number
             return sol::make_object(state, reader.read<std::float_t>());
-        case IScriptManager::StreamType::DOUBLE:
+        case ScriptManager::StreamType::DOUBLE:
             // Primitive: number
             return sol::make_object(state, reader.read<std::double_t>());
-        case IScriptManager::StreamType::CHAR16:
+        case ScriptManager::StreamType::CHAR16:
             // Primitive: number
             return sol::make_object(state, reader.read<char16_t>());
         default: throw std::runtime_error("invalid DataReader type");
@@ -601,11 +598,11 @@ struct avledet::util::Streamer<F, T...>
 
 // TODO
 template<class F, class... G>
-    requires(std::is_same_v<F, IScriptManager::StreamTypes>)
+    requires(std::is_same_v<F, ScriptManager::StreamTypes>)
 struct avledet::util::Streamer<F, G...>
 {
     template<typename ArgsOrResults>
-    void operator()(avledet::util::Writer &writer, IScriptManager::StreamTypes const &types,
+    void operator()(avledet::util::Writer &writer, ScriptManager::StreamTypes const &types,
                     ArgsOrResults const &args)
     {
         if (types.size() != args.size()) {
@@ -617,7 +614,7 @@ struct avledet::util::Streamer<F, G...>
         }
     }
 
-    sol::variadic_results operator()(avledet::util::Reader &reader, IScriptManager::StreamTypes const &types,
+    sol::variadic_results operator()(avledet::util::Reader &reader, ScriptManager::StreamTypes const &types,
                                      lua_State *state)
     {
         sol::variadic_results results;

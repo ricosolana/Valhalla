@@ -14,8 +14,8 @@ local tests = { function() -- [1]
     print('Reading from "Vector3f.nefarious"')
     assert(Vector3f.nefarious == nil, 'Sandbox was escaped!')
 end, function() -- [2]
-    print('Reading from "IAvledet.nefarious"')
-    assert(IAvledet.nefarious == nil, 'Sandbox was escaped!')
+    print('Reading from "Avledet.nefarious"')
+    assert(Avledet.nefarious == nil, 'Sandbox was escaped!')
 end }
 
 -- Call test

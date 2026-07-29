@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "DataStream.h"
+#include "Manager.h"
 #include "Peer.h"
 #include "Prefab.h"
 #include "Quaternion.h"
@@ -67,10 +68,10 @@ enum class GlobalKey
 
 class Heightmap;
 
-class IZoneManager
+class ZoneManager : public avledet::util::IManager<ZoneManager>
 {
-    friend class INetManager;
-    friend class IScriptManager;
+    friend class NetManager;
+    friend class ScriptManager;
 
   public:
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
@@ -129,7 +130,7 @@ class IZoneManager
 
         class Instance
         {
-            friend class IScriptManager;
+            friend class ScriptManager;
 
           public:
             std::reference_wrapper<Feature const> m_feature;
@@ -223,8 +224,16 @@ class IZoneManager
     bool is_inside_world_radius(ZoneID const &zone)
     {
         return (zone.x * zone.x + zone.y * zone.y
-                < IZoneManager::WORLD_INNER_ZRADIUS * IZoneManager::WORLD_INNER_ZRADIUS);
+                < WORLD_INNER_ZRADIUS * WORLD_INNER_ZRADIUS);
     }
+
+    //static ZoneManager &instance() {
+    //    // Erase copy constructor
+    //    Base(const Base&) = delete;
+    //    
+    //    // Erase copy assignment operator (highly recommended to delete alongside)
+    //    Base& operator=(const Base&) = delete;
+    //}
 
   private:
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
@@ -361,6 +370,3 @@ class IZoneManager
 
     bool IsPeerNearby(ZoneID zone, avledet::util::UserID uid);
 };
-
-// Manager class for everything related to world generation
-IZoneManager *ZoneManager();

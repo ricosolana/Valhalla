@@ -9,7 +9,7 @@
 
     #include "Peer.h"
 
-class IDiscordManager
+class DiscordManager
 {
   private:
     std::unique_ptr<dpp::cluster> m_bot;
@@ -46,9 +46,9 @@ class IDiscordManager
     void send_webhook_message(std::string_view msg);
 };
 
-    #define AVL_DISPATCH_WEBHOOK(msg) DiscordManager()->send_webhook_message((msg));
+    #define AVL_DISPATCH_WEBHOOK(msg) DiscordManager::instance().send_webhook_message((msg));
 
-IDiscordManager *DiscordManager();
+DiscordManager *DiscordManager::instance();
 #else
     #define AVL_DISPATCH_WEBHOOK(msg) \
         {                             \

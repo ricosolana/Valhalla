@@ -6,6 +6,7 @@
 #include <quill/Logger.h>
 #include <range/v3/all.hpp>
 
+#include "Manager.h"
 #include "Peer.h"
 #include "PrefabManager.h"
 #include "Types.h"
@@ -14,10 +15,10 @@
 #include "ZDO.h"
 #include "ZoneManager.h"
 
-class IZDOManager
+class ZdoManager : public avledet::util::IManager<ZdoManager>
 {
-    friend class INetManager;
-    friend class IAvledet;
+    friend class NetManager;
+    friend class Avledet;
     friend class ZDO;
 
     // Predicate for whether a zdo is a prefab with or without given flags
@@ -40,7 +41,7 @@ class IZDOManager
     // Contains ZDOs according to Zone
     //	takes up around 5MB; could be around 72 bytes (initial) with map
     std::array<ZDO::reference_set,
-               (IZoneManager::WORLD_INNER_ZDIAMETER * IZoneManager::WORLD_INNER_ZDIAMETER)>
+               (ZoneManager::WORLD_INNER_ZDIAMETER * ZoneManager::WORLD_INNER_ZDIAMETER)>
             m_objectsBySector;
     avledet::util::Map<ZoneID, ZDO::reference_set> m_objectsBySectorOuter;
 
@@ -186,17 +187,17 @@ class IZDOManager
 
     [[nodiscard]] int SectorToIndex(ZoneID zone) const
     {
-        int x = zone.x + IZoneManager::WORLD_INNER_ZRADIUS;
-        int y = zone.y + IZoneManager::WORLD_INNER_ZRADIUS;
-        if (x < 0 || y < 0 || x >= IZoneManager::WORLD_INNER_ZDIAMETER
-            || y >= IZoneManager::WORLD_INNER_ZDIAMETER) {
+        int x = zone.x + ZoneManager::WORLD_INNER_ZRADIUS;
+        int y = zone.y + ZoneManager::WORLD_INNER_ZRADIUS;
+        if (x < 0 || y < 0 || x >= ZoneManager::WORLD_INNER_ZDIAMETER
+            || y >= ZoneManager::WORLD_INNER_ZDIAMETER) {
             return -1;
         }
 
-        assert(x >= 0 && y >= 0 && x < IZoneManager::WORLD_INNER_ZDIAMETER
-               && y < IZoneManager::WORLD_INNER_ZDIAMETER && "sector exceeds world radius");
+        assert(x >= 0 && y >= 0 && x < ZoneManager::WORLD_INNER_ZDIAMETER
+               && y < ZoneManager::WORLD_INNER_ZDIAMETER && "sector exceeds world radius");
 
-        return y * IZoneManager::WORLD_INNER_ZDIAMETER + x;
+        return y * ZoneManager::WORLD_INNER_ZDIAMETER + x;
     }
 
   public:
@@ -217,7 +218,7 @@ class IZDOManager
     {
         //return InstantiateBounded(hash, pos, nullptr);
 
-        return Instantiate(PrefabManager()->get_prefab(hash), pos);
+        return Instantiate(PrefabManager::instance().get_prefab(hash), pos);
     }
 
     // TODO either correctly implement or?
@@ -433,6 +434,3 @@ class IZDOManager
 
     [[nodiscard]] std::size_t GetCountEmptyZDOs();
 };
-
-// Manager class for everything related to networked object synchronization
-IZDOManager *ZDOManager();

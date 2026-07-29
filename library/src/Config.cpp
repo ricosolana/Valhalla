@@ -1,8 +1,10 @@
 #include <filesystem>
+#include <functional>
 #include <quill/core/LogLevel.h>
 #include <quill/LogMacros.h>
 #include <quill/sinks/RotatingFileSink.h>
 #include <tracy/Tracy.hpp>
+#include <yaml-cpp/node/node.h>
 
 #include "VUtilsString.h"
 #include "VUtilsResource.h"
@@ -10,80 +12,102 @@
 #include "Avledet.h"
 #include "Config.h"
 
-template<class Enum>
-concept scoped_enum = requires { typename std::is_scoped_enum<Enum>; };
+template<typename T>
+struct type_identity { using type = T; };
 
-
-template<class T>
-struct is_duration : std::false_type
-{};
-
-template<class Rep, class Period>
-struct is_duration<std::chrono::duration<Rep, Period>> : std::true_type
-{};
+template<typename T>
+using type_identity_t = typename type_identity<T>::type;
 
 // r = raw / reloadable
 //  will always load the value from config, even on mid-server states
-template<typename T, typename D, typename Func = std::nullptr_t>
-    requires(std::is_same_v<Func, std::nullptr_t>
-             || ((is_duration<typename std::tuple_element_t<
-                          0, typename VUtils::Traits::func_traits<Func>::args_type>>::value
-                  && is_duration<T>::value)
-                 == is_duration<D>::value))
-void r(T &set, YAML::Node mutableNode, std::string const &key, D const &default_value,
-       Func valueSanitizer = nullptr)
+//template<typename T, typename D, typename Func = std::nullptr_t>
+//    requires(std::is_same_v<Func, std::nullptr_t>
+//             || ((is_duration<typename std::tuple_element_t<
+//                          0, typename VUtils::Traits::func_traits<Func>::args_type>>::value
+//                  && is_duration<T>::value)
+//                 == is_duration<D>::value))
+//void tieValue(T &set, YAML::Node mutableNode, std::string const &key, D const &default_value,
+//       Func validator = nullptr)
+//{
+template<bool once, typename T, typename F = std::nullptr_t>
+constexpr void tiedParse(T &mut, YAML::Node mutableNode, std::string const &key,
+                          std::type_identity_t<T> default_value,
+                          F validator = nullptr)
 {
-    auto &&mapping = mutableNode[key];
-
-    try {
-        auto &&val = mapping.as<T>();
-
-        if constexpr (!std::is_same_v<Func, std::nullptr_t>) {
-            using Param0 = std::tuple_element_t<0, typename VUtils::Traits::func_traits<Func>::args_type>;
-
-            if constexpr (is_duration<T>::value) {
-                if (!valueSanitizer(std::chrono::duration_cast<Param0>(val))) {
-                    set = val;
-                    return;
-                }
-            } else {
-                if (!valueSanitizer(static_cast<Param0>(val))) {
-                    set = val;
-                    return;
-                }
-            }
-        } else {
-            set = val;
-            return;
-        }
-    } catch (const YAML::Exception &) {
+    const bool reloading = ConfigManager::instance().reloading();
+    if (once && reloading) {
+        return;
     }
 
-    mapping = default_value;
+    YAML::Node mapping = mutableNode[key];
+    bool assigned = false;
 
-    assert(mutableNode[key].IsDefined());
+    try {
+        auto val = mapping.as<T>();
 
-    if constexpr (is_duration<T>::value) {
-        set = std::chrono::duration_cast<T>(default_value);
-    } else
-        set = T(default_value);
-};
+        bool rejected = false;
+        if constexpr (!std::is_same_v<F, std::nullptr_t>) {
+            using Param0 = std::remove_cvref_t<
+                std::tuple_element_t<0, typename VUtils::Traits::func_traits<F>::args_type>>;
+
+            if constexpr (avledet::util::traits::is_duration<T>::value 
+                && avledet::util::traits::is_duration<Param0>::value) {
+                rejected = validator(std::chrono::duration_cast<Param0>(val));
+            } else {
+                rejected = validator(val);
+            }
+        }
+
+        if (!rejected) {
+            if (!reloading || mut != val) {
+                if (reloading) {
+                    //LOG_DEBUG(AVL_LOGGER, "reload: [{}]: {} -> {}", key, mut, val);
+                }
+                assigned = true;
+                default_value = std::move(val);
+            }
+        }
+    } catch (YAML::Exception const&) {
+    }
+
+    if (assigned) {
+        mut = std::move(default_value);
+    } else {
+        mapping = default_value;
+        assert(mutableNode[key].IsDefined());
+
+        if constexpr (avledet::util::traits::is_duration<T>::value) {
+            mut = std::chrono::duration_cast<T>(default_value);
+        } else {
+            mut = T(default_value);
+        }
+    }
+}
+
+// r = reloadable values
+template<class... Args>
+void r(Args &&... args)
+{
+    return tiedParse<false>(std::forward<Args>(args)...);
+}
 
 // c = const loading
 //  for values to be loaded once during server init
 template<class... Args>
 void c(Args &&... args)
 {
-    if (!Config::instance().reloading()) {
-        return r(std::forward<Args>(args)...);
-    }
+    return tiedParse<true>(std::forward<Args>(args)...);
+    //if (!ConfigManager::instance().reloading()) {
+    //    //return r(std::forward<Args>(args)...);
+    //    return tiedParse(std::forward<Args>(args)...);
+    //}
 }
 
-bool Config::reloading() const {
+bool ConfigManager::reloading() const {
     return !m_first_load;
 }
 
-void Config::load()
+void ConfigManager::load()
 {
     bool fileError = false;
 
@@ -168,7 +192,9 @@ void Config::load()
             c(m_world_pregenerate, experimental, "world-pregenerate", false, nullptr);
             r(m_world_save_interval, world, "save-interval", 30min,
               [](std::chrono::seconds val) { return val < 0s; });
-            r(m_world_gen_features, world, "features", true, nullptr);
+            // TODO what should the hot reload behaviour of 'features' changes be?
+            //  Generate locations? Place only generated locations?
+            c(m_world_gen_features, world, "features", true, nullptr);
             r(m_world_gen_vegetation, world, "vegetation", true, nullptr);
             r(m_world_gen_creatures, world, "creatures", true, nullptr);
             c(m_world_heightmap_threads, world, "heightmap-threading", 1, nullptr);

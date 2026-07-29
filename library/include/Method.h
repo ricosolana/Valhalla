@@ -202,7 +202,7 @@ class MethodImpl : public IMethod<T>
 
         /*
         // Postfix
-        AVL_SCRIPT_EVENT_TUPLE(m_categoryHash ^ m_methodHash ^ IScriptManager::Events::POSTFIX, tuple);
+        AVL_SCRIPT_EVENT_TUPLE(m_categoryHash ^ m_methodHash ^ ScriptManager::Events::POSTFIX, tuple);
         */
 
         return keep_me_mapped;
@@ -226,12 +226,12 @@ MethodImpl(avledet::util::Hash,
 template<class T>
 class MethodImplLua : public IMethod<T>
 {
-    friend class IScriptManager;
+    friend class ScriptManager;
 
   private:
     sol::protected_function const m_func;
     sol::environment const m_env; //
-    IScriptManager::StreamTypes const m_types;
+    ScriptManager::StreamTypes const m_types;
 
   public:
     // TODO consider passing MethodSig directly, as it contains everything
@@ -239,7 +239,7 @@ class MethodImplLua : public IMethod<T>
                     std::string_view dbg_desc, 
                     sol::protected_function const &func,
                     sol::environment const& env,
-                    IScriptManager::StreamTypes const &types) :
+                    ScriptManager::StreamTypes const &types) :
         IMethod<T>(hash, dbg_desc),
         m_func(func),
         m_env(env),
@@ -250,7 +250,7 @@ class MethodImplLua : public IMethod<T>
     MethodImplLua(  std::string_view name, 
                     sol::protected_function const &func,
                     sol::environment const& env,
-                    IScriptManager::StreamTypes const &types) :
+                    ScriptManager::StreamTypes const &types) :
         IMethod<T>(name),
         m_func(func),
         m_env(env),
@@ -282,7 +282,7 @@ class MethodImplLua : public IMethod<T>
 
         // Postfix
     #if AVL_IS_ON(AVL_REFLECTIVE_MOD_EVENTS)
-        AVL_SCRIPT_EVENT(m_categoryHash ^ m_methodHash ^ IScriptManager::Events::POSTFIX,
+        AVL_SCRIPT_EVENT(m_categoryHash ^ m_methodHash ^ ScriptManager::Events::POSTFIX,
                          sol::as_args(results));
     #endif
 
@@ -294,6 +294,6 @@ class MethodImplLua : public IMethod<T>
 };
 
 template<class T>
-MethodImplLua(std::string_view, sol::protected_function const &, IScriptManager::StreamTypes const &) -> MethodImplLua<T>;
+MethodImplLua(std::string_view, sol::protected_function const &, ScriptManager::StreamTypes const &) -> MethodImplLua<T>;
 
 #endif// AVL_IS_ON(AVL_ENABLE_SCRIPTING)

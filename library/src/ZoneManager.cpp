@@ -19,15 +19,8 @@
 #include <vector>
 #include "ZoneManager.h"
 
-auto ZONE_MANAGER = std::make_unique<IZoneManager>();// TODO stop constructing in global
-
-IZoneManager *ZoneManager()
-{
-    return ZONE_MANAGER.get();
-}
-
 // private
-void IZoneManager::PostPrefabInit()
+void ZoneManager::PostPrefabInit()
 {
     LOG_NOTICE(AVL_LOGGER, "Initializing ZoneManager");
 
@@ -145,9 +138,9 @@ void IZoneManager::PostPrefabInit()
         for (int i = 0; i < count; i++) {
             auto prefabName = pkg.read<std::string>();
 
-            auto veg = std::make_unique<Foliage>(PrefabManager()->get_prefab(prefabName));
+            auto veg = std::make_unique<Foliage>(PrefabManager::instance().get_prefab(prefabName));
 
-            //veg->m_prefab = PrefabManager()->get_prefab(prefabName);
+            //veg->m_prefab = PrefabManager::instance().get_prefab(prefabName);
 
             veg->m_biome                        = (avledet::util::Biome) pkg.read<std::int32_t>();
             veg->m_biomeArea                    = (avledet::util::BiomeArea) pkg.read<std::int32_t>();
@@ -195,14 +188,14 @@ void IZoneManager::PostPrefabInit()
     }
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
-    ZONE_CTRL_PREFAB      = PrefabManager()->find_prefab(avledet::util::hashes::Object::_ZoneCtrl);
-    LOCATION_PROXY_PREFAB = PrefabManager()->find_prefab(avledet::util::hashes::Object::LocationProxy);
+    ZONE_CTRL_PREFAB      = PrefabManager::instance().find_prefab(avledet::util::hashes::Object::_ZoneCtrl);
+    LOCATION_PROXY_PREFAB = PrefabManager::instance().find_prefab(avledet::util::hashes::Object::LocationProxy);
 
     if (!ZONE_CTRL_PREFAB || !LOCATION_PROXY_PREFAB)
         throw std::runtime_error("zone and location prefabs missing");
 #endif
 
-    RouteManager()->Register("SetGlobalKey",
+    RouteManager::instance().Register("SetGlobalKey",
                              [this](Peer::Ptr peer, std::string_view name) {
                                  (void) peer;
                                  // TODO limit keys based on peer and the creature killed
@@ -211,7 +204,7 @@ void IZoneManager::PostPrefabInit()
                                      SendGlobalKeys();// Notify clients
                              });
 
-    RouteManager()->Register("RemoveGlobalKey",
+    RouteManager::instance().Register("RemoveGlobalKey",
                              [this](Peer::Ptr peer, std::string_view name) {
                                  (void) peer;
                                  // TODO limit keys based on peer and the creature killed
@@ -219,14 +212,14 @@ void IZoneManager::PostPrefabInit()
                                      SendGlobalKeys();// Notify clients
                              });
 
-    RouteManager()->Register("RPC_DiscoverClosestLocation",
+    RouteManager::instance().Register("RPC_DiscoverClosestLocation",
                              [this](Peer::Ptr peer, std::string_view locationName, Vector3f point,
                                     std::string_view pinName, int pinType, bool showMap, bool discoverAll) {
                                     // TODO discoverAll used by certain vesvigirs (which ones?)
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
                                  if (auto &&instance = find_nearest_feature(locationName, point)) {
                                      LOG_INFO(AVL_LOGGER, "Found location: '{}'", locationName);
-                                     RouteManager()->Invoke(peer->GetUserID(),
+                                     RouteManager::instance().Invoke(peer->GetUserID(),
                                                             avledet::util::hashes::Routed::S2C_ResponseIcon,
                                                             pinName, pinType, instance->m_pos, showMap);
                                  } else {
@@ -236,7 +229,7 @@ void IZoneManager::PostPrefabInit()
         Vector3f out;
         if (find_nearest_feature(locationName, point, out)) {
             LOG_INFO(AVL_LOGGER, "Found location: '{}'", locationName);
-            RouteManager()->Invoke(peer->m_uuid,
+            RouteManager::instance().Invoke(peer->m_uuid,
                 avledet::util::hashes::Routed::S2C_ResponseIcon,
                 pinName,
                 pinType,
@@ -250,33 +243,33 @@ void IZoneManager::PostPrefabInit()
 #endif
                              });
 
-    RouteManager()->Register("Ping", [](Peer::Ptr peer, float time) {
+    RouteManager::instance().Register("Ping", [](Peer::Ptr peer, float time) {
         peer->Route(avledet::util::hashes::Routed::Pong, time);
     });
 }
 
 // private
-void IZoneManager::OnNewPeer(Peer::Ptr peer)
+void ZoneManager::OnNewPeer(Peer::Ptr peer)
 {
     SendGlobalKeys(peer);
     SendLocationIcons(peer);
 }
 
-bool IZoneManager::ZonesOverlap(ZoneID zone, Vector3f refPoint)
+bool ZoneManager::ZonesOverlap(ZoneID zone, Vector3f refPoint)
 {
     return ZonesOverlap(zone, WorldToZonePos(refPoint));
 }
 
-bool IZoneManager::ZonesOverlap(ZoneID zone, ZoneID refCenterZone)
+bool ZoneManager::ZonesOverlap(ZoneID zone, ZoneID refCenterZone)
 {
     int num = NEAR_ZRADIUS - 1;
     return zone.x >= refCenterZone.x - num && zone.x <= refCenterZone.x + num
            && zone.y <= refCenterZone.y + num && zone.y >= refCenterZone.y - num;
 }
 
-bool IZoneManager::IsPeerNearby(ZoneID zone, avledet::util::UserID uid)
+bool ZoneManager::IsPeerNearby(ZoneID zone, avledet::util::UserID uid)
 {
-    auto &&peer = NetManager()->FindPeerByUserID(uid);
+    auto &&peer = NetManager::instance().FindPeerByUserID(uid);
     //assert((peer && uid) || (!peer && uid)); // makes sure no peer is ever found with 0 uid
     if (peer)
         return ZonesOverlap(zone, peer->m_pos);
@@ -284,20 +277,20 @@ bool IZoneManager::IsPeerNearby(ZoneID zone, avledet::util::UserID uid)
 }
 
 // private
-void IZoneManager::SendGlobalKeys()
+void ZoneManager::SendGlobalKeys()
 {
-    RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_UpdateKeys, m_globalKeys);
+    RouteManager::instance().InvokeAll(avledet::util::hashes::Routed::S2C_UpdateKeys, m_globalKeys);
 }
 
-void IZoneManager::SendGlobalKeys(Peer::Ptr peer)
+void ZoneManager::SendGlobalKeys(Peer::Ptr peer)
 {
-    //RouteManager()->Invoke(peer, avledet::util::hashes::Routed::S2C_UpdateKeys, m_globalKeys);
+    //RouteManager::instance().Invoke(peer, avledet::util::hashes::Routed::S2C_UpdateKeys, m_globalKeys);
     peer->Route(avledet::util::hashes::Routed::S2C_UpdateKeys, m_globalKeys);
 }
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
 // private
-void IZoneManager::SendLocationIcons()
+void ZoneManager::SendLocationIcons()
 {
     DataWriter writer;
 
@@ -309,12 +302,12 @@ void IZoneManager::SendLocationIcons()
         writer.write(std::string_view(instance.get().m_feature.get().m_name));
     }
 
-    RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_UpdateIcons, writer.release());
+    RouteManager::instance().InvokeAll(avledet::util::hashes::Routed::S2C_UpdateIcons, writer.release());
 }
 #endif
 
 // private
-void IZoneManager::SendLocationIcons(Peer::Ptr peer)
+void ZoneManager::SendLocationIcons(Peer::Ptr peer)
 {
     LOG_NOTICE(AVL_LOGGER, "Sending location icons to {}", peer->m_name);
 
@@ -348,7 +341,7 @@ void IZoneManager::SendLocationIcons(Peer::Ptr peer)
 }
 
 // public
-void IZoneManager::Save(DataWriter &pkg)
+void ZoneManager::Save(DataWriter &pkg)
 {
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
     pkg.write((std::int32_t) m_generatedZones.size());
@@ -387,7 +380,7 @@ void IZoneManager::Save(DataWriter &pkg)
 }
 
 // public
-void IZoneManager::Load(DataReader &reader, std::int32_t version)
+void ZoneManager::Load(DataReader &reader, std::int32_t version)
 {
     {
         auto count = reader.read<std::uint32_t>();
@@ -468,7 +461,7 @@ void IZoneManager::Load(DataReader &reader, std::int32_t version)
 }
 
 // private
-void IZoneManager::Update()
+void ZoneManager::Update()
 {
     ZoneScoped;
 
@@ -476,7 +469,7 @@ void IZoneManager::Update()
     // TODO 100ms seems a tad too frequent
     //  peers dont even move that fast
     if (VUtils::run_periodic<struct periodic_zone_generation>(100ms)) {
-        for (auto &&peer : NetManager()->GetPeers()) {
+        for (auto &&peer : NetManager::instance().GetPeers()) {
             if (!peer->IsGated()) {
                 // It turns out that zdos generated by whatever ids are different from packets...
                 //  although almost everything is the same...
@@ -490,17 +483,17 @@ void IZoneManager::Update()
 }
 
 /*
-void IZoneManager::RegenerateZone(const ZoneID& zone) {
-    for (auto&& zdo : ZDOManager()->GetZDOs(zone, 0, Prefab::Flag::NONE, Prefab::Flag::Player))
-        ZDOManager()->DestroyZDO(zdo);
+void ZoneManager::RegenerateZone(const ZoneID& zone) {
+    for (auto&& zdo : ZdoManager::instance().GetZDOs(zone, 0, Prefab::Flag::NONE, Prefab::Flag::Player))
+        ZdoManager::instance().DestroyZDO(zdo);
 
     //m_generatedZones.erase(zone);
-    PopulateZone(HeightmapManager()->GetHeightmap(zone));
+    PopulateZone(HeightmapManager::instance().GetHeightmap(zone));
     //m_generatedZones.insert(zone);
 }*/
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
 // Rename?
-void IZoneManager::TryGenerateNearbyZones(Vector3f refPoint)
+void ZoneManager::TryGenerateNearbyZones(Vector3f refPoint)
 {
     auto zone = WorldToZonePos(refPoint);
 
@@ -522,7 +515,7 @@ void IZoneManager::TryGenerateNearbyZones(Vector3f refPoint)
     }
 }
 
-bool IZoneManager::GenerateZoneBlocking(ZoneID zone)
+bool ZoneManager::GenerateZoneBlocking(ZoneID zone)
 {
     if (is_inside_world_radius(zone)) {
         //if ((zone.x > -WORLD_INNER_ZRADIUS && zone.y > -WORLD_INNER_ZRADIUS
@@ -530,20 +523,20 @@ bool IZoneManager::GenerateZoneBlocking(ZoneID zone)
         //{
         auto &&pair = m_generatedZones.insert(zone);
         if (pair.second) {
-            PopulateZone(HeightmapManager()->GetHeightmap(zone));
+            PopulateZone(HeightmapManager::instance().GetHeightmap(zone));
             return true;
         }
     }
     return false;
 }
 
-bool IZoneManager::TryPollGenerateZone(ZoneID zone)
+bool ZoneManager::TryPollGenerateZone(ZoneID zone)
 {
     if (is_inside_world_radius(zone) && !IsZoneGenerated(zone)) {
         //if ((zone.x >= -WORLD_INNER_ZRADIUS && zone.y >= -WORLD_INNER_ZRADIUS
         //    && zone.x <= WORLD_INNER_ZRADIUS && zone.y <= WORLD_INNER_ZRADIUS)
         //    && !IsZoneGenerated(zone)) {
-        if (auto heightmap = HeightmapManager()->PollHeightmap(zone)) {
+        if (auto heightmap = HeightmapManager::instance().PollHeightmap(zone)) {
             m_generatedZones.insert(zone);
 
             PopulateZone(*heightmap);
@@ -554,32 +547,32 @@ bool IZoneManager::TryPollGenerateZone(ZoneID zone)
     return false;
 }
 
-void IZoneManager::PopulateZone(Heightmap &heightmap)
+void ZoneManager::PopulateZone(Heightmap &heightmap)
 {
     ZoneScoped;
 
     //#if AVL_IS_ON(AVL_ZONE_GENERATION)
     std::vector<ClearArea> m_tempClearAreas;
 
-    if (AVL_SETTINGS.m_world_gen_features)
+    if (AVL_CONFIG.m_world_gen_features)
         m_tempClearAreas = TryGenerateFeature(heightmap.get_zone());
 
-    if (AVL_SETTINGS.m_world_gen_vegetation)
+    if (AVL_CONFIG.m_world_gen_vegetation)
         PopulateFoliage(heightmap, m_tempClearAreas);
 
-    if (AVL_SETTINGS.m_world_gen_creatures) {
-        ZDOManager()->Instantiate(*ZONE_CTRL_PREFAB, ZoneToWorldPos(heightmap.get_zone()));
+    if (AVL_CONFIG.m_world_gen_creatures) {
+        ZdoManager::instance().Instantiate(*ZONE_CTRL_PREFAB, ZoneToWorldPos(heightmap.get_zone()));
     }
     //#endif // AVL_OPTION_ENABLE_ZONE_GENERATION
 }
 
-void IZoneManager::PopulateZone(ZoneID zone)
+void ZoneManager::PopulateZone(ZoneID zone)
 {
-    this->PopulateZone(HeightmapManager()->GetHeightmap(zone));
+    this->PopulateZone(HeightmapManager::instance().GetHeightmap(zone));
 }
 
 // private
-Vector3f IZoneManager::GetRandomPointInRadius(VUtils::Random::State &state, Vector3f center, float radius)
+Vector3f ZoneManager::GetRandomPointInRadius(VUtils::Random::State &state, Vector3f center, float radius)
 {
     float f   = state.next_float() * (float) (VUtils::PI * 2.0);
     float num = state.range(0.f, radius);
@@ -587,15 +580,15 @@ Vector3f IZoneManager::GetRandomPointInRadius(VUtils::Random::State &state, Vect
 }
 
 // private
-void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> const &clearAreas)
+void ZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> const &clearAreas)
 {
     auto &&zoneID = heightmap.get_zone();
 
     Vector3f const center = ZoneToWorldPos(zoneID);
 
-    auto const seed = GeoManager()->GetSeed();
+    auto const seed = GeoManager::instance().GetSeed();
 
-    //avledet::util::Biome biomes = GeoManager()->GetBiomes(center.x, center.z);
+    //avledet::util::Biome biomes = GeoManager::instance().GetBiomes(center.x, center.z);
 
     std::vector<ClearArea> placedAreas;
 
@@ -735,7 +728,7 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
                         // END NEW CODE
 
                         if (zoneVegetation->m_inForest) {
-                            float forestFactor = GeoManager()->GetForestFactor(pos);
+                            float forestFactor = GeoManager::instance().GetForestFactor(pos);
                             if (forestFactor < zoneVegetation->m_forestTresholdMin
                                 || forestFactor > zoneVegetation->m_forestTresholdMax) {
                                 continue;
@@ -804,7 +797,7 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
                             //  this is proven because of the correct world loaded zdos,
                             //  however new generated zone zdos are not correctly rotated
 
-                            auto &&zdo = ZDOManager()->Instantiate(zoneVegetation->m_prefab, pos);
+                            auto &&zdo = ZdoManager::instance().Instantiate(zoneVegetation->m_prefab, pos);
                             zdo->set_rotation(rotation);
 
                             // basically any solid objects cannot be overlapped
@@ -834,7 +827,7 @@ void IZoneManager::PopulateFoliage(Heightmap &heightmap, std::vector<ClearArea> 
 }
 
 // private
-bool IZoneManager::InsideClearArea(std::vector<ClearArea> const &areas, Vector3f point)
+bool ZoneManager::InsideClearArea(std::vector<ClearArea> const &areas, Vector3f point)
 {
     for (auto &&clearArea : areas) {
         if (point.x > clearArea.m_center.x - clearArea.m_semiWidth
@@ -847,7 +840,7 @@ bool IZoneManager::InsideClearArea(std::vector<ClearArea> const &areas, Vector3f
     return false;
 }
 
-bool IZoneManager::OverlapsClearArea(std::vector<ClearArea> const &areas, Vector3f point, float radius)
+bool ZoneManager::OverlapsClearArea(std::vector<ClearArea> const &areas, Vector3f point, float radius)
 {
     for (auto &&area : areas) {
 
@@ -861,7 +854,7 @@ bool IZoneManager::OverlapsClearArea(std::vector<ClearArea> const &areas, Vector
 }
 
 // private
-IZoneManager::Feature const *IZoneManager::GetFeature(std::string_view name)
+ZoneManager::Feature const *ZoneManager::GetFeature(std::string_view name)
 {
     for (auto &&feature : m_features) {
         if (feature->m_name == name)
@@ -872,7 +865,7 @@ IZoneManager::Feature const *IZoneManager::GetFeature(std::string_view name)
 
 // public
 // call from within ZNet.init or earlier...
-void IZoneManager::PostGeoInit()
+void ZoneManager::PostGeoInit()
 {
     // Will be empty if world failed to load
     if (!m_generatedFeatures.empty())
@@ -884,7 +877,7 @@ void IZoneManager::PostGeoInit()
     if (!spawnLoc)
         throw std::runtime_error("World spawnpoint missing (StartTemple)");
 
-    if (!AVL_SETTINGS.m_world_gen_features) {
+    if (!AVL_CONFIG.m_world_gen_features) {
         LOG_WARNING(AVL_LOGGER, "Location generation is disabled");
         PrepareFeatures(*spawnLoc);
     } else {
@@ -900,7 +893,7 @@ void IZoneManager::PostGeoInit()
                          .count());
     }
 
-    if (AVL_SETTINGS.m_world_pregenerate && m_generatedZones.empty()) {
+    if (AVL_CONFIG.m_world_pregenerate && m_generatedZones.empty()) {
         auto now(std::chrono::steady_clock::now());
         int prevCount = 0;
 
@@ -958,7 +951,7 @@ void IZoneManager::PostGeoInit()
 }
 
 // private
-void IZoneManager::PrepareFeatures(Feature const &feature)
+void ZoneManager::PrepareFeatures(Feature const &feature)
 {
     int spawnedLocations = 0;
 
@@ -980,7 +973,7 @@ void IZoneManager::PrepareFeatures(Feature const &feature)
     unsigned int errTerrainDelta    = 0;
     unsigned int errorVegetation    = 0;
 
-    VUtils::Random::State state(GeoManager()->GetSeed() + feature.m_hash);
+    VUtils::Random::State state(GeoManager::instance().GetSeed() + feature.m_hash);
     float const locationRadius = std::max(feature.m_exteriorRadius, feature.m_interiorRadius);
 
     float range = feature.m_centerFirst ? feature.m_minDistance : 10000;
@@ -997,7 +990,7 @@ void IZoneManager::PrepareFeatures(Feature const &feature)
             errLocations++;
         } else {
             auto zonePos                       = ZoneToWorldPos(randomZone);
-            avledet::util::BiomeArea biomeArea = GeoManager()->GetBiomeArea(zonePos);
+            avledet::util::BiomeArea biomeArea = GeoManager::instance().GetBiomeArea(zonePos);
 
             if (!(std::to_underlying(feature.m_biomeArea) & std::to_underlying(biomeArea))) {
                 errBiomeArea++;
@@ -1010,20 +1003,20 @@ void IZoneManager::PrepareFeatures(Feature const &feature)
                         || (feature.m_maxDistance != 0 && magnitude > feature.m_maxDistance)) {
                         errCenterDistances++;
                     } else {
-                        avledet::util::Biome biome = GeoManager()->GetBiome(randomPointInZone);
+                        avledet::util::Biome biome = GeoManager::instance().GetBiome(randomPointInZone);
 
                         if (!(std::to_underlying(biome) & std::to_underlying(feature.m_biome)))
                             errNoneBiomes++;
                         else {
                             avledet::util::Color color;
                             randomPointInZone.y
-                                    = GeoManager()->GetHeight(randomPointInZone.x, randomPointInZone.z, color);
+                                    = GeoManager::instance().GetHeight(randomPointInZone.x, randomPointInZone.z, color);
                             float waterDiff = randomPointInZone.y - WATER_LEVEL;
                             if (waterDiff < feature.m_minAltitude || waterDiff > feature.m_maxAltitude)
                                 errAltitude++;
                             else {
                                 if (feature.m_inForest) {
-                                    float forestFactor = GeoManager()->GetForestFactor(randomPointInZone);
+                                    float forestFactor = GeoManager::instance().GetForestFactor(randomPointInZone);
                                     if (forestFactor < feature.m_forestTresholdMin
                                         || forestFactor > feature.m_forestTresholdMax) {
                                         errForestFactor++;
@@ -1042,7 +1035,7 @@ void IZoneManager::PrepareFeatures(Feature const &feature)
 
                                 float delta = 0;
                                 Vector3f vector;
-                                GeoManager()->GetTerrainDelta(state, randomPointInZone,
+                                GeoManager::instance().GetTerrainDelta(state, randomPointInZone,
                                                               feature.m_exteriorRadius, delta, vector);
                                 
                                 if (delta > feature.m_maxTerrainDelta || delta < feature.m_minTerrainDelta) {
@@ -1077,7 +1070,7 @@ void IZoneManager::PrepareFeatures(Feature const &feature)
                                                         float num8 = (float)l / 6.0f * 3.1415927f * 2.0f;
                                                         Vector3f vector2 = randomPointInZone + Vector3f(std::sin(num8) * num7, 0.0f, std::cos(num8) * num7);
                                                         avledet::util::Color color2;
-                                                        GeoManager()->GetHeight(vector2.x, vector2.z, color2);
+                                                        GeoManager::instance().GetHeight(vector2.x, vector2.z, color2);
                                                         float num9 = (feature.m_surroundCheckDistance - num7) / (feature.m_surroundCheckDistance * 2.0f);
                                                         num6 += color2.a * num9;
                                                     }
@@ -1179,7 +1172,7 @@ void IZoneManager::PrepareFeatures(Feature const &feature)
     }
 }
 
-bool IZoneManager::HaveLocationInRange(Feature const &loc, std::string const& group, Vector3f p, float radius, bool maxGroup)
+bool ZoneManager::HaveLocationInRange(Feature const &loc, std::string const& group, Vector3f p, float radius, bool maxGroup)
 {
     for (const auto& pair : m_generatedFeatures)
     {
@@ -1207,7 +1200,7 @@ bool IZoneManager::HaveLocationInRange(Feature const &loc, std::string const& gr
     return false;
 } */
 
-Vector3f IZoneManager::GetRandomPointInZone(VUtils::Random::State &state, ZoneID zone, float locationRadius)
+Vector3f ZoneManager::GetRandomPointInZone(VUtils::Random::State &state, ZoneID zone, float locationRadius)
 {
     auto pos  = ZoneToWorldPos(zone);
     float num = UNITS_PER_ZONE / 2.f;
@@ -1216,7 +1209,7 @@ Vector3f IZoneManager::GetRandomPointInZone(VUtils::Random::State &state, ZoneID
     return pos + Vector3f(x, 0.f, z);
 }
 
-ZoneID IZoneManager::GetRandomZone(VUtils::Random::State &state, float range)
+ZoneID ZoneManager::GetRandomZone(VUtils::Random::State &state, float range)
 {
     int num = (std::int32_t) range / (std::int32_t) UNITS_PER_ZONE;
     ZoneID zone;
@@ -1229,7 +1222,7 @@ ZoneID IZoneManager::GetRandomZone(VUtils::Random::State &state, float range)
 }
 
 // private
-std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(ZoneID zoneID)
+std::vector<ZoneManager::ClearArea> ZoneManager::TryGenerateFeature(ZoneID zoneID)
 {
     auto now(std::chrono::steady_clock::now());
 
@@ -1273,7 +1266,7 @@ std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(ZoneID zon
             rot = Quaternion::euler(0, VUtils::Random::State().range(0, 16) * 22.5f, 0);
         }
 
-        avledet::util::Hash seed = GeoManager()->GetSeed() + zoneID.x * 4271 + zoneID.y * 9187;
+        avledet::util::Hash seed = GeoManager::instance().GetSeed() + zoneID.x * 4271 + zoneID.y * 9187;
         GenerateFeature(location, seed, position, rot);
 
         // TODO fix quill Vector find
@@ -1294,7 +1287,7 @@ std::vector<IZoneManager::ClearArea> IZoneManager::TryGenerateFeature(ZoneID zon
 }
 
 // private
-void IZoneManager::RemoveUngeneratedFeatures(Feature const &feature)
+void ZoneManager::RemoveUngeneratedFeatures(Feature const &feature)
 {
     int count = 0;
     for (auto &&itr = m_generatedFeatures.begin(); itr != m_generatedFeatures.end();) {
@@ -1311,7 +1304,7 @@ void IZoneManager::RemoveUngeneratedFeatures(Feature const &feature)
 }
 
 // private
-void IZoneManager::GenerateFeature(Feature const &location, avledet::util::Hash seed, Vector3f pos,
+void ZoneManager::GenerateFeature(Feature const &location, avledet::util::Hash seed, Vector3f pos,
                                    Quaternion rot)
 {
     VUtils::Random::State state(seed);
@@ -1327,11 +1320,11 @@ void IZoneManager::GenerateFeature(Feature const &location, avledet::util::Hash 
         //      Interior (InteriorTransform)
         //          DG_(dungeon)
 
-        if (!(AVL_SETTINGS.m_dng_enabled && piece.get_prefab().get().AllFlagsPresent(Prefab::Flag::DUNGEON))) {
-            auto &&zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
+        if (!(AVL_CONFIG.m_dng_enabled && piece.get_prefab().get().AllFlagsPresent(Prefab::Flag::DUNGEON))) {
+            auto &&zdo = ZdoManager::instance().Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
             zdo->set_rotation(rot * piece.m_rot);
         } else {
-            auto &&dungeon = DungeonManager()->get_dungeon(piece.m_prefabHash);
+            auto &&dungeon = DungeonManager::instance().get_dungeon(piece.m_prefabHash);
 
             // TODO not really optional, it is required through a branch
             ZDO::optional zdo;
@@ -1347,10 +1340,10 @@ void IZoneManager::GenerateFeature(Feature const &location, avledet::util::Hash 
 
                 piecePos.y = dungeon.m_interior_position.y + pos.y;
 
-                zdo = ZDOManager()->Instantiate(piece.m_prefabHash, piecePos);
+                zdo = ZdoManager::instance().Instantiate(piece.m_prefabHash, piecePos);
                 zdo->set_rotation(piece.m_rot);
             } else {
-                zdo = ZDOManager()->Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
+                zdo = ZdoManager::instance().Instantiate(piece.m_prefabHash, pos + rot * piece.m_pos);
                 zdo->set_rotation(rot * piece.m_rot);
             }
 
@@ -1358,9 +1351,9 @@ void IZoneManager::GenerateFeature(Feature const &location, avledet::util::Hash 
 
             // Only add real sky dungeon
             if (zdo->get_position().y > 4000)
-                DungeonManager()->m_dungeonInstances.push_back(zdo->get_id());
+                DungeonManager::instance().m_dungeonInstances.push_back(zdo->get_id());
 
-            DungeonManager()->generate(dungeon, zdo);
+            DungeonManager::instance().generate(dungeon, zdo);
         }
     }
     //WearNTear.m_randomInitialDamage = false;
@@ -1373,10 +1366,10 @@ void IZoneManager::GenerateFeature(Feature const &location, avledet::util::Hash 
 
 // could be inlined...
 // private
-void IZoneManager::GenerateLocationProxy(Feature const &location, avledet::util::Hash seed, Vector3f pos,
+void ZoneManager::GenerateLocationProxy(Feature const &location, avledet::util::Hash seed, Vector3f pos,
                                          Quaternion rot)
 {
-    auto &&zdo = ZDOManager()->Instantiate(*LOCATION_PROXY_PREFAB, pos);
+    auto &&zdo = ZdoManager::instance().Instantiate(*LOCATION_PROXY_PREFAB, pos);
     zdo->set_rotation(rot);
 
     zdo->set(avledet::util::hashes::ZDO::ZoneManager::LOCATION, location.m_hash);
@@ -1385,9 +1378,9 @@ void IZoneManager::GenerateLocationProxy(Feature const &location, avledet::util:
 
 // public
 // TODO make this batch update every time a new location is added or whatever
-std::list<std::reference_wrapper<IZoneManager::Feature::Instance>> IZoneManager::GetFeatureIcons()
+std::list<std::reference_wrapper<ZoneManager::Feature::Instance>> ZoneManager::GetFeatureIcons()
 {
-    std::list<std::reference_wrapper<IZoneManager::Feature::Instance>> result;
+    std::list<std::reference_wrapper<ZoneManager::Feature::Instance>> result;
 
     for (auto &&pair : m_generatedFeatures) {
         auto &&instance = pair.second;
@@ -1403,7 +1396,7 @@ std::list<std::reference_wrapper<IZoneManager::Feature::Instance>> IZoneManager:
 }
 
 // private
-void IZoneManager::GetTerrainDelta(VUtils::Random::State &state, Vector3f center, float radius, float &delta,
+void ZoneManager::GetTerrainDelta(VUtils::Random::State &state, Vector3f center, float radius, float &delta,
                                    Vector3f &slopeDirection)
 {
     float num2 = std::numeric_limits<float>::min();
@@ -1429,18 +1422,18 @@ void IZoneManager::GetTerrainDelta(VUtils::Random::State &state, Vector3f center
 
 // used importantly for snapping and location/vegetation generation
 // public
-float IZoneManager::GetGroundHeight(Vector3f p)
+float ZoneManager::GetGroundHeight(Vector3f p)
 {
-    return GeoManager()->GetHeight(p.x, p.z);
+    return GeoManager::instance().GetHeight(p.x, p.z);
 }
 
 // public
 // if terrain is just heightmap,
 // could easily create a wrapper and poll points where needed
-Heightmap &IZoneManager::GetGroundData(Vector3f &p, Vector3f &normal, avledet::util::Biome &biome,
+Heightmap &ZoneManager::GetGroundData(Vector3f &p, Vector3f &normal, avledet::util::Biome &biome,
                                        avledet::util::BiomeArea &biomeArea)
 {
-    auto &&heightmap = HeightmapManager()->GetHeightmap(WorldToZonePos(p));
+    auto &&heightmap = HeightmapManager::instance().GetHeightmap(WorldToZonePos(p));
 
     heightmap.GetWorldHeight(p, p.y);
 
@@ -1453,11 +1446,11 @@ Heightmap &IZoneManager::GetGroundData(Vector3f &p, Vector3f &normal, avledet::u
 }
 
 // public
-IZoneManager::Feature::Instance *IZoneManager::find_nearest_feature(std::string_view name, Vector3f point)
+ZoneManager::Feature::Instance *ZoneManager::find_nearest_feature(std::string_view name, Vector3f point)
 {
     float closestDist = std::numeric_limits<float>::max();
 
-    IZoneManager::Feature::Instance *closest = nullptr;
+    ZoneManager::Feature::Instance *closest = nullptr;
 
     for (auto &&pair : m_generatedFeatures) {
         auto &&instance = pair.second;
@@ -1476,7 +1469,7 @@ IZoneManager::Feature::Instance *IZoneManager::find_nearest_feature(std::string_
 #else
 
 // public
-bool IZoneManager::find_nearest_feature(std::string_view name, Vector3f in, Vector3f &out)
+bool ZoneManager::find_nearest_feature(std::string_view name, Vector3f in, Vector3f &out)
 {
     float sqMin = std::numeric_limits<float>::max();
 
@@ -1497,7 +1490,7 @@ bool IZoneManager::find_nearest_feature(std::string_view name, Vector3f in, Vect
 // public
 // this is world position to zone position
 // formerly GetZone
-ZoneID IZoneManager::WorldToZonePos(Vector3f point)
+ZoneID ZoneManager::WorldToZonePos(Vector3f point)
 {
     auto x = std::floor((point.x + (float) UNITS_PER_ZONE / 2.f) / (float) UNITS_PER_ZONE);
     auto y = std::floor((point.z + (float) UNITS_PER_ZONE / 2.f) / (float) UNITS_PER_ZONE);
@@ -1507,14 +1500,14 @@ ZoneID IZoneManager::WorldToZonePos(Vector3f point)
 // public
 // zone position to ~world position
 // GetZonePos
-Vector3f IZoneManager::ZoneToWorldPos(ZoneID id)
+Vector3f ZoneManager::ZoneToWorldPos(ZoneID id)
 {
     return Vector3f(id.x * UNITS_PER_ZONE, 0, id.y * UNITS_PER_ZONE);
 }
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
 // private
-bool IZoneManager::IsZoneGenerated(ZoneID zoneID)
+bool ZoneManager::IsZoneGenerated(ZoneID zoneID)
 {
     return m_generatedZones.contains(zoneID);
 }

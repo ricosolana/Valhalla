@@ -5,14 +5,15 @@
 #include <thread>
 
 #include "DataStream.h"
+#include "Manager.h"
 #include "Types.h"
 #include "VUtils.h"
 
-class IWorldManager;
+class WorldManager;
 
 class World
 {
-    friend class IWorldManager;
+    friend class WorldManager;
 
   public:
     std::string m_name;
@@ -43,7 +44,7 @@ class World
     void WriteFiles();
 };
 
-class IWorldManager
+class WorldManager : public avledet::util::IManager<WorldManager>
 {
   private:
     std::unique_ptr<World> m_world;
@@ -88,6 +89,3 @@ class IWorldManager
 
     void PostInit();
 };
-
-// Manager class for everything related to world file loading and file saving
-IWorldManager *WorldManager();

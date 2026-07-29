@@ -13,6 +13,8 @@
 #include <quill/DirectFormatCodec.h>
 #include <quill/HelperMacros.h>
 #include <quill/LogMacros.h>
+#include <quill/bundled/fmt/base.h>
+#include <magic_enum/magic_enum_all.hpp>
 #include <tracy/Tracy.hpp>
 
 #include "CompileSettings.h"
@@ -192,6 +194,10 @@ std::ostream &operator<<(std::ostream &st, std::vector<T> const &value)
     return st;
 }
 
+/**
+ * STD::VECTOR QUILL LOGGABLE FACADE
+*/
+
 //QUILL_LOGGABLE_DEFERRED_FORMAT()
 template<class T>
 //requires (avledet::util::traits::is_iterable<T> && )
@@ -202,3 +208,51 @@ template<class T>
 //requires avledet::util::traits::is_iterable<T>
 struct quill::Codec<std::vector<T>> : quill::DeferredFormatCodec<T>
 {};
+
+/**
+ * ENUM CLASS QUILL LOGGABLE FACADE
+*/
+
+/* template<avledet::util::traits::scoped_enum T>
+struct fmtquill::formatter<T> : fmtquill::ostream_formatter
+{};
+
+template<avledet::util::traits::scoped_enum T>
+struct quill::Codec<T> : quill::DeferredFormatCodec<T>
+{}; */
+
+
+// TODO fix the below
+//  was intended to add enum logging overloads
+
+
+/* template<avledet::util::traits::scoped_enum T>
+std::ostream& operator<<(std::ostream& os, T value)
+{
+    return os << magic_enum::enum_name(value);
+}
+
+// 2. concept: scoped enum AND no formatter already defined
+template<typename T>
+struct is_quill_provided_enum : std::false_type {};
+
+template<>
+struct is_quill_provided_enum<quill::LogLevel> : std::true_type {};
+
+// add more specializations as needed
+
+template<typename T>
+concept scoped_enum_needs_formatter =
+    avledet::util::traits::scoped_enum<T> &&
+    !is_quill_provided_enum<T>::value;
+
+// 3. formatter specialization only for those
+template<scoped_enum_needs_formatter T>
+struct fmtquill::formatter<T> : fmtquill::ostream_formatter
+{};
+
+// 4. codec specialization only for those
+template<scoped_enum_needs_formatter T>
+struct quill::Codec<T> : quill::DeferredFormatCodec<T>
+{};
+ */

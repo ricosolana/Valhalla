@@ -13,13 +13,6 @@
 #include <limits>
 #include <ratio>
 
-auto ROUTE_MANAGER = std::make_unique<IRouteManager>();// TODO stop constructing in global
-
-IRouteManager *RouteManager()
-{
-    return ROUTE_MANAGER.get();
-}
-
 // throttle different packets differently
 // throttling inputs:
 //	- method hash
@@ -41,7 +34,7 @@ IRouteManager *RouteManager()
 //
 
 
-void IRouteManager::OnNewPeer(Peer::Ptr peer)
+void RouteManager::OnNewPeer(Peer::Ptr peer)
 {
     peer->Register("RoutedRPC", [this](Peer::Ptr peer, DataReader reader) {
         if (peer->IsGated())
@@ -67,7 +60,7 @@ void IRouteManager::OnNewPeer(Peer::Ptr peer)
         if (target == EVERYBODY) {
             // Confirmed: targetZDO CAN have a value when globally routed
             //  TODO make params a COPY here for lua, or define copy-like behaviour / modifs...
-            if (!AVL_SCRIPT_EVENT(IScriptManager::Events::RouteInAll ^ hash, peer, targetZDO, params)) {
+            if (!AVL_SCRIPT_EVENT(ScriptManager::Events::RouteInAll ^ hash, peer, targetZDO, params)) {
                 return;
             }
 
@@ -85,7 +78,7 @@ void IRouteManager::OnNewPeer(Peer::Ptr peer)
                 this->internal_invoke(peer, hash, reader0);
             }//else ... // netview currently not supported
 
-            auto &&peers = NetManager()->GetPeers();
+            auto &&peers = NetManager::instance().GetPeers();
             if (!peers.empty()) {
                 DataWriter writer;
 
@@ -93,7 +86,7 @@ void IRouteManager::OnNewPeer(Peer::Ptr peer)
                 {
                     avledet::util::WriterScopedEncap scoped(writer);
 
-                    RouteManager()->prepare_packet(writer, sender, target, targetZDO, hash);
+                    RouteManager::instance().prepare_packet(writer, sender, target, targetZDO, hash);
 
                     writer.write(params);
                 }
@@ -108,9 +101,9 @@ void IRouteManager::OnNewPeer(Peer::Ptr peer)
             }
         } else {
             if (target != AVL_ID) {
-                if (auto other = NetManager()->FindPeerByUserID(target)) {
+                if (auto other = NetManager::instance().FindPeerByUserID(target)) {
                     // TODO test if working correctly
-                    if (!AVL_SCRIPT_EVENT(IScriptManager::Events::Routed ^ hash, peer, other, targetZDO,
+                    if (!AVL_SCRIPT_EVENT(ScriptManager::Events::Routed ^ hash, peer, other, targetZDO,
                                           params)) {
                         return;
                     }
@@ -121,7 +114,7 @@ void IRouteManager::OnNewPeer(Peer::Ptr peer)
                     {
                         avledet::util::WriterScopedEncap scoped(writer);
 
-                        RouteManager()->prepare_packet(writer, sender, target, targetZDO, hash);
+                        RouteManager::instance().prepare_packet(writer, sender, target, targetZDO, hash);
 
                         writer.write(params);
                     }

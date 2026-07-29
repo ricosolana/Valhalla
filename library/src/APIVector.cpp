@@ -6,7 +6,7 @@
 
     #include "ModManager.h"
 
-void IScriptManager::load_userdata_vector()
+void ScriptManager::load_userdata_vector()
 {
     LOG_DEBUG(AVL_LOGGER, "Initializing API types - CSU::Vec");
 

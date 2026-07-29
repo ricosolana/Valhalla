@@ -16,7 +16,7 @@
 
     #include "ModManager.h"
 
-void IScriptManager::load_userdata_types()
+void ScriptManager::load_userdata_types()
 {
     LOG_DEBUG(AVL_LOGGER, "Initializing API types - types");
 

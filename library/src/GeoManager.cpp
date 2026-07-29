@@ -32,16 +32,9 @@
     #include "VUtilsRandom.h"
     #include "ZoneManager.h"
 
-auto GEO_MANAGER = std::make_unique<IGeoManager>();
-
-IGeoManager *GeoManager()
+void GeoManager::PostWorldInit()
 {
-    return GEO_MANAGER.get();
-}
-
-void IGeoManager::PostWorldInit()
-{
-    m_world = WorldManager()->GetWorld();
+    m_world = WorldManager::instance().GetWorld();
     assert(m_world);
 
     this->VersionSetup(m_world->m_worldGenVersion);
@@ -68,7 +61,7 @@ void IGeoManager::PostWorldInit()
     this->Pregenerate();
 }
 
-void IGeoManager::VersionSetup(int version)
+void GeoManager::VersionSetup(int version)
 {
     if (version <= 0)
     {
@@ -82,29 +75,29 @@ void IGeoManager::VersionSetup(int version)
     }
 }
 
-void IGeoManager::Pregenerate()
+void GeoManager::Pregenerate()
 {
     this->FindLakes();
     this->m_rivers = this->PlaceRivers();
     this->m_streams = this->PlaceStreams();
 }
 
-std::vector<Vector2f> IGeoManager::GetLakes()
+std::vector<Vector2f> GeoManager::GetLakes()
 {
     return this->m_lakes;
 }
 
-std::vector<IGeoManager::River> IGeoManager::GetRivers()
+std::vector<GeoManager::River> GeoManager::GetRivers()
 {
     return this->m_rivers;
 }
 
-std::vector<IGeoManager::River> IGeoManager::GetStreams()
+std::vector<GeoManager::River> GeoManager::GetStreams()
 {
     return this->m_streams;
 }
 
-void IGeoManager::FindLakes()
+void GeoManager::FindLakes()
 {
     std::vector<Vector2f> list;
     for (float num = -10000.0f; num <= 10000.0f; num = (float)((double)num + 128.0))
@@ -120,7 +113,7 @@ void IGeoManager::FindLakes()
     this->m_lakes = this->MergePoints(list, 800.0f);
 }
 
-std::vector<Vector2f> IGeoManager::MergePoints(std::vector<Vector2f> &points, float range)
+std::vector<Vector2f> GeoManager::MergePoints(std::vector<Vector2f> &points, float range)
 {
     std::vector<Vector2f> list;
     while (!points.empty()) {
@@ -140,7 +133,7 @@ std::vector<Vector2f> IGeoManager::MergePoints(std::vector<Vector2f> &points, fl
     return list;
 }
 
-int IGeoManager::FindClosest(std::vector<Vector2f> const& points, Vector2f const& p, float maxDistance)
+int GeoManager::FindClosest(std::vector<Vector2f> const& points, Vector2f const& p, float maxDistance)
 {
     int num = -1;
     float num2 = std::numeric_limits<float>::max();
@@ -159,7 +152,7 @@ int IGeoManager::FindClosest(std::vector<Vector2f> const& points, Vector2f const
     return num;
 }
 
-std::vector<IGeoManager::River> IGeoManager::PlaceStreams()
+std::vector<GeoManager::River> GeoManager::PlaceStreams()
 {
     //VUtils::Random::State state(this->m_streamSeed);
     std::vector<River> list;
@@ -191,7 +184,7 @@ std::vector<IGeoManager::River> IGeoManager::PlaceStreams()
     return list;
 }
 
-bool IGeoManager::FindStreamEndPoint(int iterations, float minHeight, float maxHeight, Vector2f const& start, float minLength, float maxLength, Vector2f &end)
+bool GeoManager::FindStreamEndPoint(int iterations, float minHeight, float maxHeight, Vector2f const& start, float minLength, float maxLength, Vector2f &end)
 {
     float num = (float)(((double)maxLength - (double)minLength) / (double)iterations);
     float num2 = maxLength;
@@ -211,7 +204,7 @@ bool IGeoManager::FindStreamEndPoint(int iterations, float minHeight, float maxH
     return false;
 }
 
-bool IGeoManager::FindStreamStartPoint(int iterations, float minHeight, float maxHeight, Vector2f& p, float& starth)
+bool GeoManager::FindStreamStartPoint(int iterations, float minHeight, float maxHeight, Vector2f& p, float& starth)
 {
     for (int i = 0; i < iterations; i++)
     {
@@ -230,7 +223,7 @@ bool IGeoManager::FindStreamStartPoint(int iterations, float minHeight, float ma
     return false;
 }
 
-std::vector<IGeoManager::River> IGeoManager::PlaceRivers()
+std::vector<GeoManager::River> GeoManager::PlaceRivers()
 {
     std::vector<River> list;
     std::vector<Vector2f> list2 = this->m_lakes;
@@ -265,7 +258,7 @@ std::vector<IGeoManager::River> IGeoManager::PlaceRivers()
 }
 
 /*
-int IGeoManager::FindClosestRiverEnd(std::vector<River> const& rivers, std::vector<Vector2f> const& points, Vector2f const&p, float maxDistance, float heightLimit, float checkStep)
+int GeoManager::FindClosestRiverEnd(std::vector<River> const& rivers, std::vector<Vector2f> const& points, Vector2f const&p, float maxDistance, float heightLimit, float checkStep)
 {
     int num = -1;
     float num2 = 99999.0f;
@@ -284,7 +277,7 @@ int IGeoManager::FindClosestRiverEnd(std::vector<River> const& rivers, std::vect
     return num;
 }*/
 
-int IGeoManager::FindRandomRiverEnd(std::vector<River> const& rivers, std::vector<Vector2f> const&points, Vector2f const&p, float maxDistance, float heightLimit, float checkStep)
+int GeoManager::FindRandomRiverEnd(std::vector<River> const& rivers, std::vector<Vector2f> const&points, Vector2f const&p, float maxDistance, float heightLimit, float checkStep)
 {
     std::vector<int> list = std::vector<int>();
     for (std::size_t i = 0; i < points.size(); i++)
@@ -301,7 +294,7 @@ int IGeoManager::FindRandomRiverEnd(std::vector<River> const& rivers, std::vecto
     return list[m_river_random.range(0, list.size())];
 }
 
-bool IGeoManager::HaveRiver(std::vector<River> const&rivers, Vector2f const&p0)
+bool GeoManager::HaveRiver(std::vector<River> const&rivers, Vector2f const&p0)
 {
     for (const auto& river : rivers)
     {
@@ -313,7 +306,7 @@ bool IGeoManager::HaveRiver(std::vector<River> const&rivers, Vector2f const&p0)
     return false;
 }
 
-bool IGeoManager::HaveRiver(std::vector<River> const&rivers, Vector2f const&p0, Vector2f const&p1)
+bool GeoManager::HaveRiver(std::vector<River> const&rivers, Vector2f const&p0, Vector2f const&p1)
 {
     for (const auto& river : rivers)
     {
@@ -325,7 +318,7 @@ bool IGeoManager::HaveRiver(std::vector<River> const&rivers, Vector2f const&p0, 
     return false;
 }
 
-bool IGeoManager::IsRiverAllowed(Vector2f const&p0, Vector2f const&p1, float step, float heightLimit)
+bool GeoManager::IsRiverAllowed(Vector2f const&p0, Vector2f const&p1, float step, float heightLimit)
 {
     float num = p0.distance_to(p1);
     Vector2f normalized = (p1 - p0).normal();
@@ -346,7 +339,7 @@ bool IGeoManager::IsRiverAllowed(Vector2f const&p0, Vector2f const&p1, float ste
     return !flag;
 }
 
-void IGeoManager::RenderRivers(std::vector<River> const&rivers)
+void GeoManager::RenderRivers(std::vector<River> const&rivers)
 {
     avledet::util::Map<Vector2i, std::vector<RiverPoint>> dictionary;
     for (const auto& river : rivers)
@@ -372,7 +365,7 @@ void IGeoManager::RenderRivers(std::vector<River> const&rivers)
     }
 }
 
-void IGeoManager::AddRiverPoint(avledet::util::Map<Vector2i, std::vector<RiverPoint>> &riverPoints, Vector2f const&p, float r, River const&river)
+void GeoManager::AddRiverPoint(avledet::util::Map<Vector2i, std::vector<RiverPoint>> &riverPoints, Vector2f const&p, float r, River const&river)
 {
     Vector2i riverGrid = this->GetRiverGrid(p.x, p.y);
     
@@ -390,27 +383,27 @@ void IGeoManager::AddRiverPoint(avledet::util::Map<Vector2i, std::vector<RiverPo
     }
 }
 
-void IGeoManager::AddRiverPoint(avledet::util::Map<Vector2i, std::vector<RiverPoint>> &riverPoints, Vector2i const&grid, Vector2f const&p, float r, River const&river)
+void GeoManager::AddRiverPoint(avledet::util::Map<Vector2i, std::vector<RiverPoint>> &riverPoints, Vector2i const&grid, Vector2f const&p, float r, River const&river)
 {
     // TODO perhaps emplace_back a direct ctor
     riverPoints[grid].push_back({p, r});
 }
 
-bool IGeoManager::InsideRiverGrid(Vector2i const&grid, Vector2f const& p, float r)
+bool GeoManager::InsideRiverGrid(Vector2i const&grid, Vector2f const& p, float r)
 {
     Vector2f vector((float)((double)grid.x * 64.0), (float)((double)grid.y * 64.0));
     Vector2f vector2 = p - vector;
     return std::abs(vector2.x) < (float)((double)r + 32.0) && std::abs(vector2.y) < (float)((double)r + 32.0);
 }
 
-Vector2i IGeoManager::GetRiverGrid(float wx, float wy)
+Vector2i GeoManager::GetRiverGrid(float wx, float wy)
 {
     int num = (int)std::floor(((double)wx + 32.0) / 64.0);
     int num2 = (int)std::floor(((double)wy + 32.0) / 64.0);
     return Vector2i(num, num2);
 }
 
-void IGeoManager::GetRiverWeight(float wx, float wy, float& weight, float& width)
+void GeoManager::GetRiverWeight(float wx, float wy, float& weight, float& width)
 {
     Vector2i riverGrid = GetRiverGrid(wx, wy);
 
@@ -449,7 +442,7 @@ void IGeoManager::GetRiverWeight(float wx, float wy, float& weight, float& width
     }
 }
 
-void IGeoManager::GetWeight(std::vector<RiverPoint> const& points, float wx, float wy, float& weight, float& width)
+void GeoManager::GetWeight(std::vector<RiverPoint> const& points, float wx, float wy, float& weight, float& width)
 {
     Vector2f vector(wx, wy);
     weight = 0.0f;
@@ -477,7 +470,7 @@ void IGeoManager::GetWeight(std::vector<RiverPoint> const& points, float wx, flo
     }
 }
 
-VUtils::BiomeArea IGeoManager::GetBiomeArea(Vector3f const& point)
+VUtils::BiomeArea GeoManager::GetBiomeArea(Vector3f const& point)
 {
     VUtils::Biome biome = this->GetBiome(point);
     VUtils::Biome biome2 = this->GetBiome(point - Vector3f(-64.0f, 0.0f, -64.0f));
@@ -495,40 +488,40 @@ VUtils::BiomeArea IGeoManager::GetBiomeArea(Vector3f const& point)
     return VUtils::BiomeArea::Edge;
 }
 
-VUtils::Biome IGeoManager::GetBiome(Vector3f const& point)
+VUtils::Biome GeoManager::GetBiome(Vector3f const& point)
 {
     return this->GetBiome(point.x, point.z, 0.02f, false);
 }
 
-bool IGeoManager::IsAshlands(float x, float y)
+bool GeoManager::IsAshlands(float x, float y)
 {
     double num = (double)WorldAngle(x, y) * 100.0;
     return (double)VUtils::Math::magnitude(x, (float)((double)y + (double)ashlandsYOffset)) > (double)ashlandsMinDistance + num;
 }
 
-float IGeoManager::GetAshlandsOceanGradient(float x, float y)
+float GeoManager::GetAshlandsOceanGradient(float x, float y)
 {
     double num = (double)WorldAngle(x, y + ashlandsYOffset) * 100.0;
     return (float)(((double)VUtils::Math::magnitude(x, y + ashlandsYOffset) - ((double)ashlandsMinDistance + num)) / 300.0);
 }
 
-float IGeoManager::GetAshlandsOceanGradient(Vector2f const& pos)
+float GeoManager::GetAshlandsOceanGradient(Vector2f const& pos)
 {
     return GetAshlandsOceanGradient(pos.x, pos.y);
 }
 
-float IGeoManager::GetAshlandsOceanGradient(Vector3f const& pos)
+float GeoManager::GetAshlandsOceanGradient(Vector3f const& pos)
 {
     return GetAshlandsOceanGradient(pos.x, pos.z);
 }
 
-bool IGeoManager::IsDeepnorth(float x, float y)
+bool GeoManager::IsDeepnorth(float x, float y)
 {
     float num = (float)((double)WorldAngle(x, y) * 100.0);
     return Vector2f(x, (float)((double)y + 4000.0)).magnitude() > (float)(12000.0 + (double)num);
 }
 
-VUtils::Biome IGeoManager::GetBiome(float wx, float wy, float oceanLevel, bool waterAlwaysOcean)
+VUtils::Biome GeoManager::GetBiome(float wx, float wy, float oceanLevel, bool waterAlwaysOcean)
 {
     float num = VUtils::Math::magnitude(wx, wy);
     float baseHeight = this->GetBaseHeight(wx, wy);
@@ -584,12 +577,12 @@ VUtils::Biome IGeoManager::GetBiome(float wx, float wy, float oceanLevel, bool w
     
 }
 
-float IGeoManager::WorldAngle(float wx, float wy)
+float GeoManager::WorldAngle(float wx, float wy)
 {
     return (float)std::sin((double)((float)((double)((float)std::atan2((double)wx, (double)wy)) * 20.0)));
 }
 
-float IGeoManager::GetBaseHeight(float wx, float wy)
+float GeoManager::GetBaseHeight(float wx, float wy)
 {
     float num4 = VUtils::Math::magnitude(wx, wy);
     double num5 = (double)wx;
@@ -627,7 +620,7 @@ float IGeoManager::GetBaseHeight(float wx, float wy)
     return num7;
 }
 
-float IGeoManager::AddRivers(float wx, float wy, float h)
+float GeoManager::AddRivers(float wx, float wy, float h)
 {
     float num;
     float num2;
@@ -651,27 +644,27 @@ float IGeoManager::AddRivers(float wx, float wy, float h)
     return h;
 }
 
-float IGeoManager::GetHeight(float wx, float wy)
+float GeoManager::GetHeight(float wx, float wy)
 {
     VUtils::Biome biome = this->GetBiome(wx, wy, 0.02f, false);
     VUtils::Color color;
     return this->GetBiomeHeight(biome, wx, wy, color, false);
 }
 
-float IGeoManager::GetHeight(float wx, float wy, VUtils::Color &mask)
+float GeoManager::GetHeight(float wx, float wy, VUtils::Color &mask)
 {
     VUtils::Biome biome = this->GetBiome(wx, wy, 0.02f, false);
     return this->GetBiomeHeight(biome, wx, wy, mask, false);
 }
 
-float IGeoManager::GetPregenerationHeight(float wx, float wy)
+float GeoManager::GetPregenerationHeight(float wx, float wy)
 {
     VUtils::Biome biome = this->GetBiome(wx, wy, 0.02f, false);
     VUtils::Color color;
     return this->GetBiomeHeight(biome, wx, wy, color, true);
 }
 
-float IGeoManager::GetBiomeHeight(VUtils::Biome biome, float wx, float wy, VUtils::Color& mask, bool preGeneration)
+float GeoManager::GetBiomeHeight(VUtils::Biome biome, float wx, float wy, VUtils::Color& mask, bool preGeneration)
 {
     float num;
     if (preGeneration)
@@ -727,7 +720,7 @@ float IGeoManager::GetBiomeHeight(VUtils::Biome biome, float wx, float wy, VUtil
     return 0.0f;
 }
 
-float IGeoManager::GetMarshHeight(float wx, float wy)
+float GeoManager::GetMarshHeight(float wx, float wy)
 {
     float num = wx;
     float num2 = wy;
@@ -743,7 +736,7 @@ float IGeoManager::GetMarshHeight(float wx, float wy)
     return (float)((double)num3 + (double)VUtils::Math::PerlinNoise(num4 * 0.4000000059604645, num5 * 0.4000000059604645) * 0.003000000026077032);
 }
 
-float IGeoManager::GetMeadowsHeight(float wx, float wy)
+float GeoManager::GetMeadowsHeight(float wx, float wy)
 {
     float num = wx;
     float num2 = wy;
@@ -768,7 +761,7 @@ float IGeoManager::GetMeadowsHeight(float wx, float wy)
     return (float)((double)num6 + (double)VUtils::Math::PerlinNoise(num3 * 0.4000000059604645, num4 * 0.4000000059604645) * 0.003000000026077032);
 }
 
-float IGeoManager::GetForestHeight(float wx, float wy)
+float GeoManager::GetForestHeight(float wx, float wy)
 {
     float num = wx;
     float num2 = wy;
@@ -785,7 +778,7 @@ float IGeoManager::GetForestHeight(float wx, float wy)
     return (float)((double)num3 + (double)VUtils::Math::PerlinNoise(num4 * 0.4000000059604645, num5 * 0.4000000059604645) * 0.003000000026077032);
 }
 
-float IGeoManager::GetMistlandsHeight(float wx, float wy, VUtils::Color &mask)
+float GeoManager::GetMistlandsHeight(float wx, float wy, VUtils::Color &mask)
 {
     float num = wx;
     float num2 = wy;
@@ -814,7 +807,7 @@ float IGeoManager::GetMistlandsHeight(float wx, float wy, VUtils::Color &mask)
     return num3;
 }
 
-float IGeoManager::GetPlainsHeight(float wx, float wy)
+float GeoManager::GetPlainsHeight(float wx, float wy)
 {
     float num = wx;
     float num2 = wy;
@@ -839,7 +832,7 @@ float IGeoManager::GetPlainsHeight(float wx, float wy)
     return (float)((double)num6 + (double)VUtils::Math::PerlinNoise(num3 * 0.4000000059604645, num4 * 0.4000000059604645) * 0.003000000026077032);
 }
 
-float IGeoManager::GetMenuHeight(float wx, float wy)
+float GeoManager::GetMenuHeight(float wx, float wy)
 {
     double baseHeight = (double)this->GetBaseHeight(wx, wy);
     wx = (float)((double)wx + 100000.0 + (double)this->m_offset3);
@@ -851,7 +844,7 @@ float IGeoManager::GetMenuHeight(float wx, float wy)
     return (float)((double)((float)((double)((float)(baseHeight + (double)num3 * 0.10000000149011612)) + (double)VUtils::Math::PerlinNoise(num * 0.10000000149011612, num2 * 0.10000000149011612) * 0.009999999776482582)) + (double)VUtils::Math::PerlinNoise(num * 0.4000000059604645, num2 * 0.4000000059604645) * 0.003000000026077032);
 }
 
-float IGeoManager::GetAshlandsHeightPregenerate(float wx, float wy)
+float GeoManager::GetAshlandsHeightPregenerate(float wx, float wy)
 {
     float num = wx;
     float num2 = wy;
@@ -871,7 +864,7 @@ float IGeoManager::GetAshlandsHeightPregenerate(float wx, float wy)
 
 
 
-float IGeoManager::GetAshlandsHeight(float wx, float wy, VUtils::Color &mask, bool cheap)
+float GeoManager::GetAshlandsHeight(float wx, float wy, VUtils::Color &mask, bool cheap)
 {
     //As for the code: yes, this is not original to the Valheim devs. 
     //This is almost verbatim FastNoise by Jordan Peck (GitHub handle Auburns), 
@@ -945,7 +938,7 @@ float IGeoManager::GetAshlandsHeight(float wx, float wy, VUtils::Color &mask, bo
     return (float)num14;
 }
 
-float IGeoManager::GetEdgeHeight(float wx, float wy)
+float GeoManager::GetEdgeHeight(float wx, float wy)
 {
     float num = VUtils::Math::magnitude(wx, wy);
     float num2 = 10490.0f;
@@ -960,12 +953,12 @@ float IGeoManager::GetEdgeHeight(float wx, float wy)
     return this->AddRivers(wx, wy, num5);
 }
 
-float IGeoManager::GetOceanHeight(float wx, float wy)
+float GeoManager::GetOceanHeight(float wx, float wy)
 {
     return this->GetBaseHeight(wx, wy);
 }
 
-float IGeoManager::BaseHeightTilt(float wx, float wy)
+float GeoManager::BaseHeightTilt(float wx, float wy)
 {
     float baseHeight = this->GetBaseHeight((float)((double)wx - 1.0), wy);
     double baseHeight2 = (double)this->GetBaseHeight((float)((double)wx + 1.0), wy);
@@ -974,7 +967,7 @@ float IGeoManager::BaseHeightTilt(float wx, float wy)
     return (float)((double)std::abs((float)(baseHeight2 - (double)baseHeight)) + (double)std::abs((float)((double)baseHeight3 - (double)baseHeight4)));
 }
 
-float IGeoManager::GetSnowMountainHeight(float wx, float wy)
+float GeoManager::GetSnowMountainHeight(float wx, float wy)
 {
     float num = wx;
     float num2 = wy;
@@ -995,7 +988,7 @@ float IGeoManager::GetSnowMountainHeight(float wx, float wy)
     return (float)((double)num3 + (double)VUtils::Math::PerlinNoise(num5 * 0.20000000298023224, num6 * 0.20000000298023224) * 2.0 * (double)num4);
 }
 
-float IGeoManager::GetDeepNorthHeight(float wx, float wy)
+float GeoManager::GetDeepNorthHeight(float wx, float wy)
 {
     float num = wx;
     float num2 = wy;
@@ -1015,7 +1008,7 @@ float IGeoManager::GetDeepNorthHeight(float wx, float wy)
     return (float)((double)num3 + (double)VUtils::Math::PerlinNoise((double)(wx * 0.4f), (double)(wy * 0.4f)) * 0.003000000026077032);
 }
 
-double IGeoManager::CreateAshlandsGap(float wx, float wy)
+double GeoManager::CreateAshlandsGap(float wx, float wy)
 {
     double num = (double)WorldAngle(wx, wy) * 100.0;
     double num2 = (double)VUtils::Math::magnitude(wx, wy + ashlandsYOffset) - ((double)ashlandsMinDistance + num);
@@ -1023,7 +1016,7 @@ double IGeoManager::CreateAshlandsGap(float wx, float wy)
     return VUtils::Math::MathfLikeSmoothStep(0.0, 1.0, (double)((float)num2));
 }
 
-double IGeoManager::CreateDeepNorthGap(float wx, float wy)
+double GeoManager::CreateDeepNorthGap(float wx, float wy)
 {
     double num = (double)WorldAngle(wx, wy) * 100.0;
     double num2 = (double)VUtils::Math::magnitude(wx, wy + 4000.0f) - (12000.0 + num);
@@ -1031,18 +1024,18 @@ double IGeoManager::CreateDeepNorthGap(float wx, float wy)
     return VUtils::Math::MathfLikeSmoothStep(0.0, 1.0, (double)((float)num2));
 }
 
-bool IGeoManager::InForest(Vector3f const& pos)
+bool GeoManager::InForest(Vector3f const& pos)
 {
     return GetForestFactor(pos) < 1.15f;
 }
 
-float IGeoManager::GetForestFactor(Vector3f const& pos)
+float GeoManager::GetForestFactor(Vector3f const& pos)
 {
     float num = 0.4f;
     return VUtils::Math::Fbm(pos * 0.01f * num, 3, 1.6f, 0.7f);
 }
 
-void IGeoManager::GetTerrainDelta(VUtils::Random::State &state, Vector3f const& center, float radius, float &delta, Vector3f &slopeDirection)
+void GeoManager::GetTerrainDelta(VUtils::Random::State &state, Vector3f const& center, float radius, float &delta, Vector3f &slopeDirection)
 {
     int num = 10;
     float num2 = std::numeric_limits<float>::min();
@@ -1070,7 +1063,7 @@ void IGeoManager::GetTerrainDelta(VUtils::Random::State &state, Vector3f const& 
 }
 
 // public
-int IGeoManager::GetSeed()
+int GeoManager::GetSeed()
 {
     return m_world->m_seed;
 }

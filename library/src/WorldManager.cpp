@@ -15,13 +15,6 @@
 #include "ZDOManager.h"
 #include "ZoneManager.h"
 
-auto WORLD_MANAGER = std::make_unique<IWorldManager>();
-
-IWorldManager *WorldManager()
-{
-    return WORLD_MANAGER.get();
-}
-
 World::World(std::string name, std::string seedName)
 {
     m_name            = std::move(name);
@@ -78,10 +71,10 @@ avledet::util::Bytes World::SaveDB() {
 	DataWriter writer(bytes);
 
 	writer.write(VConstants::WORLD);
-	writer.write(Avledet()->GetWorldTime());
+	writer.write(Avledet::instance().GetWorldTime());
 
-	ZDOManager()->Save(writer);
-	ZoneManager()->Save(writer);
+	ZdoManager::instance().Save(writer);
+	ZoneManager::instance().Save(writer);
 	EventManager()->Save(writer);
 
 	return bytes;
@@ -109,7 +102,7 @@ void World::WriteFileDB(std::filesystem::path const &root)
     std::filesystem::create_directories(root);
 
     auto startTime(std::chrono::steady_clock::now());
-    avledet::util::Bytes bytes = WorldManager()->SaveWorldDB();
+    avledet::util::Bytes bytes = WorldManager::instance().SaveWorldDB();
     auto finishTime            = (std::chrono::steady_clock::now());
 
     auto path(root / (m_name + ".db"));
@@ -150,16 +143,16 @@ void World::LoadFileDB(std::filesystem::path const &root)
             if (worldVersion >= 4)
 #endif// AVL_LEGACY_WORLD_LOADING
             {
-                Avledet()->m_worldTime = reader.read<double>();
+                Avledet::instance().m_worldTime = reader.read<double>();
             }
 
-            ZDOManager()->Load(reader, worldVersion);
+            ZdoManager::instance().Load(reader, worldVersion);
 
 #if AVL_IS_ON(AVL_LEGACY_WORLD_LOADING)
             if (worldVersion >= 12)
 #endif// AVL_LEGACY_WORLD_LOADING
             {
-                ZoneManager()->Load(reader, worldVersion);
+                ZoneManager::instance().Load(reader, worldVersion);
             }
 
 #if AVL_IS_ON(AVL_RANDOM_EVENTS)
@@ -167,7 +160,7 @@ void World::LoadFileDB(std::filesystem::path const &root)
             if (worldVersion >= 15)
     #endif// AVL_LEGACY_WORLD_LOADING
             {
-                RandomEventManager()->Load(reader, worldVersion);
+                RaidManager::instance().Load(reader, worldVersion);
             }
 #endif// AVL_RANDOM_EVENTS
             LOG_INFO(AVL_LOGGER, "World loading took {}s",
@@ -213,48 +206,48 @@ void World::WriteFiles(std::filesystem::path const &root)
 
 void World::WriteFileMeta()
 {
-    WriteFileMeta(WorldManager()->GetWorldsPath());
+    WriteFileMeta(WorldManager::instance().GetWorldsPath());
 }
 
 void World::WriteFileDB()
 {
-    WriteFileDB(WorldManager()->GetWorldsPath());
+    WriteFileDB(WorldManager::instance().GetWorldsPath());
 }
 
 void World::LoadFileDB()
 {
-    LoadFileDB(WorldManager()->GetWorldsPath());
+    LoadFileDB(WorldManager::instance().GetWorldsPath());
 }
 
 void World::WriteFiles()
 {
-    WriteFiles(WorldManager()->GetWorldsPath());
+    WriteFiles(WorldManager::instance().GetWorldsPath());
 }
 
-World *IWorldManager::GetWorld()
+World *WorldManager::GetWorld()
 {
     return m_world.get();
 }
 
-std::filesystem::path IWorldManager::GetWorldsPath() const
+std::filesystem::path WorldManager::GetWorldsPath() const
 {
     return "./worlds";
 }
 
 /*
-std::filesystem::path IWorldManager::GetWorldMetaPath(const std::string& name) const {
+std::filesystem::path WorldManager::GetWorldMetaPath(const std::string& name) const {
 	return GetWorldsPath() / (name + ".fwl");
 }
 
-std::filesystem::path IWorldManager::GetWorldDBPath(const std::string& name) const {
+std::filesystem::path WorldManager::GetWorldDBPath(const std::string& name) const {
 	return GetWorldsPath() / (name + ".db");
 }*/
 
 
-bool IWorldManager::LoadWorldMeta(std::filesystem::path const &root)
+bool WorldManager::LoadWorldMeta(std::filesystem::path const &root)
 {
     if (auto opt
-        = VUtils::Resource::ReadFile<avledet::util::Bytes>(root / (AVL_SETTINGS.m_world_name + ".fwl"))) {
+        = VUtils::Resource::ReadFile<avledet::util::Bytes>(root / (AVL_CONFIG.m_world_name + ".fwl"))) {
         try {
             this->m_world = std::make_unique<World>(DataReader(*opt));
         } catch (std::runtime_error const &e) {
@@ -265,7 +258,7 @@ bool IWorldManager::LoadWorldMeta(std::filesystem::path const &root)
     return m_world.get();
 }
 
-std::unique_ptr<World> IWorldManager::RetrieveWorld(std::string_view name,
+std::unique_ptr<World> WorldManager::RetrieveWorld(std::string_view name,
                                                     std::string_view fallbackSeedName) const
 {
     // load world from file
@@ -299,18 +292,18 @@ std::unique_ptr<World> IWorldManager::RetrieveWorld(std::string_view name,
     return world;
 }
 
-avledet::util::Bytes IWorldManager::SaveWorldDB() const
+avledet::util::Bytes WorldManager::SaveWorldDB() const
 {
     DataWriter writer;
 
     writer.write(VConstants::WORLD);
-    writer.write(Avledet()->GetWorldTime());
+    writer.write(Avledet::instance().GetWorldTime());
 
-    ZDOManager()->Save(writer);
-    ZoneManager()->Save(writer);
+    ZdoManager::instance().Save(writer);
+    ZoneManager::instance().Save(writer);
     // This omission only works because random events happen to be saved/loaded last
 #if AVL_IS_ON(AVL_RANDOM_EVENTS)
-    RandomEventManager()->Save(writer);
+    RaidManager::instance().Save(writer);
 #else
     writer.write(0.f);
     writer.write("");
@@ -322,7 +315,7 @@ avledet::util::Bytes IWorldManager::SaveWorldDB() const
 }
 
 /*
-void IWorldManager::WriteFileWorldDB(const std::filesystem::path& path, bool sync) const {
+void WorldManager::WriteFileWorldDB(const std::filesystem::path& path, bool sync) const {
 	if (m_saveThread.joinable()) {
 		//LOG(WARNING) << "Save thread is still active, joining...";
 		m_saveThread.join();
@@ -357,27 +350,27 @@ void IWorldManager::WriteFileWorldDB(const std::filesystem::path& path, bool syn
 }*/
 
 /*
-void IWorldManager::WriteFileWorldDB(bool sync) {
-	WriteFileWorldDB(WorldManager()->GetWorldDBPath(m_world->m_name), sync);
+void WorldManager::WriteFileWorldDB(bool sync) {
+	WriteFileWorldDB(WorldManager::instance().GetWorldDBPath(m_world->m_name), sync);
 }*/
 
 /*
-void IWorldManager::WriteWorldFiles(const std::filesystem::path& root) {
+void WorldManager::WriteWorldFiles(const std::filesystem::path& root) {
 	m_world->WriteFileMeta(root);
 	m_world->WriteFileDB(root);
 }*/
 
 
-void IWorldManager::PostZoneInit()
+void WorldManager::PostZoneInit()
 {
     LOG_NOTICE(AVL_LOGGER, "Initializing WorldManager");
 
-    m_world = RetrieveWorld(AVL_SETTINGS.m_world_name, AVL_SETTINGS.m_world_seed);
+    m_world = RetrieveWorld(AVL_CONFIG.m_world_name, AVL_CONFIG.m_world_seed);
 
 #ifdef AVL_OPTION_ENABLE_CAPTURE
-    if (AVL_SETTINGS.packetMode == PacketMode::PLAYBACK) {
+    if (AVL_CONFIG.packetMode == PacketMode::PLAYBACK) {
         std::filesystem::path root = std::filesystem::path(AVL_CAPTURE_PATH) / m_world->m_name
-                                     / std::to_string(AVL_SETTINGS.packetPlaybackSessionIndex);
+                                     / std::to_string(AVL_CONFIG.packetPlaybackSessionIndex);
 
         if (LoadWorldMeta(root))
             m_world->LoadFileDB(root);
@@ -390,14 +383,14 @@ void IWorldManager::PostZoneInit()
     }
 }
 
-void IWorldManager::PostInit()
+void WorldManager::PostInit()
 {
 #ifdef AVL_OPTION_ENABLE_CAPTURE
-    if (AVL_SETTINGS.packetMode == PacketMode::CAPTURE) {
+    if (AVL_CONFIG.packetMode == PacketMode::CAPTURE) {
         // then save world as a copy to captures
-        auto world(WorldManager()->GetWorld());
+        auto world(WorldManager::instance().GetWorld());
         std::filesystem::path root = std::filesystem::path(AVL_CAPTURE_PATH) / world->m_name
-                                     / std::to_string(AVL_SETTINGS.packetCaptureSessionIndex);
+                                     / std::to_string(AVL_CONFIG.packetCaptureSessionIndex);
 
         std::filesystem::create_directories(root);
 

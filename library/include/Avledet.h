@@ -7,11 +7,12 @@
 #include <list>
 #include <mutex>
 
+#include "Manager.h"
 #include "Task.h"
 #include "VUtils.h"
 #include "Config.h"
 
-#define AVL_ID       (Avledet()->ID())
+#define AVL_ID       (Avledet::instance().ID())
 
 enum class UIMsgType : std::int32_t
 {
@@ -37,11 +38,11 @@ static constexpr TimeOfDay TIME_DAY       = 270;
 static constexpr TimeOfDay TIME_AFTERNOON = 900;
 static constexpr TimeOfDay TIME_NIGHT     = 1530;
 
-class IAvledet
+class Avledet : public avledet::util::IManager<Avledet>
 {
-    friend class IScriptManager;
-    friend class IDiscordManager;
-    friend class IWorldManager;
+    friend class ScriptManager;
+    friend class DiscordManager;
+    friend class WorldManager;
     friend class World;
 
   private:
@@ -321,6 +322,5 @@ class IAvledet
     void Broadcast(UIMsgType type, std::string_view text);
 };
 
-IAvledet *Avledet();
-
+// TODO kinda tacky and bad
 extern quill::Logger *AVL_LOGGER;

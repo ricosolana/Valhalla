@@ -19,9 +19,9 @@
     #include "RandomEventManager.h"
     #include "ZDOManager.h"
 
-auto DISCORD_MANAGER(std::make_unique<IDiscordManager>());
+auto DISCORD_MANAGER(std::make_unique<DiscordManager>());
 
-IDiscordManager *DiscordManager()
+DiscordManager *DiscordManager::instance()
 {
     return DISCORD_MANAGER.get();
 }
@@ -32,9 +32,9 @@ public:
 
 };*/
 
-void IDiscordManager::init()
+void DiscordManager::init()
 {
-    if (!AVL_SETTINGS.discordEnabled || AVL_SETTINGS.discordToken.empty())
+    if (!AVL_CONFIG.discordEnabled || AVL_CONFIG.discordToken.empty())
         return;
 
     LOG_INFO(AVL_LOGGER, "Initializing DiscordManager");
@@ -42,7 +42,7 @@ void IDiscordManager::init()
     // https://dpp.dev/slashcommands.html
 
     uint64_t intents = dpp::i_default_intents | dpp::i_message_content | dpp::i_guild_members;
-    m_bot            = std::make_unique<dpp::cluster>(AVL_SETTINGS.discordToken, intents);
+    m_bot            = std::make_unique<dpp::cluster>(AVL_CONFIG.discordToken, intents);
 
     m_bot->on_log([](dpp::log_t const &log) {
         switch (log.severity) {
@@ -77,16 +77,16 @@ void IDiscordManager::init()
                 }
             });
         } else {
-            Avledet()->RunTask([this, label, event](Task &) {
+            Avledet::instance().RunTask([this, label, event](Task &) {
                 if (label == "avladmin") {
-                    auto &&admin = Avledet()->m_admin;
+                    auto &&admin = Avledet::instance().m_admin;
 
                     auto param_variant = event.get_parameter("identifier");
                     auto flag_variant  = event.get_parameter("flag");
                     auto &&identifier  = std::get_if<std::string>(&param_variant);
                     auto &&flag        = std::get_if<bool>(&flag_variant);
                     if (identifier) {
-                        if (auto &&peer = NetManager()->FindPeer(*identifier)) {
+                        if (auto &&peer = NetManager::instance().FindPeer(*identifier)) {
                             if (flag) {
                                 peer->SetAdmin(*flag);
                                 if (*flag)
@@ -122,23 +122,23 @@ void IDiscordManager::init()
                     }
                 } else if (label == "avlban") {
                     auto &&identifier = std::get<std::string>(event.get_parameter("identifier"));
-                    if (auto peer = NetManager()->Ban(identifier))
+                    if (auto peer = NetManager::instance().Ban(identifier))
                         event.reply("Banned " + peer->m_name + " (" + peer->m_socket->get_host_name() + ")");
                     else
                         event.reply("Player not found");
                 } else if (label == "avlbroadcast") {
                     auto &&message = std::get<std::string>(event.get_parameter("message"));
-                    Avledet()->Broadcast(UIMsgType::Center, message);
+                    Avledet::instance().Broadcast(UIMsgType::Center, message);
                     event.reply("Broadcasted message to all players");
                 } else if (label == "avlevent") {
-                    if (auto &&e = RandomEventManager()->GetEvent(
+                    if (auto &&e = RaidManager::instance().GetEvent(
                                 std::get<std::string>(event.get_parameter("event")))) {
-                        auto &&peer = NetManager()->FindPeer(
+                        auto &&peer = NetManager::instance().FindPeer(
                                 std::get<std::string>(event.get_parameter("identifier")));
                         //seconds duration = duration_cast<std::chrono::seconds>(e->m_duration);
                         auto dur_variant = event.get_parameter("duration");
                         auto &&dur       = std::get_if<std::int64_t>(&dur_variant);
-                        RandomEventManager()->SetCurrentRandomEvent(
+                        RaidManager::instance().SetCurrentRandomEvent(
                                 *e, peer->m_pos,
                                 dur ? std::chrono::seconds(*dur)
                                     : duration_cast<std::chrono::seconds>(e->m_duration));
@@ -150,7 +150,7 @@ void IDiscordManager::init()
                     // TODO use get_if to get pointers and not newly allocated strings
 
                     auto &&identifier = std::get<std::string>(event.get_parameter("identifier"));
-                    if (auto peer = NetManager()->Kick(identifier))
+                    if (auto peer = NetManager::instance().Kick(identifier))
                         event.reply("Kicked " + peer->m_name + " (" + peer->m_socket->get_host_name() + ")");
                     else
                         event.reply("Player not found");
@@ -166,7 +166,7 @@ void IDiscordManager::init()
                                 event.reply("Accounts successfully linked!");
                                 //m_bot->interaction_followup_create(event.command.token, dpp::message("Accounts linked! Have fun!"), );
                                 m_linked_accounts[host] = event.command.get_issuing_user().id;
-                                if (auto &&peer = NetManager()->FindPeerByHost(host)) {
+                                if (auto &&peer = NetManager::instance().FindPeerByHost(host)) {
                                     peer->SetGated(false);
                                     peer->CenterMessage("Account verified");
                                 }
@@ -184,12 +184,12 @@ void IDiscordManager::init()
                                     "account");
                     }
                 } else if (label == "avllist") {
-                    if (NetManager()->GetPeers().empty()) {
+                    if (NetManager::instance().GetPeers().empty()) {
                         event.reply("No players are online");
                     } else {
                         std::string msg
-                                = std::to_string(NetManager()->GetPeers().size()) + " players are online\n";
-                        for (auto &&peer : NetManager()->GetPeers()) {
+                                = std::to_string(NetManager::instance().GetPeers().size()) + " players are online\n";
+                        for (auto &&peer : NetManager::instance().GetPeers()) {
                             msg += " - " + peer->m_name + "\n";
                         }
                         event.reply(msg);
@@ -197,32 +197,32 @@ void IDiscordManager::init()
                 } else if (label == "avlmessage") {
                     auto &&message    = std::get<std::string>(event.get_parameter("message"));
                     auto &&identifier = std::get<std::string>(event.get_parameter("identifier"));
-                    if (auto peer = NetManager()->FindPeer(identifier)) {
+                    if (auto peer = NetManager::instance().FindPeer(identifier)) {
                         peer->CenterMessage(message);
                         event.reply("Sent message to player");
                     } else
                         event.reply("Player not found");
                 } else if (label == "avlpardon") {
                     auto &&host = std::get<std::string>(event.get_parameter("host"));
-                    if (Avledet()->m_blacklist.erase(host))
+                    if (Avledet::instance().m_blacklist.erase(host))
                         event.reply("Unbanned " + host);
                     else
                         event.reply("Player is not banned");
                 } else if (label == "avlreload") {
-                    Avledet()->LoadFiles(true);
+                    Avledet::instance().LoadFiles(true);
                     event.reply("All files were reloaded");
                 } else if (label == "avlsave") {
-                    WorldManager()->GetWorld()->WriteFiles();
+                    WorldManager::instance().GetWorld()->WriteFiles();
                     event.reply("Saved the world");
                 } else if (label == "avlstop") {
                     event.reply("Stopping the server!");
-                    Avledet()->Stop();
+                    Avledet::instance().Stop();
                 } else if (label == "avlsummon") {
                     auto &&name = std::get<std::string>(event.get_parameter("prefab"));
-                    auto &&peer = NetManager()->FindPeer(
+                    auto &&peer = NetManager::instance().FindPeer(
                             std::get<std::string>(event.get_parameter("identifier")));
-                    if (auto &&prefab = PrefabManager()->find_prefab(name); peer) {
-                        ZDOManager()->Instantiate(*prefab, peer->m_pos);
+                    if (auto &&prefab = PrefabManager::instance().find_prefab(name); peer) {
+                        ZdoManager::instance().Instantiate(*prefab, peer->m_pos);
                         event.reply("Object was summoned");
                     } else {
                         event.reply("Either prefab or peer are invalid");
@@ -230,39 +230,39 @@ void IDiscordManager::init()
                 } else if (label == "avltime") {
                     event.reply("Server time is "
                                 + std::to_string(
-                                        duration_cast<std::chrono::seconds>(Avledet()->Elapsed()).count())
+                                        duration_cast<std::chrono::seconds>(Avledet::instance().Elapsed()).count())
                                 + "s");
                 } else if (label == "avltod") {
                     auto time_variant = event.get_parameter("time");
                     auto &&time       = std::get_if<std::string>(&time_variant);
                     if (time) {
                         char ch = (*time)[0];
-                        Avledet()->SetTimeOfDay(ch == 'M'   ? TIME_MORNING
+                        Avledet::instance().SetTimeOfDay(ch == 'M'   ? TIME_MORNING
                                                 : ch == 'D' ? TIME_DAY
                                                 : ch == 'A' ? TIME_AFTERNOON
                                                             : TIME_NIGHT);
                         event.reply("Set world time to " + *time);
                     } else {
                         event.reply(std::string("It is currently ")
-                                    + (Avledet()->IsMorning()     ? "morning"
-                                       : Avledet()->IsDay()       ? "day"
-                                       : Avledet()->IsAfternoon() ? "afternoon"
+                                    + (Avledet::instance().IsMorning()     ? "morning"
+                                       : Avledet::instance().IsDay()       ? "day"
+                                       : Avledet::instance().IsAfternoon() ? "afternoon"
                                                                   : "night"));
                     }
                 } else if (label == "avlwhitelist") {
                     auto flag_variant = event.get_parameter("flag");
                     auto &&flag       = std::get_if<bool>(&flag_variant);
                     if (flag) {
-                        AVL_SETTINGS.m_player_whitelist_on = *flag;
+                        AVL_CONFIG.m_player_whitelist_on = *flag;
                         event.reply(std::string("Whitelist is now ")
-                                    + (AVL_SETTINGS.m_player_whitelist_on ? "enabled" : "disabled"));
+                                    + (AVL_CONFIG.m_player_whitelist_on ? "enabled" : "disabled"));
                     } else {
                         event.reply(std::string("The whitelist is ")
-                                    + (AVL_SETTINGS.m_player_whitelist_on ? "enabled" : "disabled"));
+                                    + (AVL_CONFIG.m_player_whitelist_on ? "enabled" : "disabled"));
                     }
                 } else if (label == "avlwhois") {
                     auto &&identifier = std::get<std::string>(event.get_parameter("identifier"));
-                    if (auto peer = NetManager()->FindPeer(identifier)) {
+                    if (auto peer = NetManager::instance().FindPeer(identifier)) {
                         event.reply("Name: " + peer->m_name + "\n"
                                     + "Uuid: " + std::to_string(peer->GetUserID()) + "\n"
                                     + "Host: " + peer->m_socket->get_host_name() + "\n"
@@ -273,10 +273,10 @@ void IDiscordManager::init()
                     auto time_variant = event.get_parameter("time");
                     auto &&time       = std::get_if<double>(&time_variant);
                     if (time) {
-                        Avledet()->SetWorldTime(*time);
+                        Avledet::instance().SetWorldTime(*time);
                         event.reply("Set world time to " + std::to_string(*time));
                     } else {
-                        event.reply("World time is " + std::to_string(Avledet()->GetWorldTime()));
+                        event.reply("World time is " + std::to_string(Avledet::instance().GetWorldTime()));
                     }
                 }
     #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -291,7 +291,7 @@ void IDiscordManager::init()
                         //dpp::snowflake file_id = std::get<dpp::snowflake>(event.get_parameter("file"));
                         //dpp::attachment const &attachment = event.command.get_resolved_attachment(file_id);
                         //attachment.download([](http_request_completion_t const &http) {
-                        //    Avledet()->RunTask([http](Task &) {
+                        //    Avledet::instance().RunTask([http](Task &) {
                         //        auto idx = attachment.filename.find_last_of('.');
                         //        if (idx != std::string::npos) {
                         //            script_name = attachment.filename.substr(0, idx);
@@ -319,11 +319,11 @@ void IDiscordManager::init()
 
                     LOG_INFO(AVL_LOGGER, "dpp / {}: {}", user_id, code);
 
-                    auto script_info = IScriptManager::ScriptInfo(script_name, chunk_name);
+                    auto script_info = ScriptManager::ScriptInfo(script_name, chunk_name);
                     script_info.m_authors.push_back(user_id);
 
                     try {
-                        ScriptManager()->execute(script_info, code);
+                        ScriptManager::instance().execute(script_info, code);
                         m_bot->interaction_followup_create(
                                 event.command.token,
                                 dpp::message("Script '" + chunk_name + "' was successful"),
@@ -346,7 +346,7 @@ void IDiscordManager::init()
     m_bot->on_autocomplete([this](dpp::autocomplete_t const &evt) {
         for (auto &opt : evt.options) {
             if (opt.focused) {
-                Avledet()->RunTask([this, evt, opt](Task &) {
+                Avledet::instance().RunTask([this, evt, opt](Task &) {
                     auto &&base    = std::get<std::string>(opt.value);
                     auto irsp      = dpp::interaction_response(dpp::ir_autocomplete_reply);
                     auto &&choices = irsp.autocomplete_choices;
@@ -382,21 +382,21 @@ void IDiscordManager::init()
                         bool const has_num = std::any_of(base.begin(), base.end(), ::isdigit);
 
                         // Populate choices
-                        for (auto &&peer : NetManager()->GetPeers()) {
+                        for (auto &&peer : NetManager::instance().GetPeers()) {
                             auto &&kw = peer->m_name;
                             choices.emplace_back(dpp::command_option_choice(
                                     has_num ? peer->m_socket->get_host_name() : peer->m_name,
                                     peer->m_socket->get_host_name()));
                         }
                     } else if (opt.name == "event") {
-                        //add_choices(ranges::views::keys(RandomEventManager()->m_events));
-                        for (auto &&e : ranges::views::keys(RandomEventManager()->m_events)) {
+                        //add_choices(ranges::views::keys(RaidManager::instance().m_events));
+                        for (auto &&e : ranges::views::keys(RaidManager::instance().m_events)) {
                             choices.emplace_back(dpp::command_option_choice(std::string(e), std::string(e)));
                             add_choice(e, false);
                         }
                     } else if (opt.name == "prefab") {
-                        //add_choices(ranges::views ranges::views::values(PrefabManager()->m_prefabs));
-                        for (auto &&prefab : PrefabManager()->m_prefabs) {
+                        //add_choices(ranges::views ranges::views::values(PrefabManager::instance().m_prefabs));
+                        for (auto &&prefab : PrefabManager::instance().m_prefabs) {
                             if (!add_choice(prefab.m_name, false))
                                 break;
                             //choices.emplace_back(dpp::command_option_choice(prefab->m_name, prefab->m_name));
@@ -414,7 +414,7 @@ void IDiscordManager::init()
     });
 
     m_bot->on_guild_member_remove([this](dpp::guild_member_remove_t const &event) {
-        if (AVL_SETTINGS.TEST_discordSyncLeaves) {
+        if (AVL_CONFIG.TEST_discordSyncLeaves) {
             // Try kicking player off Valheim server
 
             if (auto &&peer = unlink_peer(event.removed.id)) {
@@ -561,22 +561,22 @@ void IDiscordManager::init()
                 //        .set_default_permissions(0)// 0 is admins only
     #endif
                     },
-                    AVL_SETTINGS.discordGuild);
+                    AVL_CONFIG.discordGuild);
         }
     });
 
     m_bot->start(dpp::st_return);
 }
 
-void IDiscordManager::period_update()
+void DiscordManager::period_update()
 {
     // If integration is off
     if (!m_bot)
         return;
 
     for (auto &&itr = m_temp_linking_keys.begin(); itr != m_temp_linking_keys.end();) {
-        auto &&peer  = NetManager()->FindPeerByHost(itr->first);
-        auto &&since = Avledet()->Nanos() - itr->second.second;
+        auto &&peer  = NetManager::instance().FindPeerByHost(itr->first);
+        auto &&since = Avledet::instance().Nanos() - itr->second.second;
         if (since > 5min) {
             LOG_INFO(AVL_LOGGER, "Discord linking key expired for {}", itr->first);
 
@@ -599,7 +599,7 @@ void IDiscordManager::period_update()
 
     /*
 	for (auto&& pair : m_tempLinkingKeys) {
-		auto&& peer = NetManager()->FindPeerByHost(pair.first);
+		auto&& peer = NetManager::instance().FindPeerByHost(pair.first);
 		if (peer) {
 			//peer->CenterMessage(std::string("Verification required: <color=#FF1111>") + pair.second + "</color>");
 			peer->CenterMessage("Verification required: <color=#FF1111>" + pair.second.first + "</color>");
@@ -607,29 +607,29 @@ void IDiscordManager::period_update()
 	}*/
 
     /*
-	if (AVL_SETTINGS.discordKickOnLeave) {
+	if (AVL_CONFIG.discordKickOnLeave) {
 		// if a peer has left the discord server and linked players are required, then set gated or kick
-		for (auto&& peer : NetManager()->GetPeers()) {
+		for (auto&& peer : NetManager::instance().GetPeers()) {
 			
 		}
 	}*/
 }
 
-Peer::Ptr IDiscordManager::find_peer(dpp::snowflake id)
+Peer::Ptr DiscordManager::find_peer(dpp::snowflake id)
 {
     for (auto &&pair : m_linked_accounts) {
         if (pair.second == id) {
-            return NetManager()->FindPeerByHost(pair.first);
+            return NetManager::instance().FindPeerByHost(pair.first);
         }
     }
     return nullptr;
 }
 
-Peer::Ptr IDiscordManager::unlink_peer(dpp::snowflake id)
+Peer::Ptr DiscordManager::unlink_peer(dpp::snowflake id)
 {
     for (auto &&itr = m_linked_accounts.begin(); itr != m_linked_accounts.end();) {
         if (itr->second == id) {
-            auto &&peer = NetManager()->FindPeerByHost(itr->first);
+            auto &&peer = NetManager::instance().FindPeerByHost(itr->first);
             m_linked_accounts.erase(itr);
             return peer;
         } else {
@@ -639,12 +639,12 @@ Peer::Ptr IDiscordManager::unlink_peer(dpp::snowflake id)
     return nullptr;
 }
 
-void IDiscordManager::send_webhook_message(std::string_view msg)
+void DiscordManager::send_webhook_message(std::string_view msg)
 {
-    if (!m_bot || AVL_SETTINGS.discordWebhook.empty())
+    if (!m_bot || AVL_CONFIG.discordWebhook.empty())
         return;
 
-    auto &&webhook = dpp::webhook(AVL_SETTINGS.discordWebhook);
+    auto &&webhook = dpp::webhook(AVL_CONFIG.discordWebhook);
 
     m_bot->execute_webhook(webhook, dpp::message(std::string(msg)));
 }

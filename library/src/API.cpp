@@ -1,10 +1,12 @@
 #include "CompileSettings.h"
 #include "VUtilsRandom.h"
 #include <filesystem>
+#include <functional>
 #include <luaconf.h>
 #include <quill/LogMacros.h>
 #include <sol/call.hpp>
 #include <sol/load_result.hpp>
+#include <sol/make_reference.hpp>
 #include <sol/protected_function_result.hpp>
 #include <sol/raii.hpp>
 #include <sol/resolve.hpp>
@@ -30,7 +32,7 @@
     #include "VUtilsResource.h"
     #include "ZDOManager.h"
 
-void IScriptManager::load_userdata()
+void ScriptManager::load_userdata()
 {
     this->load_userdata_network();
     this->load_userdata_peer();
@@ -44,43 +46,43 @@ void IScriptManager::load_userdata()
     // clang-format off
     // ; butchering of my key-value pairs, so fuck it
 
-    this->new_usertype<IAvledet>("IAvledet",
-        sol::no_constructor,
+    this->new_usertype<Avledet>("IAvledet",
+        sol::no_constructor, // TODO try removing later
         // server members
         "version", sol::var(VConstants::GAME),
-        "delta", sol::property(&IAvledet::delta),
-        "id", sol::property(&IAvledet::ID), // server id
-        "nanos", sol::property([](IAvledet &self) { return self.Nanos().count(); }), // nanos
-        "time", sol::property(&IAvledet::Time), // time
-        "time_multiplier", &IAvledet::m_serverTimeMultiplier, // time_multiplier
+        "delta", sol::property(&Avledet::delta),
+        "id", sol::property(&Avledet::ID), // server id
+        "nanos", sol::property([](Avledet &self) { return self.Nanos().count(); }), // nanos
+        "time", sol::property(&Avledet::Time), // time
+        "time_multiplier", &Avledet::m_serverTimeMultiplier, // time_multiplier
         // world time functions
-        "world_time", sol::property(sol::resolve<WorldTime() const>(&IAvledet::GetWorldTime), &IAvledet::SetWorldTime), // world_time
+        "world_time", sol::property(sol::resolve<WorldTime() const>(&Avledet::GetWorldTime), &Avledet::SetWorldTime), // world_time
         "world_time_multiplier", sol::property(
             // getter
-            [](IAvledet &self) { return self.m_worldTimeMultiplier; },
+            [](Avledet &self) { return self.m_worldTimeMultiplier; },
             // setter
-            [](IAvledet &self, double mul) {
+            [](Avledet &self, double mul) {
                 if (mul <= 0.001)
                     throw std::runtime_error("multiplier too small");
                 self.m_worldTimeMultiplier = mul;
             }),
-        "world_ticks", sol::property(&IAvledet::GetWorldTicks), // world_ticks
-        "day", sol::property(sol::resolve<int() const>(&IAvledet::GetDay), &IAvledet::SetDay), // numeric elapsed days
+        "world_ticks", sol::property(&Avledet::GetWorldTicks), // world_ticks
+        "day", sol::property(sol::resolve<int() const>(&Avledet::GetDay), &Avledet::SetDay), // numeric elapsed days
         "time_of_day", sol::property(
             // getter
-            sol::resolve<TimeOfDay() const>(&IAvledet::GetTimeOfDay), 
+            sol::resolve<TimeOfDay() const>(&Avledet::GetTimeOfDay), 
             // setter
-            &IAvledet::SetTimeOfDay),
-        "is_morning", sol::property(sol::resolve<bool() const>(&IAvledet::IsMorning)), // bool morning
-        "is_day", sol::property(sol::resolve<bool() const>(&IAvledet::IsDay)), // bool day
-        "is_afternoon", sol::property(sol::resolve<bool() const>(&IAvledet::IsAfternoon)), // bool afternoon
-        "is_night", sol::property(sol::resolve<bool() const>(&IAvledet::IsNight)), // bool night
-        "tomorrow_morning", sol::property(&IAvledet::GetTomorrowMorning), // next morning
-        "tomorrow", sol::property(&IAvledet::GetTomorrowDay), // next day
-        "tomorrow_afternoon", sol::property(&IAvledet::GetTomorrowAfternoon), // next afternoon
-        "tomorrow_night", sol::property(&IAvledet::GetTomorrowNight), // next night
+            &Avledet::SetTimeOfDay),
+        "is_morning", sol::property(sol::resolve<bool() const>(&Avledet::IsMorning)), // bool morning
+        "is_day", sol::property(sol::resolve<bool() const>(&Avledet::IsDay)), // bool day
+        "is_afternoon", sol::property(sol::resolve<bool() const>(&Avledet::IsAfternoon)), // bool afternoon
+        "is_night", sol::property(sol::resolve<bool() const>(&Avledet::IsNight)), // bool night
+        "tomorrow_morning", sol::property(&Avledet::GetTomorrowMorning), // next morning
+        "tomorrow", sol::property(&Avledet::GetTomorrowDay), // next day
+        "tomorrow_afternoon", sol::property(&Avledet::GetTomorrowAfternoon), // next afternoon
+        "tomorrow_night", sol::property(&Avledet::GetTomorrowNight), // next night
 
-        "subscribe", [this](IAvledet &self, sol::variadic_args args, sol::this_environment te) {
+        "subscribe", [this](Avledet &self, sol::variadic_args args, sol::this_environment te) {
             (void) self;
 
             sol::environment &env = te;
@@ -127,14 +129,14 @@ void IScriptManager::load_userdata()
     );
 
     // TODO
-    //this->new_usertype<IScriptManager>("IScriptManager", "find_mod",
-    //                                [this](IScriptManager &self, std::string_view name) {
+    //this->new_usertype<ScriptManager>("IScriptManager", "find_mod",
+    //                                [this](ScriptManager &self, std::string_view name) {
     //                                    auto &&find = self.m_scripts.find(name);
     //                                    if (find != self.m_scripts.end())
     //                                        return find->second.get();
     //                                    return static_cast<ScriptInfo *>(nullptr);
     //                                }
-    //                                //"ReloadMod", [](IScriptManager& self, Mod& mod) {
+    //                                //"ReloadMod", [](ScriptManager& self, Mod& mod) {
     //                                //    if (!self.m_reload) {
     //                                //        mod.m_reload = true;
     //                                //        self.m_reload = true;
@@ -157,20 +159,20 @@ void IScriptManager::load_userdata()
         sol::constructors<MethodSig(std::string_view, sol::variadic_args, sol::this_environment)>()
     );
 
-    //table.new_usertype<IRouteManager::Data>("RouteData",
-    //    "sender", &IRouteManager::Data::m_sender,
-    //    "target", &IRouteManager::Data::m_target,
-    //    "targetZDO", &IRouteManager::Data::m_targetZDO,
-    //    "method", &IRouteManager::Data::m_method,
-    //    "params", &IRouteManager::Data::m_params
+    //table.new_usertype<RouteManager::Data>("RouteData",
+    //    "sender", &RouteManager::Data::m_sender,
+    //    "target", &RouteManager::Data::m_target,
+    //    "targetZDO", &RouteManager::Data::m_targetZDO,
+    //    "method", &RouteManager::Data::m_method,
+    //    "params", &RouteManager::Data::m_params
     //);
 
-    this->new_usertype<IRouteManager>("IRouteManager", 
+    this->new_usertype<RouteManager>("IRouteManager", 
         sol::no_constructor,
-        "register", &IRouteManager::RegisterLua, 
-        "invoke_view", &IRouteManager::InvokeViewLua, 
-        "invoke", &IRouteManager::InvokeLua,
-        "invoke_all", &IRouteManager::InvokeAllLua
+        "register", &RouteManager::RegisterLua, 
+        "invoke_view", &RouteManager::InvokeViewLua, 
+        "invoke", &RouteManager::InvokeLua,
+        "invoke_all", &RouteManager::InvokeAllLua
     );
 
     using avledet::util::CSU::Random;
@@ -217,7 +219,7 @@ void IScriptManager::load_userdata()
     };
 
     // then load my safe, limited searcher
-    if (!AVL_SETTINGS.m_lua_unsafe) {
+    if (!AVL_CONFIG.m_lua_unsafe) {
         sol::table package = m_state.create_table();
         sol::table loaded = m_state.create_table();
         package["loaded"] = loaded;
@@ -322,7 +324,7 @@ static std::vector<std::string_view> const safe_functions {// Global objects
 //http://lua-users.org/wiki/SandBoxes
 //https://ericjmritz.wordpress.com/2015/03/25/creating-and-using-environments-in-lua/
 //https://github.com/ThePhD/sol2/blob/develop/examples/source/environments.cpp
-sol::environment IScriptManager::create_sandbox()
+sol::environment ScriptManager::create_sandbox()
 {
     //auto env  = sol::environment(m_state, sol::create, m_state.globals());
     //sol::environment en1v;
@@ -330,14 +332,14 @@ sol::environment IScriptManager::create_sandbox()
     using namespace avledet::util;
     using namespace CSU;
 
-    env["Avledet"]        = Avledet();
-    env["ScriptManager"]  = ScriptManager();
-    env["NetManager"]     = NetManager();
-    env["PrefabManager"]  = PrefabManager();
-    env["ZDOManager"]     = ZDOManager();
-    env["DungeonManager"] = DungeonManager();
-    env["ZoneManager"]    = ZoneManager();
-    env["RouteManager"]   = RouteManager();
+    env["Avledet"]        = std::ref(Avledet::instance());
+    env["ScriptManager"]  = std::ref(ScriptManager::instance());
+    env["NetManager"]     = std::ref(NetManager::instance());
+    env["PrefabManager"]  = std::ref(PrefabManager::instance());
+    env["ZdoManager"]     = std::ref(ZdoManager::instance());
+    env["DungeonManager"] = std::ref(DungeonManager::instance());
+    env["ZoneManager"]    = std::ref(ZoneManager::instance());
+    env["RouteManager"]   = std::ref(RouteManager::instance());
 
     {
         auto eventTable = env["event"].get_or_create<sol::table>();
@@ -395,7 +397,7 @@ sol::environment IScriptManager::create_sandbox()
 
     env["_G"] = env;// otherwise, will point to our state global table; defeating sandboxing...
 
-    if (AVL_SETTINGS.m_lua_unsafe) {
+    if (AVL_CONFIG.m_lua_unsafe) {
         env[sol::create_if_nil][sol::metatable_key]["__index"] = m_state.globals();
     } else {
         /*

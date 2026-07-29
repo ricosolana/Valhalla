@@ -56,7 +56,7 @@ void Heightmap::CancelQueuedRegeneration() {
 void Heightmap::QueueRegenerate() {
     CancelQueuedRegeneration();
 
-    m_queuedRegenerateTask = &Avledet()->RunTaskLater([this](Task&) {
+    m_queuedRegenerateTask = &Avledet::instance().RunTaskLater([this](Task&) {
         Regenerate();
     }, 100ms);
 }
@@ -91,26 +91,26 @@ void Heightmap::Regenerate()
     }
 
     // UpdateCornerDepths
-    m_oceanDepth[0] = std::max(0.f, (float)((double)IZoneManager::WATER_LEVEL - (double)GetHeight(0, IZoneManager::UNITS_PER_ZONE)));
+    m_oceanDepth[0] = std::max(0.f, (float)((double)ZoneManager::WATER_LEVEL - (double)GetHeight(0, ZoneManager::UNITS_PER_ZONE)));
     m_oceanDepth[1]
-            = std::max(0.f, (float)((double)IZoneManager::WATER_LEVEL
-                                    - (double)GetHeight(IZoneManager::UNITS_PER_ZONE, IZoneManager::UNITS_PER_ZONE)));
-    m_oceanDepth[2] = std::max(0.f, (float)((double)IZoneManager::WATER_LEVEL - (double)GetHeight(IZoneManager::UNITS_PER_ZONE, 0)));
-    m_oceanDepth[3] = std::max(0.f, (float)((double)IZoneManager::WATER_LEVEL - (double)GetHeight(0, 0)));
+            = std::max(0.f, (float)((double)ZoneManager::WATER_LEVEL
+                                    - (double)GetHeight(ZoneManager::UNITS_PER_ZONE, ZoneManager::UNITS_PER_ZONE)));
+    m_oceanDepth[2] = std::max(0.f, (float)((double)ZoneManager::WATER_LEVEL - (double)GetHeight(ZoneManager::UNITS_PER_ZONE, 0)));
+    m_oceanDepth[3] = std::max(0.f, (float)((double)ZoneManager::WATER_LEVEL - (double)GetHeight(0, 0)));
 }
 
 /*
 // private
 void Heightmap::UpdateCornerDepths() {
-    m_oceanDepth[0] = GetHeight(0, IZoneManager::ZONE_SIZE);
-    m_oceanDepth[1] = GetHeight(IZoneManager::ZONE_SIZE, IZoneManager::ZONE_SIZE);
-    m_oceanDepth[2] = GetHeight(IZoneManager::ZONE_SIZE, 0);
+    m_oceanDepth[0] = GetHeight(0, ZoneManager::ZONE_SIZE);
+    m_oceanDepth[1] = GetHeight(ZoneManager::ZONE_SIZE, ZoneManager::ZONE_SIZE);
+    m_oceanDepth[2] = GetHeight(ZoneManager::ZONE_SIZE, 0);
     m_oceanDepth[3] = GetHeight(0, 0);
 
-    m_oceanDepth[0] = std::max(0.f, IZoneManager::WATER_LEVEL - m_oceanDepth[0]);
-    m_oceanDepth[1] = std::max(0.f, IZoneManager::WATER_LEVEL - m_oceanDepth[1]);
-    m_oceanDepth[2] = std::max(0.f, IZoneManager::WATER_LEVEL - m_oceanDepth[2]);
-    m_oceanDepth[3] = std::max(0.f, IZoneManager::WATER_LEVEL - m_oceanDepth[3]);
+    m_oceanDepth[0] = std::max(0.f, ZoneManager::WATER_LEVEL - m_oceanDepth[0]);
+    m_oceanDepth[1] = std::max(0.f, ZoneManager::WATER_LEVEL - m_oceanDepth[1]);
+    m_oceanDepth[2] = std::max(0.f, ZoneManager::WATER_LEVEL - m_oceanDepth[2]);
+    m_oceanDepth[3] = std::max(0.f, ZoneManager::WATER_LEVEL - m_oceanDepth[3]);
 }*/
 
 // public
@@ -126,8 +126,8 @@ float Heightmap::GetOceanDepth(Vector3f worldPos)
     std::int32_t num2;
     this->WorldToVertex(worldPos, num, num2);
 
-    float t  = (float) num / IZoneManager::UNITS_PER_ZONE;
-    float t2 = (float) num2 / IZoneManager::UNITS_PER_ZONE;
+    float t  = (float) num / ZoneManager::UNITS_PER_ZONE;
+    float t2 = (float) num2 / ZoneManager::UNITS_PER_ZONE;
     float a  = VUtils::Mathf::Lerp(this->m_oceanDepth[3], this->m_oceanDepth[2], t);
     float b  = VUtils::Mathf::Lerp(this->m_oceanDepth[0], this->m_oceanDepth[1], t);
     return VUtils::Mathf::Lerp(a, b, t2);
@@ -331,8 +331,8 @@ bool Heightmap::TerrainVSModifier(TerrainModifier modifier)
 // private
 Vector3f Heightmap::CalcVertex(std::int32_t x, std::int32_t y)
 {
-    Vector3f a = Vector3f((float) IZoneManager::UNITS_PER_ZONE * -0.5f, 0.f,
-                          (float) IZoneManager::UNITS_PER_ZONE * -0.5f);
+    Vector3f a = Vector3f((float) ZoneManager::UNITS_PER_ZONE * -0.5f, 0.f,
+                          (float) ZoneManager::UNITS_PER_ZONE * -0.5f);
 
     // Poll heightmap height at x,z
     float y2 = this->m_heights[y * E_WIDTH + x];
@@ -556,7 +556,7 @@ bool Heightmap::GetMinWorldHeight(Vector3f worldPos, float radius, float &height
     float num3        = radius;
     std::int32_t num4 = (int) std::ceil(num3);
     Vector2f a        = Vector2f(x, y);
-    std::int32_t num5 = IZoneManager::UNITS_PER_ZONE + 1;
+    std::int32_t num5 = ZoneManager::UNITS_PER_ZONE + 1;
     height            = 99999;
     for (std::int32_t i = y - num4; i <= y + num4; i++) {
         for (std::int32_t j = x - num4; j <= x + num4; j++) {
@@ -617,8 +617,8 @@ void Heightmap::SmoothTerrain(Vector3f worldPos, float radius, bool square, floa
     for (std::int32_t i = y - radius; i <= y + radius; i++) {
         for (std::int32_t j = x - radius; j <= x + radius; j++) {
             if ((square || VUtils::Math::sq_distance_to(x, y, j, i) <= radius * radius)
-                && (j != 0 && i != 0 && j != IZoneManager::UNITS_PER_ZONE
-                    && i != IZoneManager::UNITS_PER_ZONE)) {
+                && (j != 0 && i != 0 && j != ZoneManager::UNITS_PER_ZONE
+                    && i != ZoneManager::UNITS_PER_ZONE)) {
                 list.push_back(std::make_pair(Vector2i(j, i), this->GetAvgHeight(j, i, 1)));
             }
         }
@@ -748,7 +748,7 @@ float Heightmap::GetVegetationMask(Vector3f worldPos)
     this->WorldToVertex(worldPos - Vector3f(.5f, 0.f, .5f), x, y);
 
     // USE A DIFFERENT MASK OF ONLY ALPHA-TEX FLOATS
-    return this->m_paintMask[y * IZoneManager::UNITS_PER_ZONE + x].a;
+    return this->m_paintMask[y * ZoneManager::UNITS_PER_ZONE + x].a;
 }
 
 // public
@@ -759,10 +759,10 @@ bool Heightmap::IsCleared(Vector3f worldPos)
     this->WorldToVertex(worldPos - Vector3f(.5f, 0.f, .5f), x, y);
 
     // mode is clamp
-    x = std::clamp(x, 0, IZoneManager::UNITS_PER_ZONE - 1);
-    y = std::clamp(y, 0, IZoneManager::UNITS_PER_ZONE - 1);
+    x = std::clamp(x, 0, ZoneManager::UNITS_PER_ZONE - 1);
+    y = std::clamp(y, 0, ZoneManager::UNITS_PER_ZONE - 1);
 
-    auto &&pixel = this->m_paintMask[y * IZoneManager::UNITS_PER_ZONE + x];
+    auto &&pixel = this->m_paintMask[y * ZoneManager::UNITS_PER_ZONE + x];
     return pixel.r > 0.5f || pixel.g > 0.5f || pixel.b > 0.5f;
 }
 
@@ -773,23 +773,23 @@ bool Heightmap::IsCultivated(Vector3f worldPos)
     std::int32_t y;
     this->WorldToVertex(worldPos, x, y);
 
-    return this->m_paintMask[y * IZoneManager::UNITS_PER_ZONE + x].g > 0.5f;
+    return this->m_paintMask[y * ZoneManager::UNITS_PER_ZONE + x].g > 0.5f;
 }
 
 // public
 void Heightmap::WorldToVertex(Vector3f worldPos, std::int32_t &x, std::int32_t &y)
 {
-    Vector3f vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
-    x               = (int) std::floor(vector.x + 0.5f) + (IZoneManager::UNITS_PER_ZONE / 2);
-    y               = (int) std::floor(vector.z + 0.5f) + (IZoneManager::UNITS_PER_ZONE / 2);
+    Vector3f vector = worldPos - ZoneManager::ZoneToWorldPos(this->m_zone);
+    x               = (int) std::floor(vector.x + 0.5f) + (ZoneManager::UNITS_PER_ZONE / 2);
+    y               = (int) std::floor(vector.z + 0.5f) + (ZoneManager::UNITS_PER_ZONE / 2);
 }
 
 // private
 void Heightmap::WorldToNormalizedHM(Vector3f worldPos, float &x, float &y)
 {
-    Vector3f vector = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
-    x               = vector.x / IZoneManager::UNITS_PER_ZONE + 0.5f;
-    y               = vector.z / IZoneManager::UNITS_PER_ZONE + 0.5f;
+    Vector3f vector = worldPos - ZoneManager::ZoneToWorldPos(this->m_zone);
+    x               = vector.x / ZoneManager::UNITS_PER_ZONE + 0.5f;
+    y               = vector.z / ZoneManager::UNITS_PER_ZONE + 0.5f;
 }
 
 // private
@@ -800,7 +800,7 @@ void Heightmap::LevelTerrain(Vector3f worldPos, float radius, bool square,
     std::int32_t num;
     std::int32_t num2;
     this->WorldToVertex(worldPos, num, num2);
-    Vector3f vector   = worldPos - IZoneManager::ZoneToWorldPos(this->m_zone);
+    Vector3f vector   = worldPos - ZoneManager::ZoneToWorldPos(this->m_zone);
     float num3        = radius;
     std::int32_t num4 = (int) std::ceil(num3);
     std::int32_t num5 = E_WIDTH;
@@ -824,10 +824,10 @@ void Heightmap::LevelTerrain(Vector3f worldPos, float radius, bool square,
 // public
 avledet::util::Color Heightmap::GetPaintMask(std::int32_t x, std::int32_t y)
 {
-    if (x < 0 || y < 0 || x >= IZoneManager::UNITS_PER_ZONE || y >= IZoneManager::UNITS_PER_ZONE) {
+    if (x < 0 || y < 0 || x >= ZoneManager::UNITS_PER_ZONE || y >= ZoneManager::UNITS_PER_ZONE) {
         return avledet::util::Colors::BLACK;
     }
-    return this->m_paintMask[y * IZoneManager::UNITS_PER_ZONE + x];
+    return this->m_paintMask[y * ZoneManager::UNITS_PER_ZONE + x];
 }
 
 // public
@@ -862,8 +862,8 @@ bool Heightmap::IsPointInside(Vector3f point, float radius)
 {
     //throw std::runtime_error("not implemented");
 
-    float num         = (float) IZoneManager::UNITS_PER_ZONE * 0.5f;
-    Vector3f position = IZoneManager::ZoneToWorldPos(this->m_zone);
+    float num         = (float) ZoneManager::UNITS_PER_ZONE * 0.5f;
+    Vector3f position = ZoneManager::ZoneToWorldPos(this->m_zone);
     return point.x + radius >= position.x - num && point.x - radius <= position.x + num
            && point.z + radius >= position.z - num && point.z - radius <= position.z + num;
 }
@@ -881,8 +881,8 @@ TerrainComp Heightmap::GetAndCreateTerrainCompiler()
 
 // public
 //Vector3f Heightmap::GetWorldPosition() {
-//    return IZoneManager::ZoneToWorldPos(this->m_zone) +
-//        Vector3f(IZoneManager::ZONE_SIZE / 2.f, 0.f, IZoneManager::ZONE_SIZE / 2.f);
+//    return ZoneManager::ZoneToWorldPos(this->m_zone) +
+//        Vector3f(ZoneManager::ZONE_SIZE / 2.f, 0.f, ZoneManager::ZONE_SIZE / 2.f);
 //}
 
 #endif

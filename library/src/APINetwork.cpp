@@ -12,7 +12,7 @@
 
 using namespace avledet::network;
 
-void IScriptManager::load_userdata_network()
+void ScriptManager::load_userdata_network()
 {
     // clang-format off
 
@@ -40,10 +40,10 @@ void IScriptManager::load_userdata_network()
         "outbound", sol::property(&ISocket::is_outbound)
     );
 
-    this->new_usertype<INetManager>("INetManager", 
+    this->new_usertype<NetManager>("INetManager", 
         sol::no_constructor,
-        "find_peer", &INetManager::FindPeer,
-        "peers", sol::property(&INetManager::GetPeers) //TODO require immutable container
+        "find_peer", &NetManager::FindPeer,
+        "peers", sol::property(&NetManager::GetPeers) //TODO require immutable container
     );
 
     // clang-format on

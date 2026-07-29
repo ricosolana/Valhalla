@@ -18,14 +18,7 @@
     #include "VUtilsResource.h"
     #include "ZDOManager.h"
 
-auto DUNGEON_MANAGER = std::make_unique<IDungeonManager>();// TODO stop constructing in global
-
-IDungeonManager *DungeonManager()
-{
-    return DUNGEON_MANAGER.get();
-}
-
-void IDungeonManager::post_prefab_init()
+void DungeonManager::post_prefab_init()
 {
     // load dungeons:
     auto opt = VUtils::Resource::ReadFile<avledet::util::Bytes>("dungeons.pkg");
@@ -56,10 +49,10 @@ void IDungeonManager::post_prefab_init()
 
         auto name = pkg.read<std::string_view>();
 
-        auto dungeon = std::make_unique<Dungeon>(PrefabManager()->get_prefab(name));
+        auto dungeon = std::make_unique<Dungeon>(PrefabManager::instance().get_prefab(name));
 
         // TODO dungeon prefab is required (make a ref)
-        //dungeon->m_prefab = PrefabManager()->get_prefab(name);
+        //dungeon->m_prefab = PrefabManager::instance().get_prefab(name);
 
         //VLOG(2) << "Loading dungeon " << name;
 
@@ -97,7 +90,7 @@ void IDungeonManager::post_prefab_init()
             //    throw std::runtime_error("dg door hash unequal to computed");
             //}
 
-            auto door_prefab = PrefabManager()->find_prefab(doorHash);
+            auto door_prefab = PrefabManager::instance().find_prefab(doorHash);
             if (!door_prefab) {
                 throw std::runtime_error("dungeon door missing prefab");
             }
@@ -209,7 +202,7 @@ void IDungeonManager::post_prefab_init()
 }
 
     #if AVL_IS_ON(AVL_DUNGEON_REGENERATION)
-ZDO *IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo)
+ZDO *DungeonManager::TryRegenerateDungeon(ZDO dungeonZdo)
 {
     static constexpr avledet::util::Hash LAST_RESET_HASH = avledet::util::get_stable_hash("Areas LastReset");
 
@@ -219,13 +212,13 @@ ZDO *IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo)
 
     auto since = duration_cast<std::chrono::seconds>(unixTime) - lastReset;
 
-    if (since > AVL_SETTINGS.dungeonsRegenerationInterval) {
+    if (since > AVL_CONFIG.dungeonsRegenerationInterval) {
         bool playerNear = false;
 
         // if a player is inside, do not reset
-        for (auto &&peer : NetManager()->GetPeers()) {
+        for (auto &&peer : NetManager::instance().GetPeers()) {
             // if peer in dungeon sector, and they are high up (presumably inside the dungeon)
-            if (dungeonZdo.get_zone() == ZoneManager()->WorldToZonePos(peer->m_pos) && peer->m_pos.y > 4000) {
+            if (dungeonZdo.get_zone() == ZoneManager::instance().WorldToZonePos(peer->m_pos) && peer->m_pos.y > 4000) {
                 playerNear = true;
                 break;
             }
@@ -238,7 +231,7 @@ ZDO *IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo)
         auto rot = dungeonZdo.get_rotation();
 
         if (!playerNear) {
-            auto zdos = ZDOManager()->GetZDOs(dungeonZdo.get_zone(), [](const ZDO zdo) {
+            auto zdos = ZdoManager::instance().GetZDOs(dungeonZdo.get_zone(), [](const ZDO zdo) {
                 return zdo.get_position().y > 4000
                        && zdo.get_prefab().AllFlagsAbsent(Prefab::Flag::PLAYER | Prefab::Flag::TOMBSTONE);
             });
@@ -250,7 +243,7 @@ ZDO *IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo)
                 assert(!(prefab.m_hash == avledet::util::hashes::Object::Player
                          || prefab.m_hash == avledet::util::hashes::Object::Player_tombstone));
 
-                ZDOManager()->DestroyZDO(zdo);
+                ZdoManager::instance().DestroyZDO(zdo);
             }
 
             LOG_INFO(AVL_LOGGER, "Regenerated {} at {}", dungeon.m_prefab->m_name, pos);
@@ -268,14 +261,14 @@ ZDO *IDungeonManager::TryRegenerateDungeon(ZDO dungeonZdo)
     return nullptr;
 }
 
-void IDungeonManager::TryRegenerateDungeons()
+void DungeonManager::TryRegenerateDungeons()
 {
     std::size_t idx = m_nextIndex;
     while (idx
-           < std::min(m_dungeonInstances.size(), m_nextIndex + AVL_SETTINGS.dungeonsRegenerationMaxSteps)) {
+           < std::min(m_dungeonInstances.size(), m_nextIndex + AVL_CONFIG.dungeonsRegenerationMaxSteps)) {
         auto &&itr = m_dungeonInstances.begin() + idx;
 
-        ZDO *dungeonZdo = ZDOManager()->find_zdo(*itr);
+        ZDO *dungeonZdo = ZdoManager::instance().find_zdo(*itr);
         if (!dungeonZdo) {
             m_dungeonInstances.erase(itr);
             //LOG(WARNING) << "Dungeon ZDO no longer exists";
@@ -297,9 +290,9 @@ void IDungeonManager::TryRegenerateDungeons()
     #endif
 
 
-ZDO::reference IDungeonManager::generate(Dungeon const &dungeon, Vector3f pos, Quaternion rot)
+ZDO::reference DungeonManager::generate(Dungeon const &dungeon, Vector3f pos, Quaternion rot)
 {
-    auto &&zdo = ZDOManager()->Instantiate(dungeon.m_prefab, pos);
+    auto &&zdo = ZdoManager::instance().Instantiate(dungeon.m_prefab, pos);
     zdo->set_rotation(rot);
 
     DungeonGenerator(dungeon, zdo).Generate();
@@ -307,10 +300,10 @@ ZDO::reference IDungeonManager::generate(Dungeon const &dungeon, Vector3f pos, Q
     return zdo;
 }
 
-ZDO::reference IDungeonManager::generate(Dungeon const &dungeon, Vector3f pos, Quaternion rot,
+ZDO::reference DungeonManager::generate(Dungeon const &dungeon, Vector3f pos, Quaternion rot,
                                          avledet::util::Hash seed)
 {
-    auto &&zdo = ZDOManager()->Instantiate(dungeon.m_prefab, pos);
+    auto &&zdo = ZdoManager::instance().Instantiate(dungeon.m_prefab, pos);
     zdo->set_rotation(rot);
 
     DungeonGenerator(dungeon, zdo).Generate(seed);
@@ -318,13 +311,13 @@ ZDO::reference IDungeonManager::generate(Dungeon const &dungeon, Vector3f pos, Q
     return zdo;
 }
 
-void IDungeonManager::generate(Dungeon const &dungeon, ZDO::reference zdo)
+void DungeonManager::generate(Dungeon const &dungeon, ZDO::reference zdo)
 {
     DungeonGenerator(dungeon, zdo).Generate();
 }
 
 /*
-std::vector<const Dungeon*> IDungeonManager::get_dungeons() const {
+std::vector<const Dungeon*> DungeonManager::get_dungeons() const {
     return m_dungeons 
     | ranges::views::values 
     | ranges::views::transform([](auto const& p) -> const Dungeon* { return p.get(); })

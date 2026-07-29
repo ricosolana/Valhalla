@@ -11,7 +11,7 @@
     #include "ModManager.h"
     #include "ZoneManager.h"
 
-void IScriptManager::load_userdata_zone()
+void ScriptManager::load_userdata_zone()
 {
     LOG_DEBUG(AVL_LOGGER, "Initializing API types - Zone");
 
@@ -26,18 +26,18 @@ void IScriptManager::load_userdata_zone()
         //"Generate", sol::resolve<void(const Vector3f& pos, const Quaternion& rot) const>(&Dungeon::Generate)
     );
 
-    this->new_usertype<IDungeonManager>("IDungeonManager", 
+    this->new_usertype<DungeonManager>("IDungeonManager", 
         sol::no_constructor,
-        "find_dungeon", [](IDungeonManager &self, std::string_view name) {
+        "find_dungeon", [](DungeonManager &self, std::string_view name) {
             return self.find_dungeon(avledet::util::get_stable_hash(name));
         },
         // TODO must make get_dungeon for lua use reference I guess...
-        //"get_dungeon", [](IDungeonManager& self, std::string_view name) { return self.get_dungeon(avledet::util::get_stable_hash(name)); }, //breaks compilation
-        "generate", [](IDungeonManager &self, Dungeon &dungeon, Vector3f pos, Quaternion rot) {
+        //"get_dungeon", [](DungeonManager& self, std::string_view name) { return self.get_dungeon(avledet::util::get_stable_hash(name)); }, //breaks compilation
+        "generate", [](DungeonManager &self, Dungeon &dungeon, Vector3f pos, Quaternion rot) {
             self.generate(dungeon, pos, rot);
         },
-        //"dungeons", sol::readonly(&IDungeonManager::m_dungeons)
-        "dungeons", sol::property([](IDungeonManager &self) {
+        //"dungeons", sol::readonly(&DungeonManager::m_dungeons)
+        "dungeons", sol::property([](DungeonManager &self) {
             std::vector<std::reference_wrapper<Dungeon>> names;
             names.reserve(self.m_dungeons.size());
 
@@ -49,21 +49,21 @@ void IScriptManager::load_userdata_zone()
         })
     );
 
-    this->new_usertype<IZoneManager::Feature::Instance>("FeatureInstance", 
+    this->new_usertype<ZoneManager::Feature::Instance>("FeatureInstance", 
         sol::no_constructor,
-        "pos", sol::property([](IZoneManager::Feature::Instance &self) { return self.m_pos; })
+        "pos", sol::property([](ZoneManager::Feature::Instance &self) { return self.m_pos; })
     );
 #endif
 
-    this->new_usertype<IZoneManager>("IZoneManager",
+    this->new_usertype<ZoneManager>("IZoneManager",
         sol::no_constructor,
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
-        "populate_zone", sol::resolve<void(ZoneID)>(&IZoneManager::PopulateZone),
+        "populate_zone", sol::resolve<void(ZoneID)>(&ZoneManager::PopulateZone),
 #endif
-        "find_nearest_feature", &IZoneManager::find_nearest_feature, 
-        "to_zone_pos", &IZoneManager::WorldToZonePos, 
-        "to_world_pos", &IZoneManager::ZoneToWorldPos, 
-        "global_keys", sol::property(&IZoneManager::m_globalKeys) // TODO rw property?
+        "find_nearest_feature", &ZoneManager::find_nearest_feature, 
+        "to_zone_pos", &ZoneManager::WorldToZonePos, 
+        "to_world_pos", &ZoneManager::ZoneToWorldPos, 
+        "global_keys", sol::property(&ZoneManager::m_globalKeys) // TODO rw property?
     );
 
     // clang-format on

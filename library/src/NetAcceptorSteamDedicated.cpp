@@ -509,7 +509,7 @@ void AcceptorSteam::OnLobbyCreated(LobbyCreated_t *data, bool failure)
 
         if (!SteamMatchmaking()->SetLobbyType(
                     m_lobbyID,
-                    k_ELobbyTypeFriendsOnly)) {//AVL_SETTINGS.serverPublic ? k_ELobbyTypePublic : k_ELobbyTypeFriendsOnly)) {
+                    k_ELobbyTypeFriendsOnly)) {//AVL_CONFIG.serverPublic ? k_ELobbyTypePublic : k_ELobbyTypeFriendsOnly)) {
             LOG_ERROR(AVL_LOGGER, "Failed to set lobby visibility");
         }
 
@@ -517,7 +517,7 @@ void AcceptorSteam::OnLobbyCreated(LobbyCreated_t *data, bool failure)
             LOG_ERROR(AVL_LOGGER, "Failed to set lobby name");
         }
 
-        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "password", NetManager()->m_passwordSalt.empty() ? "0" : "1")) {
+        if (!SteamMatchmaking()->SetLobbyData(m_lobbyID, "password", NetManager::instance().m_passwordSalt.empty() ? "0" : "1")) {
             LOG_ERROR(AVL_LOGGER, "Unable to set lobby password flag");
         }
 

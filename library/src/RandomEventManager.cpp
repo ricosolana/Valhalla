@@ -13,14 +13,7 @@
 #include "ZDOManager.h"
 #include "ZoneManager.h"
 
-auto RANDOM_EVENT_MANAGER = std::make_unique<IRandomEventManager>();
-
-IRandomEventManager *RandomEventManager()
-{
-    return RANDOM_EVENT_MANAGER.get();
-}
-
-void IRandomEventManager::Init()
+void RaidManager::Init()
 {
     // interval: 46
     // chance: 20
@@ -66,7 +59,7 @@ void IRandomEventManager::Init()
     }
 }
 
-void IRandomEventManager::Update()
+void RaidManager::Update()
 {
     ZoneScoped;
 
@@ -74,11 +67,11 @@ void IRandomEventManager::Update()
     if (m_activeEvent) {
         // Update the timer of the current event
         if (!m_activeEvent->m_pauseIfNoPlayerInArea
-            || ZDOManager()->AnyZDO(this->m_activeEventPos, AVL_SETTINGS.m_raids_radius,
+            || ZdoManager::instance().AnyZDO(this->m_activeEventPos, AVL_CONFIG.m_raids_radius,
                                     avledet::util::hashes::Object::Player, Prefab::Flag::NONE,
                                     Prefab::Flag::NONE))
-            //m_activeEventTimer += Avledet()->Delta();
-            m_activeEventRemaining -= Avledet()->DeltaNanos();
+            //m_activeEventTimer += Avledet::instance().Delta();
+            m_activeEventRemaining -= Avledet::instance().DeltaNanos();
 
         //if (m_activeEventTimer > this->m_activeEvent->m_duration) {
         if (m_activeEventRemaining <= 0ns) {
@@ -87,13 +80,13 @@ void IRandomEventManager::Update()
             m_activeEvent    = nullptr;
             m_activeEventPos = Vector3f::ZERO;
         }
-    } else if (AVL_SETTINGS.m_raids_interval > 0s) {
-        m_eventIntervalTimer += Avledet()->delta();
+    } else if (AVL_CONFIG.m_raids_interval > 0s) {
+        m_eventIntervalTimer += Avledet::instance().delta();
 
         // try to set a new current event
-        if (m_eventIntervalTimer > AVL_SETTINGS.m_raids_interval.count()) {
+        if (m_eventIntervalTimer > AVL_CONFIG.m_raids_interval.count()) {
             m_eventIntervalTimer = 0;
-            if (VUtils::Random::State().next_float() <= AVL_SETTINGS.m_raids_chance) {
+            if (VUtils::Random::State().next_float() <= AVL_CONFIG.m_raids_chance) {
 
                 if (auto opt = GetPossibleRandomEvent()) {
                     auto &&e   = opt.value().first;
@@ -123,7 +116,7 @@ void IRandomEventManager::Update()
     }
 }
 
-void IRandomEventManager::SetCurrentRandomEvent(Event const &e, Vector3f pos, std::chrono::nanoseconds nanos)
+void RaidManager::SetCurrentRandomEvent(Event const &e, Vector3f pos, std::chrono::nanoseconds nanos)
 {
     this->m_activeEvent                = &e;
     this->m_activeEventPos             = pos;
@@ -134,8 +127,8 @@ void IRandomEventManager::SetCurrentRandomEvent(Event const &e, Vector3f pos, st
     AVL_DISPATCH_WEBHOOK("Random event started in world `" + e.m_name + "`");
 }
 
-std::optional<std::pair<std::reference_wrapper<IRandomEventManager::Event const>, Vector3f>>
-IRandomEventManager::GetPossibleRandomEvent()
+std::optional<std::pair<std::reference_wrapper<RaidManager::Event const>, Vector3f>>
+RaidManager::GetPossibleRandomEvent()
 {
     std::vector<std::pair<std::reference_wrapper<Event const>, Vector3f>> result;
 
@@ -147,7 +140,7 @@ IRandomEventManager::GetPossibleRandomEvent()
             std::vector<Vector3f> positions;
 
             // now look for valid spaces
-            for (auto &&peer : NetManager()->GetPeers()) {
+            for (auto &&peer : NetManager::instance().GetPeers()) {
                 auto &&zdo = peer->find_zdo();
                 if (!zdo)
                     continue;
@@ -155,7 +148,7 @@ IRandomEventManager::GetPossibleRandomEvent()
                 if (
                         // Check biome first
                         (e->m_biome == avledet::util::Biome::None
-                         || (std::to_underlying(GeoManager()->GetBiome(zdo->get_position()))
+                         || (std::to_underlying(GeoManager::instance().GetBiome(zdo->get_position()))
                              & std::to_underlying(e->m_biome))
                                     != std::to_underlying(avledet::util::Biome::None))
                         // check base next
@@ -179,16 +172,16 @@ IRandomEventManager::GetPossibleRandomEvent()
     return std::nullopt;
 }
 
-bool IRandomEventManager::CheckGlobalKeys(Event const &e)
+bool RaidManager::CheckGlobalKeys(Event const &e)
 {
-    if (AVL_SETTINGS.m_raids_require_keys) {
+    if (AVL_CONFIG.m_raids_require_keys) {
         for (auto &&key : e.m_presentGlobalKeys) {
-            if (!ZoneManager()->has_global_key(key))
+            if (!ZoneManager::instance().has_global_key(key))
                 return false;
         }
 
         for (auto &&key : e.m_absentGlobalKeys) {
-            if (ZoneManager()->has_global_key(key))
+            if (ZoneManager::instance().has_global_key(key))
                 return false;
         }
     }
@@ -196,7 +189,7 @@ bool IRandomEventManager::CheckGlobalKeys(Event const &e)
     return true;
 }
 
-void IRandomEventManager::Save(DataWriter &writer)
+void RaidManager::Save(DataWriter &writer)
 {
     writer.write(m_eventIntervalTimer);
     writer.write(m_activeEvent ? std::string_view(m_activeEvent->m_name) : "");
@@ -205,7 +198,7 @@ void IRandomEventManager::Save(DataWriter &writer)
     writer.write(m_activeEventPos);
 }
 
-void IRandomEventManager::Load(DataReader &reader, int version)
+void RaidManager::Load(DataReader &reader, int version)
 {
     m_eventIntervalTimer = reader.read<float>();
 
@@ -222,15 +215,15 @@ void IRandomEventManager::Load(DataReader &reader, int version)
     //<< ", pos: " << this->m_activeEventPos;
 }
 
-void IRandomEventManager::SendCurrentRandomEvent()
+void RaidManager::SendCurrentRandomEvent()
 {
     if (m_activeEvent) {
-        RouteManager()->InvokeAll(
+        RouteManager::instance().InvokeAll(
                 avledet::util::hashes::Routed::S2C_SetEvent, std::string_view(m_activeEvent->m_name),
                 std::chrono::duration<float>(m_activeEventInitialDuration - m_activeEventRemaining).count(),
                 m_activeEventPos);
     } else {
-        RouteManager()->InvokeAll(avledet::util::hashes::Routed::S2C_SetEvent, std::string_view(""), 0.f,
+        RouteManager::instance().InvokeAll(avledet::util::hashes::Routed::S2C_SetEvent, std::string_view(""), 0.f,
                                   Vector3f::ZERO);
     }
 }

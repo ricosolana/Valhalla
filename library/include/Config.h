@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bits/chrono.h>
 #include <chrono>
 #include <cstdint>
 #include <string>
@@ -8,6 +9,7 @@
 #include <magic_enum/magic_enum.hpp>
 
 #include "CompileSettings.h"
+#include "Manager.h"
 #include "VUtilsString.h"
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
@@ -15,9 +17,29 @@
 #endif
 
 // TODO rename to config
-#define AVL_SETTINGS (Config::instance())
+#define AVL_CONFIG (ConfigManager::instance())
 
 // TODO encapsulate in avl namespace
+
+template<typename D>
+struct duration_suffix; // no generic definition -> compile error if unsupported
+
+#define AVL_DURATION_SUFFIX(type, suffix) \
+    template<> struct duration_suffix<type> { static constexpr const char* value = suffix; }
+
+AVL_DURATION_SUFFIX(std::chrono::nanoseconds,       "ns");
+AVL_DURATION_SUFFIX(avledet::util::Ticks,           "t");
+AVL_DURATION_SUFFIX(std::chrono::microseconds,      "us");
+AVL_DURATION_SUFFIX(std::chrono::milliseconds,      "ms");
+AVL_DURATION_SUFFIX(std::chrono::seconds,           "s");
+AVL_DURATION_SUFFIX(std::chrono::minutes,           "m");
+AVL_DURATION_SUFFIX(std::chrono::hours,             "h");
+AVL_DURATION_SUFFIX(std::chrono::days,              "d");
+AVL_DURATION_SUFFIX(std::chrono::weeks,             "w");
+AVL_DURATION_SUFFIX(std::chrono::months,            "mo");
+AVL_DURATION_SUFFIX(std::chrono::years,             "y");
+
+#undef AVL_DURATION_SUFFIX
 
 enum class ReplayMode {
     NONE,
@@ -34,21 +56,11 @@ enum class AssignAlgorithm
     RADIUS_LATENCY
 };
 
-class Config
+class ConfigManager : public avledet::util::IManager<ConfigManager>
 {
 public:
-    static Config& instance() {
-        static Config inst;
-        return inst;
-    }
-
     bool reloading() const;
-
     void load();
-
-private:
-    Config() = default;
-    Config(const Config&) = delete;
 
 private:
     bool m_first_load = true;
@@ -130,10 +142,21 @@ public:
     std::string m_replay_playback_path {};
     
     //bool replay_kick_on_fail;
+
+
+
+    template<typename Rep, typename Period>
+    friend std::ostream &operator<<(std::ostream &st, std::chrono::duration<Rep, Period> const &rhs)
+    {
+        return st << std::to_string(rhs.count()) + duration_suffix<decltype(rhs)>::value;
+    }
 };
 
 
 namespace YAML {
+    /**
+     * Magic enum parsing
+     */
     template<typename Enum>
         requires std::is_scoped_enum_v<Enum>
     struct convert<Enum>
@@ -188,10 +211,11 @@ namespace YAML {
                 dur *= 10;
                 dur += (ch - '0');
             } else if (index > 0) {
-                for (; index < s.length() && s[index] == ' '; index++) {}// skip spaces
+                // skip spaces
+                for (; index < s.length() && s[index] == ' '; index++) {}
 
                 dur *= sign;
-                std::int64_t const ch2 = index < s.length() - 1 ? s[index + 1] : ' ';
+                const char ch2 = index < s.length() - 1 ? s[index + 1] : '\0';
                 switch (ch) {
                 case 'n': out = std::chrono::duration_cast<T>(std::chrono::nanoseconds(dur)); return true;
                 case 't': out = std::chrono::duration_cast<T>(avledet::util::Ticks(dur)); return true;
@@ -201,6 +225,7 @@ namespace YAML {
                     case 's':
                         out = std::chrono::duration_cast<T>(std::chrono::milliseconds(dur));
                         return true;
+                    case '\0': // fallthrough for 'm' -> minutes
                     case 'i': out = std::chrono::duration_cast<T>(std::chrono::minutes(dur)); return true;
                     case 'o': out = std::chrono::duration_cast<T>(std::chrono::months(dur)); return true;
                     default: break;
@@ -220,6 +245,24 @@ namespace YAML {
         return false;
     };
 
+    template<typename Rep, typename Period>
+    struct convert<std::chrono::duration<Rep, Period>>
+    {
+        static Node encode(std::chrono::duration<Rep, Period> const &rhs)
+        {
+            using D = std::remove_cvref_t<decltype(rhs)>;
+            return Node(std::to_string(rhs.count()) + duration_suffix<D>::value);
+        }
+
+        static bool decode(Node const &node, std::chrono::duration<Rep, Period> &rhs)
+        {
+            if (!node.IsScalar())
+                return false;
+
+            return parseDuration(node.Scalar(), rhs);
+        }
+    };
+/* 
     template<typename Rep, typename Period>
     struct convert<std::chrono::duration<Rep, Period>>
     {
@@ -265,8 +308,8 @@ namespace YAML {
             auto &&s = node.Scalar();
 
             return parseDuration(node.Scalar(), rhs);
-        }
-    };
+        } 
+    };*/
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
     template<>
@@ -346,3 +389,14 @@ namespace YAML {
     };
 
 }// namespace YAML
+
+QUILL_LOGGABLE_DEFERRED_FORMAT(std::chrono::nanoseconds)
+QUILL_LOGGABLE_DEFERRED_FORMAT(std::chrono::microseconds)
+QUILL_LOGGABLE_DEFERRED_FORMAT(std::chrono::milliseconds)
+QUILL_LOGGABLE_DEFERRED_FORMAT(std::chrono::seconds)
+QUILL_LOGGABLE_DEFERRED_FORMAT(std::chrono::minutes)
+QUILL_LOGGABLE_DEFERRED_FORMAT(std::chrono::hours)
+QUILL_LOGGABLE_DEFERRED_FORMAT(std::chrono::days)
+QUILL_LOGGABLE_DEFERRED_FORMAT(std::chrono::weeks)
+QUILL_LOGGABLE_DEFERRED_FORMAT(std::chrono::months)
+QUILL_LOGGABLE_DEFERRED_FORMAT(std::chrono::years)

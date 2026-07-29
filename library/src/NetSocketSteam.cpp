@@ -95,7 +95,7 @@ namespace avledet::network {
         LOG_TRACE_L1(AVL_LOGGER, "authenticating for {}", get_host_name());
 
         EBeginAuthSessionResult result {};
-        if (AVL_SETTINGS.m_server_dedicated) {
+        if (AVL_CONFIG.m_server_dedicated) {
             result = SteamGameServer()->BeginAuthSession(ticket.data(), (int)ticket.size(),
                                                          m_steam_id.GetSteamID());
         } else {

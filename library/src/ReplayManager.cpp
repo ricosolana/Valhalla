@@ -53,7 +53,7 @@ namespace avledet::replay {
     //void XShare::on_packet(avledet::util::Bytes packet) {
     //    SwapBuffer* buf = m_active_buf.load(std::memory_order_relaxed);
 //
-    //    auto nanos = Avledet()->Nanos();
+    //    auto nanos = Avledet::instance().Nanos();
 //
     //    this->m_bytes_size += packet.size();
     //    buf->push_back({ nanos, std::move(packet) });
@@ -62,11 +62,11 @@ namespace avledet::replay {
     void IReplayManager::init() {
         this->m_server_nanos = std::chrono::steady_clock::now().time_since_epoch();
 
-        auto snanos = AVL_SETTINGS.m_replay_mode == ReplayMode::PLAYBACK 
-            ? AVL_SETTINGS.m_replay_playback_path : std::to_string(m_server_nanos.count());
+        auto snanos = AVL_CONFIG.m_replay_mode == ReplayMode::PLAYBACK 
+            ? AVL_CONFIG.m_replay_playback_path : std::to_string(m_server_nanos.count());
 
         this->m_this_world_session_path = std::filesystem::path(AVL_REPLAY_PATH) 
-            / WorldManager()->GetWorld()->m_name 
+            / WorldManager::instance().GetWorld()->m_name 
             /// std::to_string(nanos.count()) // time stamp here, so what format?
             /// avledet::util::GenerateAlphaNum(6)
             / snanos; //TODO place a server-session identifier here
@@ -75,7 +75,7 @@ namespace avledet::replay {
 
         // TODO load paths, NOT sessions YET
         //  storing session paths is very cheap
-        if (AVL_SETTINGS.m_replay_mode == ReplayMode::PLAYBACK) {
+        if (AVL_CONFIG.m_replay_mode == ReplayMode::PLAYBACK) {
             auto hosts_dir_itr = std::vector(std::filesystem::directory_iterator{this->m_this_world_session_path / "hosts"}, std::filesystem::directory_iterator{});
             for (auto host_itr : hosts_dir_itr) {
                 auto hostname = host_itr.path().stem().string();
@@ -92,9 +92,9 @@ namespace avledet::replay {
         }
 
         m_thread = std::jthread([&](std::stop_token token) {
-            if (AVL_SETTINGS.m_replay_mode == ReplayMode::CAPTURE) {
+            if (AVL_CONFIG.m_replay_mode == ReplayMode::CAPTURE) {
                 this->thread_capture_job(token);
-            } else if (AVL_SETTINGS.m_replay_mode == ReplayMode::PLAYBACK) { // TODO rename to playback
+            } else if (AVL_CONFIG.m_replay_mode == ReplayMode::PLAYBACK) { // TODO rename to playback
                 // player
                 this->thread_player_job(token);
             } else {
@@ -262,7 +262,7 @@ namespace avledet::replay {
         // record peer joindata
         const auto host = peer->m_socket->get_host_name();
 
-        auto nanos = Avledet()->Nanos();
+        auto nanos = Avledet::instance().Nanos();
 
         const auto path = m_this_world_session_path
             / "hosts"
@@ -301,7 +301,7 @@ namespace avledet::replay {
         auto* buf = share.m_active; // CONTENDED
 
         share.m_size_bytes += packet.size();
-        buf->push_back({ Avledet()->Nanos(), std::move(packet) });
+        buf->push_back({ Avledet::instance().Nanos(), std::move(packet) });
 
         if (avledet::util::run_periodic<struct gbhusdr>(1s)) {
             LOG_INFO(AVL_LOGGER, "share: {} B", share.m_size_bytes);

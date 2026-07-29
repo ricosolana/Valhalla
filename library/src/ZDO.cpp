@@ -181,7 +181,7 @@ void ZDO::_revise()
 
 void ZDO::_set_prefab_hash(avledet::util::Hash hash)
 {
-    this->m_prefab_index = PrefabManager()->get_prefab_index(hash);
+    this->m_prefab_index = PrefabManager::instance().get_prefab_index(hash);
 }
 
 // Set the owner of the ZDO without revising
@@ -282,7 +282,7 @@ void ZDO::set_rotation(Quaternion rot)
 
 Prefab::Reference ZDO::get_prefab() const
 {
-    return PrefabManager()->get_indexed_prefab(m_prefab_index);
+    return PrefabManager::instance().get_indexed_prefab(m_prefab_index);
 }
 
 avledet::util::Hash ZDO::get_prefab_hash() const
@@ -423,7 +423,7 @@ void ZDO::Load31Pre(DataReader &pkg, std::int32_t worldVersion)
 
     if (worldVersion >= 17) {
         prefabHash = pkg.read<avledet::util::Hash>();
-        prefab = &PrefabManager()->RequirePrefabByHash(prefabHash);
+        prefab = &PrefabManager::instance().RequirePrefabByHash(prefabHash);
         _SetPrefabHash(prefabHash);
     }
 
@@ -446,7 +446,7 @@ void ZDO::Load31Pre(DataReader &pkg, std::int32_t worldVersion)
 
     if (worldVersion < 17) {
         prefabHash = get_int(avledet::util::hashes::ZDO::ZDO::PREFAB);
-        prefab = &PrefabManager()->RequirePrefabByHash(prefabHash);
+        prefab = &PrefabManager::instance().RequirePrefabByHash(prefabHash);
         _SetPrefabHash(prefabHash);
     }
 
@@ -565,17 +565,17 @@ void ZDO::unpack(DataReader &reader, std::int32_t version)
 void ZDO::set_position(Vector3f pos)
 {
     if (this->get_position() != pos) {
-        if (IZoneManager::WorldToZonePos(pos) != get_zone()) {
-            ZDOManager()->_InvalidateZDOZone(this->smart_from_this());
+        if (ZoneManager::WorldToZonePos(pos) != get_zone()) {
+            ZdoManager::instance()._InvalidateZDOZone(this->smart_from_this());
 
-            ZDOManager()->_RemoveFromSector(this->smart_from_this());
+            ZdoManager::instance()._RemoveFromSector(this->smart_from_this());
             this->_set_position(pos);//unrevised
-            ZDOManager()->_AddZDOToZone(this->smart_from_this());
+            ZdoManager::instance()._AddZDOToZone(this->smart_from_this());
         } else {
             this->_set_position(pos);
         }
 
-        assert(IZoneManager::WorldToZonePos(pos) == this->get_zone());
+        assert(ZoneManager::WorldToZonePos(pos) == this->get_zone());
 
         if (this->owned_by_me())
             this->_revise();
@@ -584,7 +584,7 @@ void ZDO::set_position(Vector3f pos)
 
 ZoneID ZDO::get_zone() const
 {
-    return IZoneManager::WorldToZonePos(this->get_position());
+    return ZoneManager::WorldToZonePos(this->get_position());
 }
 
 void ZDO::pack(DataWriter &writer, bool network) const

@@ -7,6 +7,7 @@
 #include <tuple>
 #include <type_traits>
 #include <variant>
+#include <chrono>
 
 namespace avledet::util::traits {
 
@@ -268,6 +269,20 @@ namespace avledet::util::traits {
         requires(index > 0)
     struct variadic_accumulate_values_to_index<index, F, R...>
         : std::integral_constant<std::size_t, F + variadic_accumulate_values_to_index<index - 1, R...>::value>
+    {};
+
+
+
+    template<class Enum>
+    concept scoped_enum = requires { typename std::is_scoped_enum<Enum>; };
+
+
+    template<class T>
+    struct is_duration : std::false_type
+    {};
+
+    template<class Rep, class Period>
+    struct is_duration<std::chrono::duration<Rep, Period>> : std::true_type
     {};
 
 }// namespace avledet::util::traits

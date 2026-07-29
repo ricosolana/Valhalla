@@ -28,16 +28,7 @@
 #include "ZDOManager.h"
 #include "ZoneManager.h"
 
-// TODO use netmanager instance instead
-
-auto NET_MANAGER = std::make_unique<INetManager>();
-
-INetManager *NetManager()
-{
-    return NET_MANAGER.get();
-}
-
-Peer::Ptr INetManager::Kick(std::string_view user)
+Peer::Ptr NetManager::Kick(std::string_view user)
 {
     auto &&peer = FindPeer(user);
     if (peer) {
@@ -47,25 +38,25 @@ Peer::Ptr INetManager::Kick(std::string_view user)
     return peer;
 }
 
-Peer::Ptr INetManager::Ban(std::string_view user)
+Peer::Ptr NetManager::Ban(std::string_view user)
 {
     auto &&peer = FindPeer(user);
 
     if (peer) {
-        Avledet()->m_blacklist.insert(peer->m_socket->get_host_name());
+        Avledet::instance().m_blacklist.insert(peer->m_socket->get_host_name());
         peer->close(ConnectionStatus::ErrorBanned);
     } else
-        Avledet()->m_blacklist.insert(user);
+        Avledet::instance().m_blacklist.insert(user);
 
     return peer;
 }
 
-bool INetManager::Unban(std::string_view user)
+bool NetManager::Unban(std::string_view user)
 {
-    return Avledet()->m_blacklist.erase(user);
+    return Avledet::instance().m_blacklist.erase(user);
 }
 
-void INetManager::SendDisconnect()
+void NetManager::SendDisconnect()
 {
     LOG_INFO(AVL_LOGGER, "Sending disconnect msg");
 
@@ -74,10 +65,10 @@ void INetManager::SendDisconnect()
     }
 }
 
-void INetManager::SendPlayerList()
+void NetManager::SendPlayerList()
 {
     if (!m_onlinePeers.empty()) {
-        if (!AVL_SCRIPT_EVENT(IScriptManager::Events::PlayerList))
+        if (!AVL_SCRIPT_EVENT(ScriptManager::Events::PlayerList))
             return;
 
         DataWriter writer;
@@ -97,9 +88,9 @@ void INetManager::SendPlayerList()
                 writer.write(platform);           // ...?
                 auto forcedDisplayName = platform;//TODO the algo / usage is kinda weird / convoluted
                 writer.write(forcedDisplayName);  //TODO
-                writer.write(peer->IsMapVisible() || AVL_SETTINGS.playerListForceVisible);
-                if (peer->IsMapVisible() || AVL_SETTINGS.playerListForceVisible) {
-                    if (AVL_SETTINGS.playerListSmoothUpdating >= 2s)
+                writer.write(peer->IsMapVisible() || AVL_CONFIG.playerListForceVisible);
+                if (peer->IsMapVisible() || AVL_CONFIG.playerListForceVisible) {
+                    if (AVL_CONFIG.playerListSmoothUpdating >= 2s)
                         writer.write(peer->m_pos);
                     else {// quickly dynamic map
                         auto &&zdo = peer->find_zdo();
@@ -118,44 +109,44 @@ void INetManager::SendPlayerList()
     }
 }
 
-void INetManager::SendNetTime()
+void NetManager::SendNetTime()
 {
     for (auto &&peer : m_onlinePeers) {
-        peer->Invoke(avledet::util::hashes::Rpc::S2C_UpdateTime, Avledet()->GetWorldTime());
+        peer->Invoke(avledet::util::hashes::Rpc::S2C_UpdateTime, Avledet::instance().GetWorldTime());
     }
 }
 
-void INetManager::SendPeerInfo(Peer::Ptr peer)
+void NetManager::SendPeerInfo(Peer::Ptr peer)
 {
     avledet::util::Writer writer;
     {
         //avledet::util::WriterScopedEncap scoped(writer);
 
-        writer.write(Avledet()->ID());
+        writer.write(Avledet::instance().ID());
         writer.write(std::string_view(VConstants::GAME));
         writer.write(VConstants::NETWORK);
         writer.write(Vector3f::ZERO);      // dummy
         writer.write(std::string_view(""));// dummy
 
-        auto world = WorldManager()->GetWorld();
+        auto world = WorldManager::instance().GetWorld();
 
         writer.write(world->m_name);
         writer.write(world->m_seed);
         writer.write(world->m_seedName);// Peer does not seem to use
         writer.write(world->m_uid);
         writer.write(world->m_worldGenVersion);
-        writer.write(Avledet()->GetWorldTime());
+        writer.write(Avledet::instance().GetWorldTime());
     }
 
     peer->Invoke(avledet::util::hashes::Rpc::PeerInfo, writer.release());
 }
 
-//void INetManager::OnNewClient(ISocket::Ptr socket, avledet::util::UserID uuid, const std::string &name, const Vector3f &pos) {
-void INetManager::OnPeerConnect(Peer::Ptr peer)
+//void NetManager::OnNewClient(ISocket::Ptr socket, avledet::util::UserID uuid, const std::string &name, const Vector3f &pos) {
+void NetManager::OnPeerConnect(Peer::Ptr peer)
 {
-    peer->SetAdmin(Avledet()->m_admin.contains(peer->m_socket->get_host_name()));
+    peer->SetAdmin(Avledet::instance().m_admin.contains(peer->m_socket->get_host_name()));
 
-    if (!AVL_SCRIPT_EVENT(IScriptManager::Events::Join, peer)) {
+    if (!AVL_SCRIPT_EVENT(ScriptManager::Events::Join, peer)) {
         return peer->Disconnect();
     }
 
@@ -257,9 +248,9 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
-        //WorldManager()->WriteFileWorldDB(true);
+        //WorldManager::instance().WriteFileWorldDB(true);
 
-        WorldManager()->GetWorld()->WriteFiles();
+        WorldManager::instance().GetWorld()->WriteFiles();
 
         peer->ConsoleMessage("Saved the world");
     });
@@ -268,23 +259,23 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
         if (!peer->IsAdmin())
             return peer->ConsoleMessage("You are not admin");
 
-        if (Avledet()->m_blacklist.empty())
+        if (Avledet::instance().m_blacklist.empty())
             peer->ConsoleMessage("Banned users: (none)");
         else {
             peer->ConsoleMessage("Banned users:");
-            for (auto &&banned : Avledet()->m_blacklist) {
+            for (auto &&banned : Avledet::instance().m_blacklist) {
                 peer->ConsoleMessage(banned);
             }
         }
 
-        if (!AVL_SETTINGS.m_player_whitelist_on)
+        if (!AVL_CONFIG.m_player_whitelist_on)
             peer->ConsoleMessage("Whitelist is disabled");
         else {
-            if (Avledet()->m_whitelist.empty())
+            if (Avledet::instance().m_whitelist.empty())
                 peer->ConsoleMessage("Whitelisted users: (none)");
             else {
                 peer->ConsoleMessage("Whitelisted users:");
-                for (auto &&banned : Avledet()->m_whitelist) {
+                for (auto &&banned : Avledet::instance().m_whitelist) {
                     peer->ConsoleMessage(banned);
                 }
             }
@@ -293,28 +284,28 @@ void INetManager::OnPeerConnect(Peer::Ptr peer)
 
     SendPeerInfo(peer);
 
-    ZDOManager()->OnNewPeer(peer);
-    RouteManager()->OnNewPeer(peer);
-    ZoneManager()->OnNewPeer(peer);
+    ZdoManager::instance().OnNewPeer(peer);
+    RouteManager::instance().OnNewPeer(peer);
+    ZoneManager::instance().OnNewPeer(peer);
 
 #if AVL_IS_ON(AVL_DISCORD_INTEGRATION)
-    if (AVL_SETTINGS.TEST_discordAccountLinking) {
+    if (AVL_CONFIG.TEST_discordAccountLinking) {
         auto &&host_name = peer->m_socket->get_host_name();
-        peer->SetGated(!DiscordManager()->m_linked_accounts.contains(host_name));
+        peer->SetGated(!DiscordManager::instance().m_linked_accounts.contains(host_name));
         if (peer->IsGated()) {
-            DiscordManager()->m_temp_linking_keys[host_name]
-                    = {VUtils::Random::GenerateAlphaNum(4), Avledet()->Nanos()};
+            DiscordManager::instance().m_temp_linking_keys[host_name]
+                    = {VUtils::Random::GenerateAlphaNum(4), Avledet::instance().Nanos()};
         }
     }
 #endif
 
     // TODO remove this for debug only
-    peer->SetGated(AVL_SETTINGS.m_discord_player_restrict);
+    peer->SetGated(AVL_CONFIG.m_discord_player_restrict);
 
     m_onlinePeers.push_back(peer);
 }
 
-Peer::Ptr INetManager::FindPeer(std::string_view any)
+Peer::Ptr NetManager::FindPeer(std::string_view any)
 {
     Peer::Ptr peer = FindPeerByHost(any);
     if (!peer)
@@ -325,7 +316,7 @@ Peer::Ptr INetManager::FindPeer(std::string_view any)
 }
 
 // Return the peer or nullptr
-Peer::Ptr INetManager::FindPeerByName(std::string_view name)
+Peer::Ptr NetManager::FindPeerByName(std::string_view name)
 {
     for (auto &&peer : m_onlinePeers) {
         if (peer->m_name == name)
@@ -335,7 +326,7 @@ Peer::Ptr INetManager::FindPeerByName(std::string_view name)
 }
 
 // Return the peer or nullptr
-Peer::Ptr INetManager::FindPeerByUserID(avledet::util::UserID uuid)
+Peer::Ptr NetManager::FindPeerByUserID(avledet::util::UserID uuid)
 {
     for (auto &&peer : m_onlinePeers) {
         if (peer->GetUserID() == uuid)
@@ -344,7 +335,7 @@ Peer::Ptr INetManager::FindPeerByUserID(avledet::util::UserID uuid)
     return nullptr;
 }
 
-Peer::Ptr INetManager::FindPeerByHost(std::string_view host)
+Peer::Ptr NetManager::FindPeerByHost(std::string_view host)
 {
     for (auto &&peer : m_onlinePeers) {
         if (peer->m_socket->get_host_name() == host)
@@ -353,28 +344,28 @@ Peer::Ptr INetManager::FindPeerByHost(std::string_view host)
     return nullptr;
 }
 
-void INetManager::PostInit()
+void NetManager::PostInit()
 {
     LOG_NOTICE(AVL_LOGGER, "Initializing NetManager");
 
     //m_acceptor = std::make_unique<AcceptorSteam>();
     //m_acceptor->Listen();
-    if (AVL_SETTINGS.m_server_tcp) {
+    if (AVL_CONFIG.m_server_tcp) {
         m_acceptor
-                = IAcceptor::tcp_dedicated(AVL_SETTINGS.m_server_address + ":" + std::to_string(AVL_SETTINGS.m_server_port));// m_acceptor
+                = IAcceptor::tcp_dedicated(AVL_CONFIG.m_server_address + ":" + std::to_string(AVL_CONFIG.m_server_port));// m_acceptor
     } else {
-        m_acceptor = IAcceptor::steam_dedicated(AVL_SETTINGS.m_server_address + ":"
-                                                + std::to_string(AVL_SETTINGS.m_server_port));      // m_acceptor
+        m_acceptor = IAcceptor::steam_dedicated(AVL_CONFIG.m_server_address + ":"
+                                                + std::to_string(AVL_CONFIG.m_server_port));      // m_acceptor
     }
 
     m_acceptor->start();
     m_acceptor->on_connect([this](ISocket::Ptr socket) {
         try {
             auto peer = std::make_shared<Peer>(std::move(socket));
-            if (AVL_SCRIPT_EVENT(IScriptManager::Events::Connect, peer)) {
+            if (AVL_SCRIPT_EVENT(ScriptManager::Events::Connect, peer)) {
                 m_connectedPeers.insert(m_connectedPeers.end(), peer);
 
-                if (AVL_SETTINGS.m_replay_mode == ReplayMode::CAPTURE) {
+                if (AVL_CONFIG.m_replay_mode == ReplayMode::CAPTURE) {
                     // TODO implement the replay mode
                     //assert(false);
                     avledet::replay::ReplayManager()->on_new_peer(peer);
@@ -386,7 +377,7 @@ void INetManager::PostInit()
     });
 }
 
-void INetManager::Update()
+void NetManager::Update()
 {
     ZoneScoped;
 
@@ -395,8 +386,8 @@ void INetManager::Update()
         SendNetTime();
     }
 
-    if (AVL_SETTINGS.playerListSmoothUpdating > 0s) {
-        if (VUtils::run_periodic<struct periodic_peer_tablist>(AVL_SETTINGS.playerListSmoothUpdating)) {
+    if (AVL_CONFIG.playerListSmoothUpdating > 0s) {
+        if (VUtils::run_periodic<struct periodic_peer_tablist>(AVL_CONFIG.playerListSmoothUpdating)) {
             SendPlayerList();
         }
     }
@@ -461,37 +452,37 @@ void INetManager::Update()
     }
 }
 
-void INetManager::OnPeerQuit(Peer::Ptr peer)
+void NetManager::OnPeerQuit(Peer::Ptr peer)
 {
     LOG_INFO(AVL_LOGGER, "Cleaning up peer");
     AVL_DISPATCH_WEBHOOK(peer->m_name + " has quit");
-    AVL_SCRIPT_EVENT(IScriptManager::Events::Quit, peer);
+    AVL_SCRIPT_EVENT(ScriptManager::Events::Quit, peer);
 
-    ZDOManager()->OnPeerQuit(peer);
+    ZdoManager::instance().OnPeerQuit(peer);
 
-    if (AVL_SETTINGS.m_replay_mode == ReplayMode::CAPTURE) {
+    if (AVL_CONFIG.m_replay_mode == ReplayMode::CAPTURE) {
         // TODO
         //assert(false);
         avledet::replay::ReplayManager()->on_peer_quit(peer);
     }
 
     if (peer->IsAdmin()) {
-        Avledet()->m_admin.insert(peer->m_socket->get_host_name());
+        Avledet::instance().m_admin.insert(peer->m_socket->get_host_name());
     } else {
-        Avledet()->m_admin.erase(peer->m_socket->get_host_name());
+        Avledet::instance().m_admin.erase(peer->m_socket->get_host_name());
     }
 }
 
-void INetManager::OnPeerDisconnect(Peer::Ptr peer)
+void NetManager::OnPeerDisconnect(Peer::Ptr peer)
 {
-    AVL_SCRIPT_EVENT(IScriptManager::Events::Disconnect, peer);
+    AVL_SCRIPT_EVENT(ScriptManager::Events::Disconnect, peer);
 
     peer->SendDisconnect();
 
     LOG_INFO(AVL_LOGGER, "{} has disconnected", peer->m_socket->get_host_name());
 }
 
-void INetManager::Uninit()
+void NetManager::Uninit()
 {
     SendDisconnect();
 
@@ -508,11 +499,11 @@ void INetManager::Uninit()
     m_acceptor->stop();
 }
 
-void INetManager::OnConfigLoad(bool reloading)
+void NetManager::OnConfigLoad(bool reloading)
 {
     (void) reloading;
 
-    bool hasPassword = !AVL_SETTINGS.m_server_password.empty();
+    bool hasPassword = !AVL_CONFIG.m_server_password.empty();
 
     if (hasPassword) {
         m_passwordSalt = VUtils::Random::GenerateAlphaNum(16);
@@ -520,7 +511,7 @@ void INetManager::OnConfigLoad(bool reloading)
         // Hash a salted password
         //VUtils::md5(merge.c_str(), merge.size(), reinterpret_cast<std::uint8_t*>(m_passwordHash.data()));
 
-        auto s         = avledet::crypto::md5(AVL_SETTINGS.m_server_password + m_passwordSalt);
+        auto s         = avledet::crypto::md5(AVL_CONFIG.m_server_password + m_passwordSalt);
         m_passwordHash = avledet::lexicon::CSU::ascii(std::string_view(s));
     } else {
         m_passwordSalt.clear();

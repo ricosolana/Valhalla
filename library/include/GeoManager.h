@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FastNoise.h"
+#include "Manager.h"
 #include "VUtils.h"
 #include <memory>
 #include <quill/Logger.h>
@@ -19,7 +20,7 @@
     #include "VUtilsRandom.h"
     #include "WorldManager.h"
 
-class IGeoManager
+class GeoManager : public avledet::util::IManager<GeoManager>
 {
     // TODO make private
   public:
@@ -246,8 +247,5 @@ public:
 
     static constexpr float waterEdge = 10500;
 };
-
-// Manager class for everything related to coarse world heights and biomes during initial generation
-IGeoManager *GeoManager();
 
 #endif

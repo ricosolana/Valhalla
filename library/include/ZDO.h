@@ -36,9 +36,9 @@
 class ZDO
 {
     // TODO are these friend classes safe?
-    friend class IZDOManager;
-    friend class IPrefabManager;
-    friend class IAvledet;
+    friend class ZdoManager;
+    friend class PrefabManager;
+    friend class Avledet;
 
     static constexpr unsigned int MACHINE_Persistent = 0;
     static constexpr unsigned int MACHINE_Distant    = 1;

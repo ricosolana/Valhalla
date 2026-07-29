@@ -6,6 +6,7 @@
 
 #include "Avledet.h"
 #include "Types.h"
+#include "ZoneManager.h"
 #include "HeightmapBuilder.h"
 
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
@@ -32,7 +33,7 @@ void IHeightmapBuilder::PostGeoInit()
 
     LOG_NOTICE(AVL_LOGGER, "Initializing HeightmapBuilder");
 
-    for (unsigned int i = 0; i < AVL_SETTINGS.m_world_heightmap_threads; i++) {
+    for (unsigned int i = 0; i < AVL_CONFIG.m_world_heightmap_threads; i++) {
         auto &&insert = m_builders.insert(std::end(m_builders), std::make_unique<Shared>());
 
         Shared *shared = insert->get();
@@ -128,19 +129,19 @@ void IHeightmapBuilder::Update()
 // private
 void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone)
 {
-    auto baseWorldPos = IZoneManager::ZoneToWorldPos(zone)
-                        + Vector3f((float) IZoneManager::UNITS_PER_ZONE * -0.5f, 0.,
-                                   (float) IZoneManager::UNITS_PER_ZONE * -0.5f);
+    auto baseWorldPos = ZoneManager::ZoneToWorldPos(zone)
+                        + Vector3f((float) ZoneManager::UNITS_PER_ZONE * -0.5f, 0.,
+                                   (float) ZoneManager::UNITS_PER_ZONE * -0.5f);
 
-    auto GEO = GeoManager();
+    auto &&GEO = GeoManager::instance();
 
     //WorldGenerator worldGen = data.m_worldGen;
     //data.m_cornerBiomes = new Heightmap.Biome[4];
-    base->m_cornerBiomes[0] = GEO->GetBiome(baseWorldPos.x, baseWorldPos.z,  0.02f, false);
+    base->m_cornerBiomes[0] = GEO.GetBiome(baseWorldPos.x, baseWorldPos.z,  0.02f, false);
     
-    base->m_cornerBiomes[1] = GEO->GetBiome((float)((double)baseWorldPos.x + (double)IZoneManager::UNITS_PER_ZONE), baseWorldPos.z, 0.02f, false);
-    base->m_cornerBiomes[2] = GEO->GetBiome(baseWorldPos.x, (float)((double)baseWorldPos.z + (double)IZoneManager::UNITS_PER_ZONE), 0.02f, false);
-    base->m_cornerBiomes[3] = GEO->GetBiome((float)((double)baseWorldPos.x + (double)IZoneManager::UNITS_PER_ZONE), (float)((double)baseWorldPos.z + (double)IZoneManager::UNITS_PER_ZONE), 0.02f, false);
+    base->m_cornerBiomes[1] = GEO.GetBiome((float)((double)baseWorldPos.x + (double)ZoneManager::UNITS_PER_ZONE), baseWorldPos.z, 0.02f, false);
+    base->m_cornerBiomes[2] = GEO.GetBiome(baseWorldPos.x, (float)((double)baseWorldPos.z + (double)ZoneManager::UNITS_PER_ZONE), 0.02f, false);
+    base->m_cornerBiomes[3] = GEO.GetBiome((float)((double)baseWorldPos.x + (double)ZoneManager::UNITS_PER_ZONE), (float)((double)baseWorldPos.z + (double)ZoneManager::UNITS_PER_ZONE), 0.02f, false);
 
     auto const& biome1 = base->m_cornerBiomes[0];
     auto const& biome2 = base->m_cornerBiomes[1];
@@ -152,11 +153,11 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone)
 
     for (int ry = 0; ry < Heightmap::E_WIDTH; ry++) {
         float const world_y = (float)((double)baseWorldPos.z + (double)ry);
-        float const ty      = VUtils::Math::SmoothStep(0.0f, 1.0f, (float)((double)ry / (double)IZoneManager::UNITS_PER_ZONE));
+        float const ty      = VUtils::Math::SmoothStep(0.0f, 1.0f, (float)((double)ry / (double)ZoneManager::UNITS_PER_ZONE));
 
         for (int rx = 0; rx < Heightmap::E_WIDTH; rx++) {
             float const world_x = (float)((double)baseWorldPos.x + (float)rx);
-            float const tx      = VUtils::Math::SmoothStep(0.0f, 1.0f, (float)((double)rx / (double)IZoneManager::UNITS_PER_ZONE));
+            float const tx      = VUtils::Math::SmoothStep(0.0f, 1.0f, (float)((double)rx / (double)ZoneManager::UNITS_PER_ZONE));
 
             auto colorMask = avledet::util::Colors::BLACK;
             float height;
@@ -166,13 +167,13 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone)
 
             // slight optimization case
             if (biome1 == biome2 && biome1 == biome3 && biome1 == biome4) {
-                height = GEO->GetBiomeHeight(biome1, world_x, world_y, colorMask, false);
+                height = GEO.GetBiomeHeight(biome1, world_x, world_y, colorMask, false);
             } else {
                 std::array<VUtils::Color, 4> array;
-                float biomeHeight = GEO->GetBiomeHeight(biome1, world_x, world_y, array[0], false);
-                float biomeHeight2 = GEO->GetBiomeHeight(biome2, world_x, world_y, array[1], false);
-                float biomeHeight3 = GEO->GetBiomeHeight(biome3, world_x, world_y, array[2], false);
-                float biomeHeight4 = GEO->GetBiomeHeight(biome4, world_x, world_y, array[3], false);
+                float biomeHeight = GEO.GetBiomeHeight(biome1, world_x, world_y, array[0], false);
+                float biomeHeight2 = GEO.GetBiomeHeight(biome2, world_x, world_y, array[1], false);
+                float biomeHeight3 = GEO.GetBiomeHeight(biome3, world_x, world_y, array[2], false);
+                float biomeHeight4 = GEO.GetBiomeHeight(biome4, world_x, world_y, array[3], false);
                 
                 float num9 = VUtils::Math::Lerp(biomeHeight, biomeHeight2, tx);
                 float num10 = VUtils::Math::Lerp(biomeHeight3, biomeHeight4, tx);
@@ -186,8 +187,8 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone)
             base->m_baseHeights[(std::size_t)(ry * Heightmap::E_WIDTH + rx)] = height;
 
             // color mask is a bit smaller, so check bounds
-            if (rx < IZoneManager::UNITS_PER_ZONE && ry < IZoneManager::UNITS_PER_ZONE) {
-                base->m_base_mask[(std::size_t)(ry * IZoneManager::UNITS_PER_ZONE + rx)] = colorMask;
+            if (rx < ZoneManager::UNITS_PER_ZONE && ry < ZoneManager::UNITS_PER_ZONE) {
+                base->m_base_mask[(std::size_t)(ry * ZoneManager::UNITS_PER_ZONE + rx)] = colorMask;
             }
         }
     }
