@@ -5,6 +5,9 @@ namespace avledet::util {
     template<typename T>
     class IManager
     {
+    private:
+        static inline T inst;
+
     public:
         IManager(const IManager&) = delete;
         IManager& operator=(const IManager&) = delete;
@@ -13,7 +16,6 @@ namespace avledet::util {
         IManager& operator=(IManager&&) = delete;
 
         static T& instance() {
-            static T inst;
             return inst;
         }
 

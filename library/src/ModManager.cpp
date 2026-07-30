@@ -1,6 +1,7 @@
 #include "ModManager.h"
 #include "VUtils.h"
 #include <sol/state_handling.hpp>
+#include <string>
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
 
@@ -81,7 +82,7 @@ ScriptManager::load_file_script(std::filesystem::path script_root)
                            last_write_time);
 
     script_info.m_version     = loadNode["version"].as<std::string>("");
-    script_info.m_apiVersion  = loadNode["api-version"].as<std::string>("");
+    script_info.m_apiVersion  = loadNode["api-version"].as<std::string>(std::to_string(loadNode["api-version"].as<int>(1)));
     script_info.m_description = loadNode["description"].as<std::string>("");
     script_info.m_authors     = loadNode["authors"].as<avledet::util::Strings>(avledet::util::Strings());
 

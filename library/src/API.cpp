@@ -231,6 +231,12 @@ void ScriptManager::load_userdata()
             sol::state_view state(env.lua_state());
             
             // Check cache
+            // TODO
+            //  THE ISSUE HERE, is that
+            //  packages are being laoded by whatever script requires the first,
+            //  then cached without ever being ran again.
+            //  so my cross api is effectively broken, unless I make 
+            //  packages/searchers env specific too
             sol::object cached = loaded[module_name];
             if (cached.valid()) {
                 return cached;
@@ -238,7 +244,7 @@ void ScriptManager::load_userdata()
 
             // module to path
             //  lua.module.world    =>   lua/module/world
-            std::string filename = std::string(AVL_LUA_SCRIPT_PATH);
+            std::string filename = std::string(AVL_LUA_SCRIPT_PATH) + "/";
             for (char c : module_name) {
                 filename += (c == '.') ? '/' : c;
             }

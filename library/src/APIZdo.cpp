@@ -33,7 +33,7 @@ void ScriptManager::load_userdata_zdo()
         "id", sol::property(&ZDOID::get_id, &ZDOID::set_id)
     );
 
-    this->new_usertype<ZDO>("ZDO", 
+    this->new_usertype<ZDO>("Zdo", 
         sol::no_constructor, 
         "id", sol::property(&ZDO::get_id), 
         "pos", sol::property(&ZDO::get_position, &ZDO::set_position), 
