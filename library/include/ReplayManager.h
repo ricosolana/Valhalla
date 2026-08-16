@@ -29,7 +29,7 @@
 
 namespace avledet::replay {
 
-    class IReplayManager
+    class ReplayManager : public avledet::util::IManager<ReplayManager>
     {
       public:
         std::jthread m_thread;
@@ -59,7 +59,5 @@ namespace avledet::replay {
         void on_peer_quit(Peer::Ptr peer);
         void on_packet(Peer::Ptr peer, avledet::util::Bytes packet);
     };
-
-    IReplayManager *ReplayManager();
 
 }// namespace avledet::replay

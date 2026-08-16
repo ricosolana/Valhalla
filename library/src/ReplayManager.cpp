@@ -29,12 +29,6 @@
 
 namespace avledet::replay {
 
-    auto REPLAY_MANAGER = std::make_unique<IReplayManager>();
-
-    IReplayManager *ReplayManager() {
-        return REPLAY_MANAGER.get();
-    }
-
     XShare::XShare(std::filesystem::path path) 
         : m_zstream(path)
         //: m_time_begin(time_begin)
@@ -59,7 +53,7 @@ namespace avledet::replay {
     //    buf->push_back({ nanos, std::move(packet) });
     //}
 
-    void IReplayManager::init() {
+    void ReplayManager::init() {
         this->m_server_nanos = std::chrono::steady_clock::now().time_since_epoch();
 
         auto snanos = AVL_CONFIG.m_replay_mode == ReplayMode::PLAYBACK 
@@ -107,7 +101,7 @@ namespace avledet::replay {
         LOG_WARNING(AVL_LOGGER, "Im too lazy to manage my branches, so you've been warned otherwise...");
     }
 
-    void IReplayManager::uninit() {
+    void ReplayManager::uninit() {
         // TODO: stop the thread
         //  finish all peers
         m_thread.request_stop();
@@ -118,7 +112,7 @@ namespace avledet::replay {
         //  
     }
 
-    void IReplayManager::emit_to_stream(XShare& share, XShare::SwapBuffer const& buf) {
+    void ReplayManager::emit_to_stream(XShare& share, XShare::SwapBuffer const& buf) {
         avledet::util::Writer writer;
 
         for (auto const& pair : buf) {
@@ -130,7 +124,7 @@ namespace avledet::replay {
         share.m_zstream.compressChunk(writer_buf.data(), writer_buf.size());
     }
 
-    void IReplayManager::thread_capture_job(std::stop_token token) {
+    void ReplayManager::thread_capture_job(std::stop_token token) {
         bool run_one_more = false;
         //while (!token.stop_requested())
         for (;;)
@@ -228,7 +222,7 @@ namespace avledet::replay {
         }
     }
 
-    void IReplayManager::thread_player_job(std::stop_token token) {
+    void ReplayManager::thread_player_job(std::stop_token token) {
         while (!token.stop_requested()) {
             // load saved replays
 
@@ -253,12 +247,12 @@ namespace avledet::replay {
         }
     }
 
-    void IReplayManager::update() {
+    void ReplayManager::update() {
         // have queued sessions ready
         //ZStdDecompressor()
     }
 
-    void IReplayManager::on_new_peer(Peer::Ptr peer) {
+    void ReplayManager::on_new_peer(Peer::Ptr peer) {
         // record peer joindata
         const auto host = peer->m_socket->get_host_name();
 
@@ -272,7 +266,7 @@ namespace avledet::replay {
         peer->m_replay_share = std::make_shared<XShare>(path);
     }
 
-    void IReplayManager::on_peer_quit(Peer::Ptr peer) {
+    void ReplayManager::on_peer_quit(Peer::Ptr peer) {
         assert(peer->m_replay_share);
         // TODO: must dump ALL, while not interfering
         auto &share = *peer->m_replay_share;
@@ -284,7 +278,7 @@ namespace avledet::replay {
         flush(share);
     }
 
-    void IReplayManager::on_packet(Peer::Ptr peer, avledet::util::Bytes packet) {
+    void ReplayManager::on_packet(Peer::Ptr peer, avledet::util::Bytes packet) {
         assert(peer->m_replay_share);
 
         auto& share = *peer->m_replay_share;
@@ -314,7 +308,7 @@ namespace avledet::replay {
         this->flush(share);
     }
 
-    void IReplayManager::flush(XShare& share) {
+    void ReplayManager::flush(XShare& share) {
         bool expected = false;
         if (!share.m_in_flight.compare_exchange_strong(
                 expected, true,

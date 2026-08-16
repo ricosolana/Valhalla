@@ -12,7 +12,7 @@
 
     #include "ZoneManager.h"
 
-class IHeightmapBuilder
+class HMBuildManager : public avledet::util::IManager<HMBuildManager>
 {
     struct Shared
     {
@@ -48,7 +48,5 @@ class IHeightmapBuilder
     //std::unique_ptr<HMBuildData> RequestTerrain(const ZoneID& zone);
     //bool IsTerrainReady(const ZoneID& zone);
 };
-
-IHeightmapBuilder *HeightmapBuilder();
 
 #endif// AVL_IS_ON(AVL_ZONE_GENERATION)

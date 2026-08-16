@@ -1,11 +1,10 @@
-
 {
     "configurations": [
         {
             "name": "Avledet",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/bin/Avledet",
+            "program": "${workspaceFolder}/build/bin/avledet_server",
             "args": [ ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/bin/",

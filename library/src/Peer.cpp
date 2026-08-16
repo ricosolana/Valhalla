@@ -151,7 +151,7 @@ void Peer::update()
         
         if (AVL_CONFIG.m_replay_mode == ReplayMode::CAPTURE) {
             //assert(false); // TODO
-            avledet::replay::ReplayManager()->on_packet(shared_from_this(), std::move(bytes));
+            avledet::replay::ReplayManager::instance().on_packet(shared_from_this(), std::move(bytes));
         }
     }
 

@@ -173,11 +173,13 @@ namespace avledet::replay {
 
     // 672 (base)
     // 688 (w/ enable_shared)
-    struct XShare : public std::enable_shared_from_this<XShare> {
+    class XShare : public std::enable_shared_from_this<XShare> {
+    public:
         using PacketTS = std::pair<std::chrono::nanoseconds, avledet::util::Bytes>;
         using SwapBuffer = std::vector<PacketTS>;
 
         using Ptr = std::shared_ptr<XShare>;
+
 
         //std::chrono::nanoseconds m_time_begin;
         //std::chrono::nanoseconds m_time_end;
@@ -212,5 +214,7 @@ namespace avledet::replay {
 
         //void on_packet(avledet::util::Bytes packet);
     };
+
+    
 
 }

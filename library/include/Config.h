@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <type_traits>
+#include <vector>
 #include <yaml-cpp/yaml.h>
 #include <magic_enum/magic_enum.hpp>
 
@@ -135,6 +136,7 @@ public:
     //bool            discordDeleteCommands;
 
     bool m_lua_unsafe {};
+    //std::vector<std::string> m_lua_sandbox {};
 
     //bool replay_enabled;
 

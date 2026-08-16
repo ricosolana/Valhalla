@@ -300,7 +300,7 @@ void Avledet::init()
     WorldManager::instance().PostZoneInit();
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
     GeoManager::instance().PostWorldInit();
-    HeightmapBuilder()->PostGeoInit();
+    HMBuildManager::instance().PostGeoInit();
     ZoneManager::instance().PostGeoInit();
 #endif
 
@@ -308,7 +308,7 @@ void Avledet::init()
     NetManager::instance().PostInit();
 
     if (AVL_CONFIG.m_replay_mode != ReplayMode::NONE) {
-        avledet::replay::ReplayManager()->init();
+        avledet::replay::ReplayManager::instance().init();
     }
 
     AVL_SCRIPT_EVENT(ScriptManager::Events::Enable);
@@ -352,7 +352,7 @@ void Avledet::uninit()
     // Cleanup
     NetManager::instance().Uninit();
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
-    HeightmapBuilder()->Uninit();
+    HMBuildManager::instance().Uninit();
 #endif
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)
@@ -413,7 +413,7 @@ bool Avledet::update()
     RaidManager::instance().Update();
 #endif
 #if AVL_IS_ON(AVL_ZONE_GENERATION)
-    HeightmapBuilder()->Update();
+    HMBuildManager::instance().Update();
 #endif
 
 #if AVL_IS_ON(AVL_ENABLE_SCRIPTING)

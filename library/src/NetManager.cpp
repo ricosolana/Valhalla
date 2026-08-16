@@ -368,7 +368,7 @@ void NetManager::PostInit()
                 if (AVL_CONFIG.m_replay_mode == ReplayMode::CAPTURE) {
                     // TODO implement the replay mode
                     //assert(false);
-                    avledet::replay::ReplayManager()->on_new_peer(peer);
+                    avledet::replay::ReplayManager::instance().on_new_peer(peer);
                 }
             }
         } catch (std::exception const &e) {
@@ -463,7 +463,7 @@ void NetManager::OnPeerQuit(Peer::Ptr peer)
     if (AVL_CONFIG.m_replay_mode == ReplayMode::CAPTURE) {
         // TODO
         //assert(false);
-        avledet::replay::ReplayManager()->on_peer_quit(peer);
+        avledet::replay::ReplayManager::instance().on_peer_quit(peer);
     }
 
     if (peer->IsAdmin()) {

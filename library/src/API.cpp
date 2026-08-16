@@ -1,5 +1,6 @@
 #include "CompileSettings.h"
 #include "VUtilsRandom.h"
+#include <cassert>
 #include <filesystem>
 #include <functional>
 #include <luaconf.h>
@@ -220,16 +221,17 @@ void ScriptManager::load_userdata()
 
     // then load my safe, limited searcher
     if (!AVL_CONFIG.m_lua_unsafe) {
-        sol::table package = m_state.create_table();
-        sol::table loaded = m_state.create_table();
-        package["loaded"] = loaded;
-        m_state["package"] = package; // package.loaded ...
-
         // Sandbox-safe require
-        m_state["require"] = [package, loaded](std::string_view module_name, sol::this_environment tenv) mutable -> sol::object {
+        m_state["require"] = [](std::string_view module_name, sol::this_environment tenv) mutable -> sol::object {
             sol::environment &env = tenv;
             sol::state_view state(env.lua_state());
-            
+
+            sol::table package = env["package"].get_or_create<sol::table>();
+            sol::table loaded = package["loaded"].get_or_create<sol::table>();
+
+            assert(env["package"].valid());            
+            assert(env["package"]["loaded"].valid());
+
             // Check cache
             // TODO
             //  THE ISSUE HERE, is that
@@ -313,13 +315,16 @@ void ScriptManager::load_userdata()
 static std::vector<std::string_view> const safe_functions {// Global objects
                                                            "assert", "error", "ipairs", "next", "pairs",
                                                            "pcall", "print", "select", "tonumber", "tostring",
-                                                           "type", "unpack", "_VERSION", "xpcall",
+                                                           "type", "_VERSION", "xpcall",
+                                                           // Keys below are somewhat vulnerable (bypass metamethods)
+                                                           //"rawequal", "rawget", "rawset", "rawlen"
 
                                                            // Custom require
                                                            "require",
 
                                                            // Full packages
                                                            "coroutine.*", "string.*", "table.*", "math.*",
+                                                           "utf8.*",
 
                                                            // Partial packages
                                                            "os.clock", "os.date", "os.difftime", "os.time"};
@@ -401,6 +406,12 @@ sol::environment ScriptManager::create_sandbox()
         }
     }
 
+    //auto tostring_lua = m_state["tostring"]; //(func).get<std::string>()
+
+    //auto tostring = [&](sol::object obj) -> std::string {
+    //    return m_state["tostring"](obj).get<std::string>();
+    //};
+
     env["_G"] = env;// otherwise, will point to our state global table; defeating sandboxing...
 
     if (AVL_CONFIG.m_lua_unsafe) {
@@ -425,6 +436,7 @@ sol::environment ScriptManager::create_sandbox()
                 for (auto [func_name, func] : m_state[package_name].get<sol::table>()) {
                     copy[func_name] = func;
 
+                    assert(env[package_name].valid());
                     assert(env.get<sol::table>(package_name)[func_name].valid());
                 }
                 continue;
@@ -436,21 +448,18 @@ sol::environment ScriptManager::create_sandbox()
             idx = entry.find(".");
             if (idx != std::string::npos) {
                 // load the partial
-                auto package_name = entry.substr(0, idx);
-                assert(!package_name.contains("."));
+                std::string_view package_name = entry.substr(0, idx);
+                std::string_view func_name = entry.substr(idx + 1);
 
-                auto func_name = entry.substr(idx + 1);
+                assert(!package_name.contains("."));
                 assert(!func_name.contains("."));
 
                 // https://github.com/ThePhD/sol2/blob/develop/examples/source/table_create_if_nil.cpp
 
-                auto func = m_state[package_name][func_name].get<sol::function>();
-                assert(func.valid());
-
+                sol::function func = m_state[package_name][func_name];
                 env[sol::create_if_nil][package_name][func_name] = func;
 
                 assert(env.get<sol::table>(package_name)[func_name].valid());
-                assert(env.get<sol::table>(package_name)[func_name].get_type() == sol::type::function);
 
                 continue;
             }
@@ -458,19 +467,51 @@ sol::environment ScriptManager::create_sandbox()
             /*
                 Global function loading
             */
+/* 
+            auto gobj1 = m_state[entry]; //.get<sol::object>();
+            sol::type t1 = gobj1.get_type();
+
+            auto gobj2 = m_state.globals()[entry];
+            sol::type t2 = gobj2.get_type();
+
+
+
+            // SEGFAULT AVOIDANCE CODE:
+            std::vector<std::pair<sol::object, sol::object>> pairs;
+            for (auto& kv : m_state.globals()) {
+                pairs.emplace_back(kv.first, kv.second);
+            }
+            // The above is used, because doing pretty much any lua operations during a state iterator
+            //  invalidates the lua stack, and causes mayhem
+ */
+
+
+            //std::vector<std::pair<std::string, sol::type>> names1;
+            //for (auto itr = m_state.begin(); itr != m_state.end(); itr++) {
+            //    std::string key = tostring((*itr).first);
+            //    sol::type val = (*itr).second.get_type();
+            //    names1.push_back({ key, val });
+            //}
+
+            //std::vector<std::pair<std::string, sol::type>> names2;
+            //for (const auto& pair : pairs) {
+            //    std::string key = tostring(pair.first);
+            //    sol::type val = pair.second.get_type();
+            //    names2.push_back({ key, val });
+            //}
 
             env[sol::create_if_nil][entry] = m_state[entry].get<sol::object>();
+
+            // If assert FAILS, possible the lib function is not global (or exist anymore)
+            assert(env[entry].valid());
         }
 
-        //assert(false);
-        // TODO register all usertypes as env accessible tables
+        // This registers all CUSTOM usertypes as env accessible tables
         for (const auto& name : m_custom_globals) {
             env[sol::create_if_nil][name] = m_state[name].get<sol::object>();
-        }
 
-        //env[sol::create_if_nil]["require"] = [](sol::variadic_args) {
-        //    throw std::runtime_error("cannot use 'require' while in safe mode");
-        //};
+            assert(env[name].valid());
+        }
     }
 
     return env;

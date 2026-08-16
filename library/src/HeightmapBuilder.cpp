@@ -19,15 +19,8 @@
     #include "VUtilsMathf.h"
     #include "VUtilsMath.h"
 
-auto HEIGHTMAP_BUILDER = std::make_unique<IHeightmapBuilder>();
-
-IHeightmapBuilder *HeightmapBuilder()
-{
-    return HEIGHTMAP_BUILDER.get();
-}
-
 // public
-void IHeightmapBuilder::PostGeoInit()
+void HMBuildManager::PostGeoInit()
 {
     //int TC = std::max(1, (int)std::thread::hardware_concurrency() - 2);
 
@@ -97,7 +90,7 @@ void IHeightmapBuilder::PostGeoInit()
     m_nextBuilder = m_builders.begin();
 }
 
-void IHeightmapBuilder::Uninit()
+void HMBuildManager::Uninit()
 {
     // First request all to stop
     for (auto &&shared : m_builders) {
@@ -111,7 +104,7 @@ void IHeightmapBuilder::Uninit()
     }
 }
 
-void IHeightmapBuilder::Update()
+void HMBuildManager::Update()
 {
     if (VUtils::run_periodic<struct clear_heightmaps>(1min)) {
         std::scoped_lock<std::mutex> scoped(m_mux);
@@ -127,7 +120,7 @@ void IHeightmapBuilder::Update()
 }
 
 // private
-void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone)
+void HMBuildManager::Build(BaseHeightmap *base, ZoneID zone)
 {
     auto baseWorldPos = ZoneManager::ZoneToWorldPos(zone)
                         + Vector3f((float) ZoneManager::UNITS_PER_ZONE * -0.5f, 0.,
@@ -196,7 +189,7 @@ void IHeightmapBuilder::Build(BaseHeightmap *base, ZoneID zone)
 
 /*
 // public
-std::unique_ptr<HMBuildData> IHeightmapBuilder::RequestTerrainBlocking(const ZoneID& zone) {
+std::unique_ptr<HMBuildData> HMBuildManager::RequestTerrainBlocking(const ZoneID& zone) {
     std::unique_ptr<HMBuildData> hmbuildData;
     do {
         hmbuildData = RequestTerrain(zone);
@@ -206,7 +199,7 @@ std::unique_ptr<HMBuildData> IHeightmapBuilder::RequestTerrainBlocking(const Zon
 }*/
 
 /*
-void IHeightmapBuilder::QueueBatch(const ZoneID& zone) {
+void HMBuildManager::QueueBatch(const ZoneID& zone) {
     for (auto&& shared : m_builders) {
         std::scoped_lock<std::mutex> scoped(shared.m_mux);
 
@@ -215,7 +208,7 @@ void IHeightmapBuilder::QueueBatch(const ZoneID& zone) {
     }
 }*/
 
-std::unique_ptr<Heightmap> IHeightmapBuilder::PollHeightmap(ZoneID zone)
+std::unique_ptr<Heightmap> HMBuildManager::PollHeightmap(ZoneID zone)
 {
     {
         std::unique_ptr<Heightmap> result;
@@ -267,7 +260,7 @@ std::unique_ptr<Heightmap> IHeightmapBuilder::PollHeightmap(ZoneID zone)
 // This entire multithreaded (single thread really) chunkbuilder is not even used
 // for its intended purpose
 /*
-std::unique_ptr<HMBuildData> IHeightmapBuilder::RequestTerrain(const ZoneID& zone) {
+std::unique_ptr<HMBuildData> HMBuildManager::RequestTerrain(const ZoneID& zone) {
     std::scoped_lock<std::mutex> scoped(m_lock);
     auto&& find = m_ready.find(zone);
     if (find != m_ready.end()) {
@@ -284,7 +277,7 @@ std::unique_ptr<HMBuildData> IHeightmapBuilder::RequestTerrain(const ZoneID& zon
 
 /*
 // public
-bool IHeightmapBuilder::IsTerrainReady(const ZoneID& zone) {
+bool HMBuildManager::IsTerrainReady(const ZoneID& zone) {
     std::scoped_lock<std::mutex> scoped(m_lock);
 
     if (m_ready.contains(zone))

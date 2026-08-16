@@ -147,7 +147,7 @@ Heightmap *HeightmapManager::PollHeightmap(ZoneID zone)
     //auto&& pop = m_population.insert(zone);
     //if (!insert.first->second && pop.second) // if heightmap is null, try polling it
     if (!insert.first->second)
-        insert.first->second = HeightmapBuilder()->PollHeightmap(zone);
+        insert.first->second = HMBuildManager::instance().PollHeightmap(zone);
 
     return insert.first->second.get();
 }
@@ -163,7 +163,7 @@ Heightmap &HeightmapManager::GetHeightmap(ZoneID zone)
     auto &&insert = m_heightmaps.insert({zone, nullptr});
 
     while (!insert.first->second) {// if heightmap is null, try polling it
-        insert.first->second = HeightmapBuilder()->PollHeightmap(zone);
+        insert.first->second = HMBuildManager::instance().PollHeightmap(zone);
         if (!insert.first->second) // small optimize
             std::this_thread::sleep_for(1ms);
     }
