@@ -1,5 +1,12 @@
 # Avledet
 
+Please take note of the branches
+- **Stable branch**: 0.221.12 (this branch)
+  - Boring, slower moving, features some bugs
+- **Latest (un)stable branch**: 0.221.12-replay-B-semi-atomic-modular
+  - Has bleeding edge changes involving scripting API, dungeon generation fixes, bugfixes
+  - Experimental replay feature that is partially unimplemented (please do not enable it)
+
 Valheim server written in modern C++. 
 
 Low resource usage. Includes features not present in Vanilla.
