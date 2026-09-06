@@ -371,4 +371,9 @@ namespace avledet::replay {
         m_wakeup.notify_one();   // or notify_all()
     }
 
+    // reader expects the zdo packet
+    void DataTracker::compile(avledet::util::Reader &reader) {
+        
+    }
+
 }

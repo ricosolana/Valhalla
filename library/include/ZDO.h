@@ -26,6 +26,7 @@
 #include "Hashes.h"
 #include "PrefabManager.h"
 #include "Quaternion.h"
+#include "Replay.h"
 #include "Types.h"
 #include "Vector.h"
 #include "VUtils.h"
@@ -358,9 +359,14 @@ class ZDO
 
     static void _write_num_items(DataWriter &writer, int numItems);
 
-    template<class T>
-    void _load_vars(avledet::util::Reader &reader, int version, VarMap<T> &map)
+    //template<class T>
+    //void _load_vars(avledet::util::Reader &reader, int version, VarMap<T> &map)
+    template<bool do_replay_compile>
+    void _load_vars(avledet::util::Reader &reader, int version, VarMap<avledet::util::Bytes> &map, avledet::replay::DataTracker *tracker)
     {
+        // dumb temp to help my intellisense
+        using T = avledet::util::Bytes;
+
         auto num3     = _read_num_items(reader, version);
         auto &&insert = map.try_emplace(m_id);
         auto &&tree   = insert.first->second;
@@ -369,6 +375,21 @@ class ZDO
             auto num5 = reader.read<T>();
             // Run during network, or if conversion during world-load
             if (!(version && _try_convert(num4, num5))) {
+                // TODO, this inefficient now, but, do later insert/replace...
+                //auto&& item = tree[num4];
+                if constexpr (do_replay_compile) {
+                    auto&& find = tree.find(num4);
+                    if (find != tree.end()) {
+                        if (find->second != num5) {
+                            // then append to replay change set
+
+                            // TODO need to somehow 
+                            tracker->compile()
+                        }
+                        
+                        //item = num5;
+                    }
+                }
                 tree[num4] = num5;
             }
         }

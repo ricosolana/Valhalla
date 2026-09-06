@@ -32,6 +32,10 @@
 //    ASSERT_FALSE(map.find({ { 10, 4.0f }, "A" }));
 //}
 
+// Remember, strict mapping requires that each positional key is individually unique across instances
+//  - (1, 2)
+//  - (0, 2)
+//  Above results in a chash (second keys collide)
 TEST(AvledetUtil, MonotonicStrict)
 {
     avledet::util::mono::strict_btree_map<
@@ -48,6 +52,8 @@ TEST(AvledetUtil, MonotonicStrict)
     ASSERT_TRUE(m.find({ 3, 1 })->second);
 }
 
+// Weak mapping
+//  Requires that 
 TEST(AvledetUtil, MonotonicWeak)
 {
     avledet::util::mono::weak_btree_map<
@@ -105,6 +111,7 @@ TEST(AvledetUtil, MonotonicMulti)
     m[{ 0, 2 }] = 10; // adds a new 0,2, because this is a duplicating map
     ASSERT_EQ((m[{ 0, 2 }]), 0); // idx[] operator
     ASSERT_TRUE(m.insert({{ 0, 2 }, 110 }).second);
+    ASSERT_EQ(m.find({ 0 , 2 })->second, 110);
     ASSERT_TRUE(m.insert({{ 0, 2 }, 120 }).second);
     ASSERT_EQ(m.find({ 0 , 2 })->second, 120);
 }
